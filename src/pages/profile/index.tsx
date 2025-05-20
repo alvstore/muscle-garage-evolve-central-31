@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -8,11 +9,11 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-import { uploadFile } from '@/services/utils/storageService';
 import { User } from '@supabase/supabase-js';
 import { Loader2, Camera, Key, UserIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { DatePicker } from '@/components/ui/date-picker';
+import { useUploadImage } from '@/hooks/utils/use-upload-image';
 
 interface Profile {
   id: string;
@@ -35,6 +36,7 @@ const ProfilePage = () => {
   const [updating, setUpdating] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [activeTab, setActiveTab] = useState('personal');
+  const { uploadImage } = useUploadImage();
   
   // Form states
   const [fullName, setFullName] = useState('');
@@ -46,11 +48,22 @@ const ProfilePage = () => {
 
   useEffect(() => {
     const getUser = async () => {
-      const { data } = await supabase.auth.getUser();
-      if (data?.user) {
-        setUser(data.user);
-        fetchProfile(data.user);
-      } else {
+      try {
+        setLoading(true);
+        const { data, error } = await supabase.auth.getUser();
+        
+        if (error) {
+          throw error;
+        }
+        
+        if (data?.user) {
+          setUser(data.user);
+          await fetchProfile(data.user);
+        }
+      } catch (error) {
+        console.error('Error getting user:', error);
+        toast.error('Failed to load user information');
+      } finally {
         setLoading(false);
       }
     };
@@ -67,14 +80,17 @@ const ProfilePage = () => {
         .eq('id', user.id)
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching profile:', error);
+        throw error;
+      }
 
       setProfile(data);
-      setFullName(data.full_name || '');
+      setFullName(data?.full_name || '');
       setEmail(user.email || '');
-      setPhone(data.phone || '');
-      setDateOfBirth(data.date_of_birth ? new Date(data.date_of_birth) : undefined);
-    } catch (error) {
+      setPhone(data?.phone || '');
+      setDateOfBirth(data?.date_of_birth ? new Date(data.date_of_birth) : undefined);
+    } catch (error: any) {
       console.error('Error fetching profile:', error);
       toast.error('Failed to load profile information');
     } finally {
@@ -86,17 +102,19 @@ const ProfilePage = () => {
     if (!e.target.files || !e.target.files[0]) return;
     
     const file = e.target.files[0];
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${user?.id}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-    const filePath = `${fileName}`;
     
     try {
       setUploadingAvatar(true);
       
       // Upload to storage
-      const avatarUrl = await uploadFile('avatars', filePath, file);
+      const avatarUrl = await uploadImage({
+        file,
+        folder: 'avatars',
+      });
       
-      if (!avatarUrl) throw new Error('Failed to upload avatar');
+      if (!avatarUrl) {
+        throw new Error('Failed to upload avatar');
+      }
       
       // Update profile
       const { error } = await supabase
@@ -104,23 +122,36 @@ const ProfilePage = () => {
         .update({ avatar_url: avatarUrl })
         .eq('id', user?.id);
       
-      if (error) throw error;
+      if (error) {
+        throw error;
+      }
       
       // Update local state
       setProfile(prev => prev ? { ...prev, avatar_url: avatarUrl } : null);
       
       toast.success('Your profile picture has been updated successfully');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error uploading avatar:', error);
-      toast.error('There was an error uploading your avatar');
+      toast.error(error.message || 'There was an error uploading your avatar');
     } finally {
       setUploadingAvatar(false);
     }
   };
 
   const updateProfile = async () => {
+    if (!user?.id) {
+      toast.error('User information not available');
+      return;
+    }
+
     try {
       setUpdating(true);
+      
+      // Validate inputs
+      if (!fullName.trim()) {
+        toast.error('Full name is required');
+        return;
+      }
       
       // Update profile in database
       const { error } = await supabase
@@ -131,23 +162,32 @@ const ProfilePage = () => {
           date_of_birth: dateOfBirth ? format(dateOfBirth, 'yyyy-MM-dd') : null,
           updated_at: new Date().toISOString(),
         })
-        .eq('id', user?.id);
+        .eq('id', user.id);
       
-      if (error) throw error;
+      if (error) {
+        throw error;
+      }
       
       // Update email if changed
-      if (email !== user?.email) {
+      if (email !== user.email) {
         const { error: emailError } = await supabase.auth.updateUser({
           email,
         });
         
-        if (emailError) throw emailError;
+        if (emailError) {
+          throw emailError;
+        }
+        
+        toast.info('A confirmation email has been sent to your new email address');
       }
       
       toast.success('Your profile information has been updated successfully');
       
       // Refresh profile data
-      if (user) fetchProfile(user);
+      const updatedUserData = await supabase.auth.getUser();
+      if (updatedUserData.data?.user) {
+        fetchProfile(updatedUserData.data.user);
+      }
     } catch (error: any) {
       console.error('Error updating profile:', error);
       toast.error(error.message || 'There was an error updating your profile');
@@ -157,8 +197,18 @@ const ProfilePage = () => {
   };
 
   const updatePassword = async () => {
+    if (!newPassword || !confirmPassword) {
+      toast.error('Please enter both password fields');
+      return;
+    }
+    
     if (newPassword !== confirmPassword) {
       toast.error('New password and confirmation must match');
+      return;
+    }
+    
+    if (newPassword.length < 6) {
+      toast.error('Password must be at least 6 characters');
       return;
     }
     
@@ -169,7 +219,9 @@ const ProfilePage = () => {
         password: newPassword,
       });
       
-      if (error) throw error;
+      if (error) {
+        throw error;
+      }
       
       toast.success('Your password has been updated successfully');
       

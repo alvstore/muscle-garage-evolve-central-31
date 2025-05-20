@@ -1,4 +1,5 @@
 
+import { useState } from 'react';
 import { supabase } from '@/services/api/supabaseClient';
 import { toast } from 'sonner';
 
@@ -7,11 +8,33 @@ interface UploadImageProps {
   folder: string;
 }
 
-export const useUploadImage = () => {
-  const uploadImage = async ({ file, folder }: UploadImageProps) => {
+interface UseUploadImageReturn {
+  uploadImage: (props: UploadImageProps) => Promise<string | null>;
+  isUploading: boolean;
+  error: Error | null;
+}
+
+export const useUploadImage = (): UseUploadImageReturn => {
+  const [isUploading, setIsUploading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+
+  const uploadImage = async ({ file, folder }: UploadImageProps): Promise<string | null> => {
     try {
+      setIsUploading(true);
+      setError(null);
+
       if (!file) {
         throw new Error('No file selected');
+      }
+
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        throw new Error('File must be an image');
+      }
+
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        throw new Error('Image size should be less than 5MB');
       }
 
       // Generate a unique filename
@@ -44,10 +67,13 @@ export const useUploadImage = () => {
       return publicUrl;
     } catch (error: any) {
       console.error('Error uploading image:', error);
+      setError(error instanceof Error ? error : new Error(error.message || 'Unknown error'));
       toast.error(error.message || 'Failed to upload image');
-      throw error;
+      return null;
+    } finally {
+      setIsUploading(false);
     }
   };
 
-  return { uploadImage };
+  return { uploadImage, isUploading, error };
 };

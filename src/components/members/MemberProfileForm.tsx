@@ -1,15 +1,18 @@
-import React, { useState, useEffect, useCallback } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calendar } from "@/components/ui/calendar"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { cn } from "@/lib/utils"
-import { format } from "date-fns"
-import { CalendarIcon } from "lucide-react"
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
+import { format, parseISO } from "date-fns";
+import { CalendarIcon, Loader2 } from "lucide-react";
 import { Member } from '@/types/members/member';
-import { useToast } from "@/components/ui/use-toast"
+import { toast } from "sonner";
+import { useUploadImage } from '@/hooks/utils/use-upload-image';
+import AvatarUpload from '@/components/common/AvatarUpload';
 
 interface MemberProfileFormProps {
   member: Member | null;
@@ -19,42 +22,42 @@ interface MemberProfileFormProps {
 
 const MemberProfileForm: React.FC<MemberProfileFormProps> = ({ member, onSubmit, disabled = false }) => {
   const [formData, setFormData] = useState<Partial<Member>>({});
-  const [date, setDate] = useState<Date>();
-  const { toast } = useToast()
+  const [profileImage, setProfileImage] = useState<File | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [date, setDate] = useState<Date | undefined>();
+  const { uploadImage, isUploading } = useUploadImage();
 
+  // Initialize form with member data
   useEffect(() => {
     if (member) {
-      // Use date_of_birth from member, fallback to dateOfBirth for compatibility
-      setDate(member.date_of_birth ? new Date(member.date_of_birth) : 
-             (member.dateOfBirth ? new Date(member.dateOfBirth) : undefined));
+      // Handle date of birth conversion
+      let dob = member.date_of_birth ? new Date(member.date_of_birth) : 
+              (member.dateOfBirth ? new Date(member.dateOfBirth) : undefined);
+              
+      setDate(dob);
+
+      // Set initial form data
+      setFormData({
+        ...member,
+        // Ensure all potential field variations are considered
+        name: member.name || '',
+        email: member.email || '',
+        phone: member.phone || '',
+        address: member.address || '',
+        city: member.city || '',
+        state: member.state || '',
+        zipCode: member.zipCode || member.zip_code || '',
+        country: member.country || 'India',
+        gender: member.gender || 'male',
+        date_of_birth: member.date_of_birth || member.dateOfBirth || '',
+        goal: member.goal || '',
+        avatar: member.avatar || member.profile_picture || '',
+        occupation: member.occupation || '',
+        blood_group: member.blood_group || '',
+        id_type: member.id_type || '',
+        id_number: member.id_number || ''
+      });
     }
-  }, [member]);
-
-  const initialFormData = {
-    name: member?.name || '',
-    email: member?.email || '',
-    phone: member?.phone || '',
-    address: member?.address || '',
-    city: member?.city || '',
-    state: member?.state || '',
-    zipCode: member?.zipCode || member?.zip_code || '',
-    country: member?.country || 'India',
-    gender: member?.gender || 'male',
-    date_of_birth: member?.date_of_birth || member?.dateOfBirth || '',
-    goal: member?.goal || '',
-    avatar: member?.avatar || member?.profile_picture || '',
-    occupation: member?.occupation || '',
-    blood_group: member?.blood_group || '',
-    id_type: member?.id_type || '',
-    id_number: member?.id_number || '',
-    emergency_contact_name: member?.emergency_contact_name || '',
-    emergency_contact_phone: member?.emergency_contact_phone || '',
-    emergency_contact_relation: member?.emergency_contact_relation || '',
-    status: member?.status || 'active'
-  };
-
-  useEffect(() => {
-    setFormData(initialFormData);
   }, [member]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -62,7 +65,11 @@ const MemberProfileForm: React.FC<MemberProfileFormProps> = ({ member, onSubmit,
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleDateChange = useCallback((date: Date | undefined) => {
+  const handleSelectChange = (name: string, value: string) => {
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleDateChange = (date: Date | undefined) => {
     setDate(date);
     if (date) {
       const formattedDate = format(date, 'yyyy-MM-dd');
@@ -72,40 +79,77 @@ const MemberProfileForm: React.FC<MemberProfileFormProps> = ({ member, onSubmit,
         dateOfBirth: formattedDate // For backward compatibility
       }));
     }
-  }, [setFormData]);
+  };
+
+  const handleImageChange = (file: File | null) => {
+    setProfileImage(file);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSubmitting(true);
 
     try {
-      if (onSubmit) {
-        await onSubmit({ ...formData } as Member);
-        toast({
-          title: "Success!",
-          description: "Member profile updated successfully.",
-        })
+      // Upload profile image if selected
+      let avatarUrl = formData.avatar;
+      
+      if (profileImage) {
+        const uploadedUrl = await uploadImage({ file: profileImage, folder: 'avatars' });
+        if (uploadedUrl) {
+          avatarUrl = uploadedUrl;
+        }
       }
+
+      // Update the member with all the collected data
+      const updatedMember: Member = {
+        ...formData,
+        avatar: avatarUrl,
+        profile_picture: avatarUrl, // Ensure both fields are updated for compatibility
+        id: member?.id || '', // Ensure ID is preserved
+      } as Member;
+
+      await onSubmit(updatedMember);
+      toast.success("Member profile updated successfully.");
     } catch (error) {
       console.error("Error updating member profile:", error);
-      toast({
-        variant: "destructive",
-        title: "Error!",
-        description: "Failed to update member profile.",
-      })
+      toast.error("Failed to update member profile. Please try again.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
+  // If there's no member data and not in creation mode, show loading
+  if (!member && !disabled) {
+    return (
+      <div className="flex items-center justify-center p-6">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      {/* Avatar Upload Section */}
+      <div className="flex justify-center mb-8">
+        <AvatarUpload
+          initialImageUrl={formData.avatar}
+          onImageChange={handleImageChange}
+          disabled={disabled || isSubmitting}
+          name={formData.name || ''}
+          size="xl"
+        />
+      </div>
+
+      {/* Basic Info Section */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <Label htmlFor="name">Full Name</Label>
+          <Label htmlFor="name">Full Name <span className="text-red-500">*</span></Label>
           <Input
             id="name"
             name="name"
             value={formData.name || ''}
             onChange={handleInputChange}
-            disabled={disabled}
+            disabled={disabled || isSubmitting}
             required
           />
         </div>
@@ -117,7 +161,7 @@ const MemberProfileForm: React.FC<MemberProfileFormProps> = ({ member, onSubmit,
             name="email"
             value={formData.email || ''}
             onChange={handleInputChange}
-            disabled={disabled}
+            disabled={disabled || isSubmitting}
           />
         </div>
       </div>
@@ -131,15 +175,15 @@ const MemberProfileForm: React.FC<MemberProfileFormProps> = ({ member, onSubmit,
             name="phone"
             value={formData.phone || ''}
             onChange={handleInputChange}
-            disabled={disabled}
+            disabled={disabled || isSubmitting}
           />
         </div>
         <div>
           <Label htmlFor="gender">Gender</Label>
           <Select
             value={formData.gender as string || 'male'}
-            onValueChange={(value) => setFormData(prev => ({ ...prev, gender: value }))}
-            disabled={disabled}
+            onValueChange={(value) => handleSelectChange('gender', value)}
+            disabled={disabled || isSubmitting}
           >
             <SelectTrigger>
               <SelectValue placeholder="Select gender" />
@@ -160,7 +204,7 @@ const MemberProfileForm: React.FC<MemberProfileFormProps> = ({ member, onSubmit,
           name="address"
           value={formData.address || ''}
           onChange={handleInputChange}
-          disabled={disabled}
+          disabled={disabled || isSubmitting}
         />
       </div>
 
@@ -172,7 +216,7 @@ const MemberProfileForm: React.FC<MemberProfileFormProps> = ({ member, onSubmit,
             name="city"
             value={formData.city || ''}
             onChange={handleInputChange}
-            disabled={disabled}
+            disabled={disabled || isSubmitting}
           />
         </div>
         <div>
@@ -182,7 +226,7 @@ const MemberProfileForm: React.FC<MemberProfileFormProps> = ({ member, onSubmit,
             name="state"
             value={formData.state || ''}
             onChange={handleInputChange}
-            disabled={disabled}
+            disabled={disabled || isSubmitting}
           />
         </div>
         <div>
@@ -192,7 +236,7 @@ const MemberProfileForm: React.FC<MemberProfileFormProps> = ({ member, onSubmit,
             name="zipCode"
             value={formData.zipCode || ''}
             onChange={handleInputChange}
-            disabled={disabled}
+            disabled={disabled || isSubmitting}
           />
         </div>
       </div>
@@ -204,7 +248,7 @@ const MemberProfileForm: React.FC<MemberProfileFormProps> = ({ member, onSubmit,
           name="country"
           value={formData.country || ''}
           onChange={handleInputChange}
-          disabled={disabled}
+          disabled={disabled || isSubmitting}
         />
       </div>
 
@@ -215,13 +259,13 @@ const MemberProfileForm: React.FC<MemberProfileFormProps> = ({ member, onSubmit,
             <Button
               variant={"outline"}
               className={cn(
-                "w-[240px] justify-start text-left font-normal",
+                "w-full justify-start text-left font-normal",
                 !date && "text-muted-foreground"
               )}
-              disabled={disabled}
+              disabled={disabled || isSubmitting}
             >
               <CalendarIcon className="mr-2 h-4 w-4" />
-              {date ? format(date, "PPP") : <span>Pick a date</span>}
+              {date ? format(date, "PPP") : <span>Select date</span>}
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-auto p-0" align="start">
@@ -229,59 +273,84 @@ const MemberProfileForm: React.FC<MemberProfileFormProps> = ({ member, onSubmit,
               mode="single"
               selected={date}
               onSelect={handleDateChange}
-              disabled={disabled}
+              disabled={disabled || isSubmitting || ((date) => date > new Date())}
               initialFocus
             />
           </PopoverContent>
         </Popover>
       </div>
 
-      <div>
-        <Label htmlFor="goal">Fitness Goal</Label>
-        <Input
-          id="goal"
-          name="goal"
-          value={formData.goal || ''}
-          onChange={handleInputChange}
-          disabled={disabled}
-        />
+      {/* Additional Info Section */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <Label htmlFor="goal">Fitness Goal</Label>
+          <Input
+            id="goal"
+            name="goal"
+            value={formData.goal || ''}
+            onChange={handleInputChange}
+            disabled={disabled || isSubmitting}
+          />
+        </div>
+        <div>
+          <Label htmlFor="occupation">Occupation</Label>
+          <Input
+            id="occupation"
+            name="occupation"
+            value={formData.occupation || ''}
+            onChange={handleInputChange}
+            disabled={disabled || isSubmitting}
+          />
+        </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <Label htmlFor="emergency_contact_name">Emergency Contact Name</Label>
+          <Label htmlFor="blood_group">Blood Group</Label>
           <Input
-            id="emergency_contact_name"
-            name="emergency_contact_name"
-            value={formData.emergency_contact_name}
+            id="blood_group"
+            name="blood_group"
+            value={formData.blood_group || ''}
             onChange={handleInputChange}
-            disabled={disabled}
+            disabled={disabled || isSubmitting}
           />
         </div>
         <div>
-          <Label htmlFor="emergency_contact_phone">Emergency Contact Phone</Label>
+          <Label htmlFor="id_type">ID Type</Label>
           <Input
-            id="emergency_contact_phone"
-            name="emergency_contact_phone"
-            value={formData.emergency_contact_phone}
+            id="id_type"
+            name="id_type"
+            value={formData.id_type || ''}
             onChange={handleInputChange}
-            disabled={disabled}
+            disabled={disabled || isSubmitting}
           />
         </div>
       </div>
+
       <div>
-        <Label htmlFor="emergency_contact_relation">Relationship</Label>
+        <Label htmlFor="id_number">ID Number</Label>
         <Input
-          id="emergency_contact_relation"
-          name="emergency_contact_relation"
-          value={formData.emergency_contact_relation}
+          id="id_number"
+          name="id_number"
+          value={formData.id_number || ''}
           onChange={handleInputChange}
-          disabled={disabled}
+          disabled={disabled || isSubmitting}
         />
       </div>
 
-      <Button type="submit" disabled={disabled}>
-        Update Profile
+      <Button 
+        type="submit" 
+        disabled={disabled || isSubmitting || isUploading}
+        className="w-full sm:w-auto"
+      >
+        {isSubmitting || isUploading ? (
+          <>
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            Updating...
+          </>
+        ) : (
+          'Update Profile'
+        )}
       </Button>
     </form>
   );

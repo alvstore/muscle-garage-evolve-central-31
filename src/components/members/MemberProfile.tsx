@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { format, parseISO } from "date-fns";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
-import { CalendarIcon, Mail, MapPin, Phone, User } from "lucide-react";
+import { CalendarIcon, Mail, MapPin, Phone, User, Loader2 } from "lucide-react";
 import trainersService from '@/services/trainersService';
 
 interface Trainer {
@@ -17,15 +18,19 @@ interface Trainer {
 
 const MemberProfile = ({ member, onEdit }: { member: any, onEdit: () => void }) => {
   const [trainer, setTrainer] = useState<Trainer | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
   
   useEffect(() => {
     const fetchTrainerData = async () => {
       if (member?.trainer_id || member?.trainerId) {
         try {
+          setIsLoading(true);
           const trainerData = await trainersService.getTrainerById(member.trainer_id || member.trainerId);
           setTrainer(trainerData);
         } catch (error) {
           console.error("Error fetching trainer data:", error);
+        } finally {
+          setIsLoading(false);
         }
       }
     };
@@ -33,10 +38,25 @@ const MemberProfile = ({ member, onEdit }: { member: any, onEdit: () => void }) 
     fetchTrainerData();
   }, [member?.trainer_id, member?.trainerId]);
 
+  // Safe access to member properties
+  const memberName = member?.name || 'Unknown Member';
+  const memberInitials = memberName.substring(0, 2).toUpperCase();
+  const memberAvatar = member?.avatar_url || member?.profile_picture || member?.avatar || '';
+  const membershipStatus = member?.membership_status || 'unknown';
+  const memberCreatedAt = member?.created_at ? format(parseISO(member.created_at), 'MMM yyyy') : 'N/A';
+  
   // Safe access to trainer properties
   const trainerAvatar = trainer?.avatar_url || '';
   const trainerName = trainer?.name || 'No Trainer Assigned';
   const displayTrainerName = trainer?.name || 'No Trainer Assigned';
+
+  if (!member) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -49,15 +69,15 @@ const MemberProfile = ({ member, onEdit }: { member: any, onEdit: () => void }) 
           <div className="flex flex-col md:flex-row gap-6">
             <div className="flex flex-col items-center gap-4">
               <Avatar className="h-32 w-32">
-                <AvatarImage src={member?.avatar_url} alt={member?.name} />
-                <AvatarFallback className="text-2xl">{member?.name?.substring(0, 2).toUpperCase()}</AvatarFallback>
+                <AvatarImage src={memberAvatar} alt={memberName} />
+                <AvatarFallback className="text-2xl">{memberInitials}</AvatarFallback>
               </Avatar>
               <div className="text-center">
-                <h2 className="text-xl font-bold">{member?.name}</h2>
-                <p className="text-sm text-muted-foreground">Member since {member?.created_at ? format(parseISO(member.created_at), 'MMM yyyy') : 'N/A'}</p>
+                <h2 className="text-xl font-bold">{memberName}</h2>
+                <p className="text-sm text-muted-foreground">Member since {memberCreatedAt}</p>
               </div>
-              <Badge variant={member?.membership_status === 'active' ? 'default' : 'destructive'}>
-                {member?.membership_status || 'Unknown Status'}
+              <Badge variant={membershipStatus === 'active' ? 'default' : 'destructive'}>
+                {membershipStatus}
               </Badge>
             </div>
             
@@ -91,7 +111,8 @@ const MemberProfile = ({ member, onEdit }: { member: any, onEdit: () => void }) 
                   <p className="text-sm font-medium text-muted-foreground">Date of Birth</p>
                   <div className="flex items-center gap-2">
                     <CalendarIcon className="h-4 w-4 text-muted-foreground" />
-                    <p>{member?.date_of_birth ? format(parseISO(member.date_of_birth), 'dd MMM yyyy') : 'Not provided'}</p>
+                    <p>{member?.date_of_birth ? format(parseISO(member.date_of_birth), 'dd MMM yyyy') : 
+                       (member?.dateOfBirth ? format(parseISO(member.dateOfBirth), 'dd MMM yyyy') : 'Not provided')}</p>
                   </div>
                 </div>
               </div>
@@ -107,7 +128,8 @@ const MemberProfile = ({ member, onEdit }: { member: any, onEdit: () => void }) 
                   </div>
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">Expiry Date</p>
-                    <p>{member?.membership_end_date ? format(parseISO(member.membership_end_date), 'dd MMM yyyy') : 'N/A'}</p>
+                    <p>{member?.membership_end_date ? format(parseISO(member.membership_end_date), 'dd MMM yyyy') : 
+                       (member?.membershipEndDate ? format(parseISO(member.membershipEndDate), 'dd MMM yyyy') : 'N/A')}</p>
                   </div>
                 </div>
               </div>
@@ -116,16 +138,23 @@ const MemberProfile = ({ member, onEdit }: { member: any, onEdit: () => void }) 
               
               <div className="space-y-2">
                 <h3 className="font-medium">Assigned Trainer</h3>
-                <div className="flex items-center gap-3">
-                  <Avatar className="h-10 w-10">
-                    <AvatarImage src={trainerAvatar} alt={trainerName} />
-                    <AvatarFallback>{trainerName.substring(0, 2).toUpperCase()}</AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <p>{displayTrainerName}</p>
-                    {trainer && <p className="text-sm text-muted-foreground">Personal Trainer</p>}
+                {isLoading ? (
+                  <div className="flex items-center">
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    <p>Loading trainer information...</p>
                   </div>
-                </div>
+                ) : (
+                  <div className="flex items-center gap-3">
+                    <Avatar className="h-10 w-10">
+                      <AvatarImage src={trainerAvatar} alt={trainerName} />
+                      <AvatarFallback>{trainerName.substring(0, 2).toUpperCase()}</AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <p>{displayTrainerName}</p>
+                      {trainer && <p className="text-sm text-muted-foreground">Personal Trainer</p>}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
