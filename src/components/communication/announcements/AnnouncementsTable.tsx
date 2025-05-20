@@ -17,8 +17,9 @@ import {
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
 import { MoreVertical, Eye, Pencil, RefreshCw, Trash2 } from "lucide-react";
-import { Announcement } from "@/types/notification";
+import { Announcement } from '@/types/communication/notification';
 import { usePermissions } from "@/hooks/auth/use-permissions";
+import { useAuth } from '@/hooks/auth/use-auth';
 
 interface AnnouncementsTableProps {
   announcements: Announcement[];
@@ -35,9 +36,12 @@ const AnnouncementsTable = ({
   onDelete,
   onResend,
 }: AnnouncementsTableProps) => {
-  const { userRole } = usePermissions();
-  const canEdit = userRole !== 'member';
-  const canResend = userRole === 'admin' || userRole === 'staff';
+  import { useAuth } from '@/hooks/auth/use-auth';
+
+  // Replace usePermissions with useAuth
+  const { role } = useAuth();
+  const canEdit = role !== 'member';
+  const canResend = role === 'admin' || role === 'staff';
 
   return (
     <div className="rounded-md border">

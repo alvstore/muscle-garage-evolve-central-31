@@ -1,35 +1,26 @@
+import React, { useState, useEffect, FC } from 'react';
+import { useHikvisionSettings } from '@/hooks/use-hikvision-settings';
+import { HikvisionDevice } from '@/types/settings/hikvision-types';
+import { useBranch } from '@/hooks/settings/use-branches';
 
-import React, { useState } from 'react';
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardHeader, 
-  CardTitle,
-  CardFooter
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from "@/components/ui/table";
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogFooter, 
-  DialogHeader, 
-  DialogTitle, 
+// UI Components
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
   DialogTrigger,
   DialogClose
-} from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
-import { 
+} from '@/components/ui/dialog';
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -38,28 +29,37 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger
-} from "@/components/ui/alert-dialog";
-import { Loader2, Cpu, RefreshCw, CheckCircle, XCircle, PlusCircle, Trash2, Edit, RotateCw } from 'lucide-react';
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
-import { HikvisionDevice } from '@/types/hikvision';
-import { useHikvisionSettings } from '@/hooks/use-hikvision-settings';
-import { useBranch } from '@/hooks/settings/use-branches';
+import { Loader2, Wifi, WifiOff, Trash2, Plus, TestTube2 } from 'lucide-react';
+
+// Types
+interface TestConnectionResult {
+  success: boolean;
+  message?: string;
+  error?: string;
+}
 
 interface HikvisionDeviceManagerProps {
   siteId?: string;
+  currentBranch?: {
+    id: string;
+    name: string;
+  };
 }
 
-const HikvisionDeviceManager: React.FC<HikvisionDeviceManagerProps> = ({ siteId }) => {
-  const { currentBranch } = useBranch();
+const HikvisionDeviceManager: React.FC<HikvisionDeviceManagerProps> = ({ siteId = '', currentBranch }) => {
+  const { currentBranch: activeBranch } = useBranch();
+  const branch = currentBranch || activeBranch;
+  
   const { 
-    devices, 
+    devices = [], 
     fetchDevices, 
-    syncDevices, 
-    isLoadingDevices, 
-    testConnection,
-    isConnected
-  } = useHikvisionSettings(currentBranch?.id);
+    testConnection, 
+    isLoading: isDevicesLoading, 
+    error: devicesError 
+  } = useHikvisionSettings(branch?.id);
   
   const [selectedDevice, setSelectedDevice] = useState<HikvisionDevice | null>(null);
   const [newDevice, setNewDevice] = useState<Partial<HikvisionDevice>>({
@@ -68,15 +68,92 @@ const HikvisionDeviceManager: React.FC<HikvisionDeviceManagerProps> = ({ siteId 
     port: 8000,
     username: '',
     password: '',
-    deviceType: 'access-control'
+    deviceType: 'entry',
+    isActive: true,
+    isCloudManaged: false,
+    useIsupFallback: false,
+    doors: []
   });
   
+  const [isLoading, setLoading] = useState(false);
+  const [isTesting, setIsTesting] = useState(false);
+  const [testResult, setTestResult] = useState<TestConnectionResult | null>(null);
+  const [siteIdState, setSiteIdState] = useState<string>(siteId || '');
+  const [devicesState, setDevicesState] = useState<HikvisionDevice[]>(devices);
+
+  // Sync devices from props to local state
   useEffect(() => {
-    if (currentBranch?.id) {
+    if (devices) {
+      setDevicesState(devices);
+    }
+  }, [devices]);
+  
+  // Fetch devices when branch changes
+  useEffect(() => {
+    if (branch?.id) {
       fetchDevices();
     }
-  }, [currentBranch?.id, fetchDevices]);
+  }, [branch?.id, fetchDevices]);
+
+  // Handle branch changes
+  useEffect(() => {
+    if (branch?.id) {
+      setSiteIdState(branch.id);
+    }
+  }, [branch]);
   
+  // Handle device input changes
+  const handleDeviceInputChange = (field: keyof HikvisionDevice, value: any) => {
+    setNewDevice(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+  
+  // Handle device type change
+  const handleDeviceTypeChange = (type: HikvisionDevice['deviceType']) => {
+    setNewDevice(prev => ({
+      ...prev,
+      deviceType: type
+    }));
+  };
+  
+  // Handle test connection
+  const handleTestConnection = async () => {
+    if (!newDevice.ipAddress || !newDevice.username || !newDevice.password) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+    
+    setIsTesting(true);
+    setTestResult(null);
+    
+    try {
+      const result = await testConnection({
+        ipAddress: newDevice.ipAddress,
+        username: newDevice.username,
+        password: newDevice.password,
+        port: newDevice.port
+      });
+      
+      setTestResult(result);
+      if (result.success) {
+        toast.success('Connection successful!');
+      } else {
+        toast.error(`Connection failed: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('Error testing connection:', error);
+      toast.error('Failed to test connection');
+      setTestResult({
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    } finally {
+      setIsTesting(false);
+    }
+  };
+
   const refreshDevices = async () => {
     try {
       await syncDevices();
@@ -86,74 +163,115 @@ const HikvisionDeviceManager: React.FC<HikvisionDeviceManagerProps> = ({ siteId 
     }
   };
   
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setNewDevice(prev => ({
+      ...prev,
+      [name]: name === 'port' ? parseInt(value, 10) : value
+    }));
+  };
+
+  const handleDeviceTypeChange = (value: string) => {
+    setNewDevice(prev => ({
+      ...prev,
+      deviceType: value as 'entry' | 'exit' | 'gym' | 'swimming' | 'special'
+    }));
+  };
+
   const testDeviceConnection = async (device: HikvisionDevice) => {
     try {
-      setSelectedDevice({...device, deviceStatus: 'unknown'});
+      setSelectedDevice(device);
+      setIsTesting(true);
       
-      const result = await testConnection({
-        apiUrl: device.ipAddress,
-        appKey: device.username,
-        appSecret: device.password
+      const result: TestConnectionResult = await testConnection({
+        apiUrl: device.ipAddress || '',
+        appKey: device.username || '',
+        appSecret: device.password || ''
       });
       
       if (result.success) {
-        setSelectedDevice({...device, deviceStatus: 'online'});
+        setSelectedDevice(device);
         toast.success(`Connection to ${device.name} successful`);
         
         // Update devices list
-        fetchDevices();
+        await fetchDevices();
       } else {
-        setSelectedDevice({...device, deviceStatus: 'offline'});
-        toast.error(`Failed to connect to ${device.name}: ${result.message}`);
+        setSelectedDevice(device);
+        toast.error(`Connection to ${device.name} failed: ${result.message || 'Unknown error'}`);
       }
     } catch (error) {
-      console.error('Connection test error:', error);
-      toast.error(`Error testing connection to ${device.name}`);
-      setSelectedDevice({...device, deviceStatus: 'offline'});
+      console.error('Connection test failed:', error);
+      setSelectedDevice(device);
+      toast.error(`Connection test failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setIsTesting(false);
     }
   };
   
-  const addDevice = () => {
-    if (!newDevice.deviceName || !newDevice.deviceAddress) {
-      toast.error('Device name and address are required');
+  const handleAddDevice = async () => {
+    if (!newDevice.name || !newDevice.ipAddress || !newDevice.port || !newDevice.username || !newDevice.password) {
+      toast.error('Please fill in all required fields');
       return;
     }
-    
-    const deviceId = `dev${Math.floor(Math.random() * 10000).toString().padStart(3, '0')}`;
-    
-    const device: HikvisionDevice = {
-      deviceId,
-      deviceName: newDevice.deviceName,
-      deviceAddress: newDevice.deviceAddress,
-      devicePort: newDevice.devicePort || 8000,
-      deviceUsername: newDevice.deviceUsername,
-      devicePassword: newDevice.devicePassword,
-      deviceType: newDevice.deviceType || 'access-control',
-      deviceStatus: 'unknown',
-      serialNumber: `AC${new Date().getFullYear()}${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`,
-      createdTime: new Date().toISOString()
-    };
-    
-    setDevices([...devices, device]);
-    
-    // Reset form
-    setNewDevice({
-      deviceName: '',
-      deviceAddress: '',
-      devicePort: 8000,
-      deviceUsername: '',
-      devicePassword: '',
-      deviceType: 'access-control'
-    });
-    
-    toast.success(`Device ${device.deviceName} added successfully`);
+
+    try {
+      setLoading(true);
+      
+      // Test connection first
+      const testResult: TestConnectionResult = await testConnection({
+
+      setDevicesState(prevDevices => [...prevDevices, device]);
+      setNewDevice({
+        name: '',
+        ipAddress: '',
+        port: 8000,
+        username: '',
+        password: '',
+        deviceType: 'entry',
+        isActive: true,
+        isCloudManaged: false,
+        useIsupFallback: false,
+        doors: []
+      });
+      toast.success('Device added successfully');
+    } catch (error) {
+      console.error('Error adding device:', error);
+      toast.error('Failed to add device');
+    } finally {
+      setLoading(false);
+    }
   };
   
+  const handleDeleteDevice = async (deviceId: string) => {
+    if (!confirm('Are you sure you want to delete this device?')) return;
+    
+    try {
+      setLoading(true);
+      const response = await fetch(`/api/hikvision/devices/${deviceId}`, {
+        method: 'DELETE',
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to delete device');
+      }
+      
+      // Refresh devices list
+      await fetchDevices();
+      toast.success('Device deleted successfully');
+    } catch (error) {
+      console.error('Error deleting device:', error);
+      toast.error(`Failed to delete device: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const deleteDevice = (deviceId: string) => {
-    setDevices(devices.filter(d => d.deviceId !== deviceId));
+    setDevices(devices.filter(d => d.id !== deviceId));
     toast.success('Device deleted successfully');
   };
-  
+
   return (
     <Card>
       <CardHeader>
