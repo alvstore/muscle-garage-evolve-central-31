@@ -1,17 +1,18 @@
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, Upload } from 'lucide-react';
+import { Loader2, Upload, User, X } from 'lucide-react';
 import { useToast } from '@/hooks/ui/use-toast';
 import { useStaff } from '@/hooks/members/use-staff';
 import { useBranch } from '@/hooks/settings/use-branches';
 import { Card, CardContent } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
+import { v4 as uuidv4 } from 'uuid';
 
 interface FormData {
   name: string;
@@ -51,15 +52,30 @@ export interface StaffMember {
 }
 
 const CreateStaffForm = ({ onSuccess, onCancel }: CreateStaffFormProps) => {
-  const { register, handleSubmit, watch, reset, formState: { errors } } = useForm<FormData>();
+  const { register, handleSubmit, watch, reset, formState: { errors }, setValue } = useForm<FormData>();
   const { toast } = useToast();
   const { createStaffMember } = useStaff();
   const { branches, currentBranch } = useBranch();
+  
+  const departmentOptions = [
+    'Administration',
+    'Fitness',
+    'Yoga',
+    'CrossFit',
+    'Maintenance',
+    'Front Desk',
+    'Management',
+    'Other'
+  ];
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [activeTab, setActiveTab] = useState('basic-info');
   const [idDocument, setIdDocument] = useState<File | null>(null);
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
+  const [showCustomDepartment, setShowCustomDepartment] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   const password = watch('password');
 
@@ -76,6 +92,42 @@ const CreateStaffForm = ({ onSuccess, onCancel }: CreateStaffFormProps) => {
     setIsSubmitting(true);
 
     try {
+          // Upload avatar if provided
+      let avatarUrl = null;
+      if (avatarFile) {
+        try {
+          setIsUploading(true);
+          const fileExt = avatarFile.name.split('.').pop();
+          const fileName = `${uuidv4()}.${fileExt}`;
+          const filePath = `avatars/${fileName}`;
+          
+          const { error: uploadError } = await supabase.storage
+            .from('avatars')
+            .upload(filePath, avatarFile, {
+              cacheControl: '3600',
+              upsert: false
+            });
+          
+          if (uploadError) throw uploadError;
+          
+          // Get the public URL
+          const { data: { publicUrl } } = supabase.storage
+            .from('avatars')
+            .getPublicUrl(filePath);
+            
+          avatarUrl = publicUrl;
+        } catch (error) {
+          console.error('Error uploading avatar:', error);
+          toast({
+            title: 'Warning',
+            description: 'Avatar upload failed. You can update it later.',
+            variant: 'destructive',
+          });
+        } finally {
+          setIsUploading(false);
+        }
+      }
+
       // Create the staff member auth user
       const { data: authData, error } = await createStaffMember({
         email: data.email,
@@ -83,6 +135,14 @@ const CreateStaffForm = ({ onSuccess, onCancel }: CreateStaffFormProps) => {
         name: data.name,
         role: data.role,
       });
+      
+      // Store the avatar URL in the profile if available
+      if (avatarUrl && authData?.id) {
+        await supabase
+          .from('profiles')
+          .update({ avatar_url: avatarUrl })
+          .eq('id', authData.id);
+      }
 
       if (error) {
         throw new Error(error);
@@ -168,14 +228,70 @@ const CreateStaffForm = ({ onSuccess, onCancel }: CreateStaffFormProps) => {
     }
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setIdDocument(e.target.files[0]);
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, type: 'id' | 'avatar' = 'id') => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (type === 'id') {
+      setIdDocument(file);
+    } else if (type === 'avatar') {
+      setAvatarFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setAvatarPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRemoveAvatar = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setAvatarFile(null);
+    setAvatarPreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
     }
   };
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+      {/* Avatar Upload Section */}
+      <div className="flex flex-col items-center justify-center mb-6">
+        <div className="relative group">
+          <div className="relative h-24 w-24 rounded-full bg-muted flex items-center justify-center overflow-hidden">
+            {avatarPreview ? (
+              <img 
+                src={avatarPreview} 
+                alt="Profile preview" 
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <User className="h-12 w-12 text-muted-foreground" />
+            )}
+            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+              <Upload className="h-6 w-6 text-white" />
+            </div>
+          </div>
+          {avatarPreview && (
+            <button
+              type="button"
+              onClick={handleRemoveAvatar}
+              className="absolute -top-2 -right-2 bg-destructive text-white rounded-full p-1 hover:bg-destructive/90 transition-colors"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={(e) => handleFileChange(e, 'avatar')}
+            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+          />
+        </div>
+        <p className="text-sm text-muted-foreground mt-2">Click to upload profile picture</p>
+      </div>
+
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="basic-info">Basic Info</TabsTrigger>
@@ -259,7 +375,6 @@ const CreateStaffForm = ({ onSuccess, onCancel }: CreateStaffFormProps) => {
                   };
                   register('role').onChange(event);
                 }}
-                defaultValue="staff"
               >
                 <SelectTrigger id="role">
                   <SelectValue placeholder="Select role" />
@@ -270,7 +385,8 @@ const CreateStaffForm = ({ onSuccess, onCancel }: CreateStaffFormProps) => {
                   <SelectItem value="admin">Admin</SelectItem>
                 </SelectContent>
               </Select>
-              <input type="hidden" {...register('role', { required: true })} defaultValue="staff" />
+              <input type="hidden" {...register('role', { required: 'Role is required' })} />
+              {errors.role && <p className="text-sm text-red-500">{errors.role.message}</p>}
             </div>
             
             <div className="space-y-2">
@@ -312,11 +428,21 @@ const CreateStaffForm = ({ onSuccess, onCancel }: CreateStaffFormProps) => {
             
             <div className="space-y-2">
               <Label htmlFor="department">Department</Label>
-              <Input
-                id="department"
-                {...register('department')}
-                placeholder="Department"
-              />
+              <Select
+                onValueChange={(value) => setValue('department', value as any)}
+                defaultValue={watch('department')}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select department" />
+                </SelectTrigger>
+                <SelectContent>
+                  {departmentOptions.map((dept) => (
+                    <SelectItem key={dept} value={dept}>
+                      {dept}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
         </TabsContent>
@@ -381,12 +507,10 @@ const CreateStaffForm = ({ onSuccess, onCancel }: CreateStaffFormProps) => {
                   <SelectValue placeholder="Select ID type" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="passport">Passport</SelectItem>
-                  <SelectItem value="drivers_license">Driver's License</SelectItem>
-                  <SelectItem value="national_id">National ID</SelectItem>
                   <SelectItem value="aadhar">Aadhar Card</SelectItem>
-                  <SelectItem value="pan">PAN Card</SelectItem>
-                  <SelectItem value="other">Other</SelectItem>
+                  <SelectItem value="passport">Passport</SelectItem>
+                  <SelectItem value="driving_license">Driving License</SelectItem>
+                  <SelectItem value="voter_id">Voter ID</SelectItem>
                 </SelectContent>
               </Select>
               <input type="hidden" {...register('id_type')} />
@@ -401,47 +525,37 @@ const CreateStaffForm = ({ onSuccess, onCancel }: CreateStaffFormProps) => {
               />
             </div>
           </div>
-
+          
           <div className="space-y-2">
-            <Label htmlFor="id_document">Upload ID Document</Label>
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex flex-col items-center justify-center space-y-2">
-                  <div className="flex items-center justify-center w-full">
-                    <label 
-                      htmlFor="id_document"
-                      className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 dark:bg-gray-800 dark:border-gray-600 dark:hover:bg-gray-700"
-                    >
-                      <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                        <Upload className="w-8 h-8 mb-3 text-gray-500 dark:text-gray-400" />
-                        <p className="mb-2 text-sm text-gray-500 dark:text-gray-400">
-                          {idDocument ? idDocument.name : 'Click to upload or drag and drop'}
-                        </p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">PNG, JPG or PDF (MAX. 5MB)</p>
-                      </div>
-                      <input 
-                        id="id_document" 
-                        type="file" 
-                        className="hidden" 
-                        accept=".jpg,.jpeg,.png,.pdf"
-                        onChange={handleFileChange}
-                      />
-                    </label>
-                  </div>
-                  {uploadProgress > 0 && isUploading && (
-                    <div className="w-full mt-2">
-                      <div className="h-2 bg-gray-200 rounded-full dark:bg-gray-700">
-                        <div 
-                          className="h-2 bg-blue-600 rounded-full" 
-                          style={{ width: `${uploadProgress}%` }}
-                        ></div>
-                      </div>
-                      <p className="text-xs text-right mt-1">{uploadProgress}%</p>
-                    </div>
-                  )}
+            <Label>ID Document (Optional)</Label>
+            <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-dashed rounded-md">
+              <div className="space-y-1 text-center">
+                <Upload className="mx-auto h-12 w-12 text-gray-400" />
+                <div className="flex text-sm text-gray-600">
+                  <label
+                    htmlFor="id-document"
+                    className="relative cursor-pointer bg-white rounded-md font-medium text-primary-600 hover:text-primary-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-primary-500"
+                  >
+                    <span>Upload a file</span>
+                    <input
+                      id="id-document"
+                      name="id-document"
+                      type="file"
+                      className="sr-only"
+                      accept=".jpg,.jpeg,.png,.pdf"
+                      onChange={(e) => handleFileChange(e, 'id')}
+                    />
+                  </label>
+                  <p className="pl-1">or drag and drop</p>
                 </div>
-              </CardContent>
-            </Card>
+                <p className="text-xs text-gray-500">PNG, JPG, PDF up to 10MB</p>
+                {idDocument && (
+                  <p className="text-sm text-gray-900">
+                    Selected: {idDocument.name}
+                  </p>
+                )}
+              </div>
+            </div>
           </div>
         </TabsContent>
       </Tabs>

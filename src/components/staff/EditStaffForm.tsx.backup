@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage, } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { supabase } from '@/services/api/supabaseClient';
 import { toast } from 'sonner';
-import { Loader2, User, ChevronDown, ChevronUp, Upload, X } from "lucide-react";
+import { Loader2, User, ChevronDown, ChevronUp } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
@@ -75,6 +75,7 @@ const EditStaffForm: React.FC<EditStaffFormProps> = ({
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   const departmentOptions = [
     'Administration',
@@ -241,9 +242,8 @@ const EditStaffForm: React.FC<EditStaffFormProps> = ({
     <form onSubmit={handleSubmit} className="space-y-6">
       {/* Avatar Upload Section */}
       <div className="flex flex-col items-center mb-8">
-        <div className="relative h-32 w-32 group">
-          {/* Avatar Image Container */}
-          <div className="h-full w-full rounded-full overflow-hidden border-2 border-gray-200 dark:border-gray-700">
+        <div className="relative group">
+          <div className="h-32 w-32 rounded-full overflow-hidden border-2 border-gray-200 dark:border-gray-700">
             {avatarPreview || formData.avatar_url ? (
               <img 
                 src={avatarPreview || formData.avatar_url} 
@@ -256,28 +256,26 @@ const EditStaffForm: React.FC<EditStaffFormProps> = ({
               </div>
             )}
           </div>
-          
-          {/* Upload Button */}
           <label 
             htmlFor="avatar-upload" 
-            className="absolute -bottom-2 -right-2 bg-primary text-primary-foreground p-2 rounded-full cursor-pointer hover:bg-primary/90 transition-colors z-10 border-2 border-background shadow-md"
+            className="absolute bottom-0 right-0 bg-primary text-white p-2 rounded-full cursor-pointer hover:bg-primary/90 transition-colors"
             title="Upload new avatar"
           >
             <Upload className="h-4 w-4" />
+            <input
+              id="avatar-upload"
+              type="file"
+              ref={fileInputRef}
+              accept="image/*"
+              className="hidden"
+              onChange={handleAvatarChange}
+            />
           </label>
-          <input
-            id="avatar-upload"
-            type="file"
-            ref={fileInputRef}
-            accept="image/*"
-            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20"
-            onChange={handleAvatarChange}
-          />
           {(avatarPreview || formData.avatar_url) && (
             <button
               type="button"
               onClick={handleRemoveAvatar}
-              className="absolute top-0 right-0 bg-destructive text-destructive-foreground p-2 rounded-full hover:bg-destructive/90 transition-colors z-10 border-2 border-background shadow-md"
+              className="absolute top-0 right-0 bg-destructive text-white p-2 rounded-full hover:bg-destructive/90 transition-colors"
               title="Remove avatar"
             >
               <X className="h-4 w-4" />

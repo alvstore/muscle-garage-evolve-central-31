@@ -1,5 +1,5 @@
 
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { CreateTrainerForm } from "./CreateTrainerForm";
 
 interface CreateTrainerDialogProps {
@@ -14,6 +14,9 @@ export function CreateTrainerDialog({ open, onOpenChange, onSuccess }: CreateTra
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
           <DialogTitle>Add New Trainer</DialogTitle>
+          <DialogDescription>
+            Fill out the form to add a new trainer to the system. All required fields are marked with an asterisk (*).
+          </DialogDescription>
         </DialogHeader>
         <CreateTrainerForm onSuccess={() => {
           onSuccess?.();

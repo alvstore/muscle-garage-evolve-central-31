@@ -37,17 +37,29 @@ export const StaffMemberColumn = (onRefresh: () => void): ColumnDef<StaffMember>
         const staff = row.original;
         return (
           <div className="flex items-center space-x-3">
-            <Avatar className="h-9 w-9">
+            <Avatar className="h-9 w-9 shrink-0">
               <AvatarImage src={staff.avatar_url || ''} alt={staff.name} />
               <AvatarFallback>{getInitials(staff.name)}</AvatarFallback>
             </Avatar>
-            <div>
-              <p className="font-medium">{staff.name}</p>
-              <p className="text-sm text-muted-foreground">{staff.email}</p>
+            <div className="min-w-0">
+              <p className="font-medium truncate">{staff.name}</p>
+              <p className="text-sm text-muted-foreground truncate">{staff.email}</p>
             </div>
           </div>
         );
       },
+    },
+    {
+      id: 'department',
+      header: 'Department',
+      accessorKey: 'department',
+      cell: ({ row }) => <div>{row.getValue('department') || 'N/A'}</div>,
+    },
+    {
+      id: 'email',
+      header: 'Email',
+      accessorKey: 'email',
+      cell: ({ row }) => <div>{row.getValue('email') || 'N/A'}</div>,
     },
     {
       id: 'phone',
