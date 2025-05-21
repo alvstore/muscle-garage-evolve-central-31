@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { supabase } from '@/services/api/supabaseClient';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 interface UploadImageProps {
@@ -41,6 +41,21 @@ export const useUploadImage = (): UseUploadImageReturn => {
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '')}`;
       const filePath = `${folder}/${fileName}`;
 
+      // Check if images bucket exists, create it if it doesn't
+      const { data: buckets } = await supabase.storage.listBuckets();
+      
+      if (!buckets?.find(bucket => bucket.name === 'images')) {
+        const { error: createBucketError } = await supabase.storage.createBucket('images', {
+          public: true,
+          fileSizeLimit: 5242880 // 5MB
+        });
+        
+        if (createBucketError) {
+          console.error('Failed to create bucket:', createBucketError);
+          throw new Error(`Failed to create bucket: ${createBucketError.message}`);
+        }
+      }
+
       // Upload to Supabase Storage with explicit content type
       const { error: uploadError, data } = await supabase.storage
         .from('images')
@@ -52,14 +67,6 @@ export const useUploadImage = (): UseUploadImageReturn => {
 
       if (uploadError) {
         console.error('Storage upload error:', uploadError);
-        
-        // Check for common errors
-        if (uploadError.message.includes('does not exist')) {
-          // Create the bucket and try again
-          await supabase.storage.createBucket('images', { public: true });
-          return uploadImage({ file, folder }); // Recursively try again
-        }
-        
         throw new Error(`Failed to upload image: ${uploadError.message}`);
       }
 

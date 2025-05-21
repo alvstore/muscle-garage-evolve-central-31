@@ -3542,6 +3542,8 @@ export type Database = {
           full_name: string | null
           gender: string | null
           id: string
+          id_number: string | null
+          id_type: string | null
           is_active: boolean | null
           is_branch_manager: boolean | null
           phone: string | null
@@ -3564,6 +3566,8 @@ export type Database = {
           full_name?: string | null
           gender?: string | null
           id: string
+          id_number?: string | null
+          id_type?: string | null
           is_active?: boolean | null
           is_branch_manager?: boolean | null
           phone?: string | null
@@ -3586,6 +3590,8 @@ export type Database = {
           full_name?: string | null
           gender?: string | null
           id?: string
+          id_number?: string | null
+          id_type?: string | null
           is_active?: boolean | null
           is_branch_manager?: boolean | null
           phone?: string | null
@@ -4285,45 +4291,6 @@ export type Database = {
             referencedColumns: ["branch_id"]
           },
         ]
-      }
-      trainers: {
-        Row: {
-          avatar: string | null
-          bio: string | null
-          email: string
-          id: string
-          name: string
-          phone: string | null
-          rating: number | null
-          role: string | null
-          specialty: string | null
-          status: string | null
-        }
-        Insert: {
-          avatar?: string | null
-          bio?: string | null
-          email: string
-          id: string
-          name: string
-          phone?: string | null
-          rating?: number | null
-          role?: string | null
-          specialty?: string | null
-          status?: string | null
-        }
-        Update: {
-          avatar?: string | null
-          bio?: string | null
-          email?: string
-          id?: string
-          name?: string
-          phone?: string | null
-          rating?: number | null
-          role?: string | null
-          specialty?: string | null
-          status?: string | null
-        }
-        Relationships: []
       }
       transactions: {
         Row: {
