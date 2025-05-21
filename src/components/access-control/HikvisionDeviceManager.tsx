@@ -1,514 +1,413 @@
-import React, { useState, useEffect, FC } from 'react';
-import { useHikvisionSettings } from '@/hooks/use-hikvision-settings';
-import { HikvisionDevice } from '@/types/settings/hikvision-types';
+import React, { useState, useEffect } from 'react';
+import { zodResolver } from "@hookform/resolvers/zod"
+import { useForm } from "react-hook-form"
+import { z } from "zod"
+import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 import { useBranch } from '@/hooks/settings/use-branches';
+import { hikvisionService } from '@/services/access-control/hikvisionService';
 
-// UI Components
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Button } from "@/components/ui/button"
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form"
+import { Input } from "@/components/ui/input"
 import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-  DialogClose
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog"
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
-import { toast } from 'sonner';
-import { Loader2, Wifi, WifiOff, Trash2, Plus, TestTube2 } from 'lucide-react';
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableFooter,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { Badge } from "@/components/ui/badge"
+import { MoreHorizontal } from 'lucide-react';
+import { Switch } from "@/components/ui/switch"
+import { Label } from "@/components/ui/label"
 
-// Types
-interface TestConnectionResult {
-  success: boolean;
-  message?: string;
-  error?: string;
+// Define the form validation schema
+const deviceFormSchema = z.object({
+  name: z.string().min(2, {
+    message: "Device name must be at least 2 characters.",
+  }),
+  serialNumber: z.string().min(5, {
+    message: "Serial number must be at least 5 characters.",
+  }),
+  ipAddress: z.string().ip({ message: "Invalid IP address." }),
+  username: z.string().min(2, {
+    message: "Username must be at least 2 characters.",
+  }),
+  password: z.string().min(8, {
+    message: "Password must be at least 8 characters.",
+  }),
+})
+
+// Define the type for the form values
+type DeviceFormValues = z.infer<typeof deviceFormSchema>
+
+// Define the type for the device data
+type Device = {
+  id: string;
+  device_id: string;
+  name: string;
+  ip_address: string;
+  username: string;
+  password?: string;
+  status: 'active' | 'inactive';
+  branch_id?: string;
+  created_at?: string;
 }
 
 interface HikvisionDeviceManagerProps {
-  siteId?: string;
-  currentBranch?: {
-    id: string;
-    name: string;
-  };
+  settings: {
+    app_key: string;
+    app_secret: string;
+  } | null;
 }
 
-const HikvisionDeviceManager: React.FC<HikvisionDeviceManagerProps> = ({ siteId = '', currentBranch }) => {
-  const { currentBranch: activeBranch } = useBranch();
-  const branch = currentBranch || activeBranch;
-  
-  const { 
-    devices = [], 
-    fetchDevices, 
-    testConnection, 
-    isLoading: isDevicesLoading, 
-    error: devicesError 
-  } = useHikvisionSettings(branch?.id);
-  
-  const [selectedDevice, setSelectedDevice] = useState<HikvisionDevice | null>(null);
-  const [newDevice, setNewDevice] = useState<Partial<HikvisionDevice>>({
-    name: '',
-    ipAddress: '',
-    port: 8000,
-    username: '',
-    password: '',
-    deviceType: 'entry',
-    isActive: true,
-    isCloudManaged: false,
-    useIsupFallback: false,
-    doors: []
-  });
-  
-  const [isLoading, setLoading] = useState(false);
-  const [isTesting, setIsTesting] = useState(false);
-  const [testResult, setTestResult] = useState<TestConnectionResult | null>(null);
-  const [siteIdState, setSiteIdState] = useState<string>(siteId || '');
-  const [devicesState, setDevicesState] = useState<HikvisionDevice[]>(devices);
+const HikvisionDeviceManager: React.FC<HikvisionDeviceManagerProps> = ({ settings }) => {
+  const [addDeviceOpen, setAddDeviceOpen] = useState(false);
+  const [devices, setDevices] = useState<Device[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { currentBranch } = useBranch();
 
-  // Sync devices from props to local state
+  // Initialize the form using useForm hook
+  const deviceForm = useForm<DeviceFormValues>({
+    resolver: zodResolver(deviceFormSchema),
+    defaultValues: {
+      name: "",
+      serialNumber: "",
+      ipAddress: "",
+      username: "",
+      password: "",
+    },
+  })
+
   useEffect(() => {
-    if (devices) {
-      setDevicesState(devices);
+    fetchDevices();
+  }, [currentBranch?.id]);
+
+  const fetchDevices = async () => {
+    try {
+      if (!currentBranch?.id) {
+        setDevices([]);
+        return;
+      }
+      
+      const { data, error } = await supabase
+        .from('hikvision_devices')
+        .select('*')
+        .eq('branch_id', currentBranch.id);
+      
+      if (error) throw error;
+      setDevices(data || []);
+    } catch (error: any) {
+      console.error("Error fetching devices:", error);
+      toast.error(error.message || "Failed to fetch devices");
     }
-  }, [devices]);
-  
-  // Fetch devices when branch changes
-  useEffect(() => {
-    if (branch?.id) {
+  };
+
+  const handleDeviceAdd = async (values: DeviceFormValues) => {
+    try {
+      setIsSubmitting(true);
+      
+      // Check if API settings are configured
+      if (!settings || !settings.app_key || !settings.app_secret) {
+        toast.error("API settings must be configured first");
+        setIsSubmitting(false);
+        return;
+      }
+      
+      // Add device to Hikvision system
+      const result = await hikvisionService.addDevice({
+        name: values.name,
+        serialNumber: values.serialNumber,
+        ipAddress: values.ipAddress,
+        password: values.password,
+        username: values.username
+      });
+      
+      if (result.error) {
+        toast.error(`Failed to add device: ${result.error}`);
+        setIsSubmitting(false);
+        return;
+      }
+      
+      // Save device to database
+      const { data, error } = await supabase
+        .from('hikvision_devices')
+        .insert({
+          device_id: values.serialNumber,
+          name: values.name,
+          ip_address: values.ipAddress,
+          username: values.username,
+          password: values.password,
+          status: 'active',
+          branch_id: currentBranch?.id
+        })
+        .select()
+        .single();
+      
+      if (error) throw error;
+      
+      toast.success("Device added successfully");
       fetchDevices();
+      setAddDeviceOpen(false);
+    } catch (error: any) {
+      console.error("Error adding device:", error);
+      toast.error(error.message || "Failed to add device");
+    } finally {
+      setIsSubmitting(false);
     }
-  }, [branch?.id, fetchDevices]);
+  };
 
-  // Handle branch changes
-  useEffect(() => {
-    if (branch?.id) {
-      setSiteIdState(branch.id);
-    }
-  }, [branch]);
-  
-  // Handle device input changes
-  const handleDeviceInputChange = (field: keyof HikvisionDevice, value: any) => {
-    setNewDevice(prev => ({
-      ...prev,
-      [field]: value
-    }));
-  };
-  
-  // Handle device type change
-  const handleDeviceTypeChange = (type: HikvisionDevice['deviceType']) => {
-    setNewDevice(prev => ({
-      ...prev,
-      deviceType: type
-    }));
-  };
-  
-  // Handle test connection
-  const handleTestConnection = async () => {
-    if (!newDevice.ipAddress || !newDevice.username || !newDevice.password) {
-      toast.error('Please fill in all required fields');
+  const handleDeviceDelete = async (deviceId: string) => {
+    if (!window.confirm("Are you sure you want to delete this device?")) {
       return;
     }
     
-    setIsTesting(true);
-    setTestResult(null);
-    
     try {
-      const result = await testConnection({
-        ipAddress: newDevice.ipAddress,
-        username: newDevice.username,
-        password: newDevice.password,
-        port: newDevice.port
-      });
+      setIsSubmitting(true);
       
-      setTestResult(result);
-      if (result.success) {
-        toast.success('Connection successful!');
-      } else {
-        toast.error(`Connection failed: ${result.error}`);
-      }
-    } catch (error) {
-      console.error('Error testing connection:', error);
-      toast.error('Failed to test connection');
-      setTestResult({
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown error'
-      });
-    } finally {
-      setIsTesting(false);
-    }
-  };
-
-  const refreshDevices = async () => {
-    try {
-      await syncDevices();
-    } catch (error) {
-      console.error('Failed to refresh devices:', error);
-      toast.error('Failed to refresh devices. Please try again.');
-    }
-  };
-  
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setNewDevice(prev => ({
-      ...prev,
-      [name]: name === 'port' ? parseInt(value, 10) : value
-    }));
-  };
-
-  const handleDeviceTypeChange = (value: string) => {
-    setNewDevice(prev => ({
-      ...prev,
-      deviceType: value as 'entry' | 'exit' | 'gym' | 'swimming' | 'special'
-    }));
-  };
-
-  const testDeviceConnection = async (device: HikvisionDevice) => {
-    try {
-      setSelectedDevice(device);
-      setIsTesting(true);
-      
-      const result: TestConnectionResult = await testConnection({
-        apiUrl: device.ipAddress || '',
-        appKey: device.username || '',
-        appSecret: device.password || ''
-      });
-      
-      if (result.success) {
-        setSelectedDevice(device);
-        toast.success(`Connection to ${device.name} successful`);
-        
-        // Update devices list
-        await fetchDevices();
-      } else {
-        setSelectedDevice(device);
-        toast.error(`Connection to ${device.name} failed: ${result.message || 'Unknown error'}`);
-      }
-    } catch (error) {
-      console.error('Connection test failed:', error);
-      setSelectedDevice(device);
-      toast.error(`Connection test failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    } finally {
-      setIsTesting(false);
-    }
-  };
-  
-  const handleAddDevice = async () => {
-    if (!newDevice.name || !newDevice.ipAddress || !newDevice.port || !newDevice.username || !newDevice.password) {
-      toast.error('Please fill in all required fields');
-      return;
-    }
-
-    try {
-      setLoading(true);
-      
-      // Test connection first
-      const testResult: TestConnectionResult = await testConnection({
-
-      setDevicesState(prevDevices => [...prevDevices, device]);
-      setNewDevice({
-        name: '',
-        ipAddress: '',
-        port: 8000,
-        username: '',
-        password: '',
-        deviceType: 'entry',
-        isActive: true,
-        isCloudManaged: false,
-        useIsupFallback: false,
-        doors: []
-      });
-      toast.success('Device added successfully');
-    } catch (error) {
-      console.error('Error adding device:', error);
-      toast.error('Failed to add device');
-    } finally {
-      setLoading(false);
-    }
-  };
-  
-  const handleDeleteDevice = async (deviceId: string) => {
-    if (!confirm('Are you sure you want to delete this device?')) return;
-    
-    try {
-      setLoading(true);
-      const response = await fetch(`/api/hikvision/devices/${deviceId}`, {
-        method: 'DELETE',
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to delete device');
+      // Delete device from Hikvision system
+      const result = await hikvisionService.deleteDevice(deviceId);
+      if (result.error) {
+        toast.error(`Failed to delete device: ${result.error}`);
+        setIsSubmitting(false);
+        return;
       }
       
-      // Refresh devices list
-      await fetchDevices();
-      toast.success('Device deleted successfully');
-    } catch (error) {
-      console.error('Error deleting device:', error);
-      toast.error(`Failed to delete device: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      // Delete device from database
+      const { error } = await supabase
+        .from('hikvision_devices')
+        .delete()
+        .eq('device_id', deviceId);
+      
+      if (error) throw error;
+      
+      toast.success("Device deleted successfully");
+      fetchDevices();
+    } catch (error: any) {
+      console.error("Error deleting device:", error);
+      toast.error(error.message || "Failed to delete device");
     } finally {
-      setLoading(false);
+      setIsSubmitting(false);
     }
   };
 
-  const deleteDevice = (deviceId: string) => {
-    setDevices(devices.filter(d => d.id !== deviceId));
-    toast.success('Device deleted successfully');
+  const handleDeviceStatusChange = async (deviceId: string, status: 'active' | 'inactive') => {
+    try {
+      setIsSubmitting(true);
+      
+      // Update device status in Hikvision system
+      const result = await hikvisionService.updateDeviceStatus(deviceId, status);
+      if (result.error) {
+        toast.error(`Failed to update device status: ${result.error}`);
+        setIsSubmitting(false);
+        return;
+      }
+      
+      // Update device status in database
+      const { error } = await supabase
+        .from('hikvision_devices')
+        .update({ status })
+        .eq('device_id', deviceId);
+      
+      if (error) throw error;
+      
+      toast.success("Device status updated successfully");
+      fetchDevices();
+    } catch (error: any) {
+      console.error("Error updating device status:", error);
+      toast.error(error.message || "Failed to update device status");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex justify-between items-center">
-          <div>
-            <CardTitle>Access Control Devices</CardTitle>
-            <CardDescription>
-              Manage your Hikvision access control devices
-            </CardDescription>
-          </div>
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={refreshDevices}
-              disabled={loading}
-            >
-              {loading ? (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              ) : (
-                <RefreshCw className="h-4 w-4 mr-2" />
-              )}
-              Refresh
-            </Button>
-            
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button size="sm">
-                  <PlusCircle className="h-4 w-4 mr-2" />
-                  Add Device
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Add New Device</DialogTitle>
-                  <DialogDescription>
-                    Add a new Hikvision access control device to your system.
-                  </DialogDescription>
-                </DialogHeader>
-                
-                <div className="grid gap-4 py-4">
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <label htmlFor="deviceName" className="text-right">
-                      Device Name
-                    </label>
-                    <Input
-                      id="deviceName"
-                      value={newDevice.deviceName}
-                      onChange={(e) => setNewDevice({...newDevice, deviceName: e.target.value})}
-                      className="col-span-3"
-                    />
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <label htmlFor="deviceAddress" className="text-right">
-                      IP Address
-                    </label>
-                    <Input
-                      id="deviceAddress"
-                      value={newDevice.deviceAddress}
-                      onChange={(e) => setNewDevice({...newDevice, deviceAddress: e.target.value})}
-                      className="col-span-3"
-                      placeholder="192.168.1.100"
-                    />
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <label htmlFor="devicePort" className="text-right">
-                      Port
-                    </label>
-                    <Input
-                      id="devicePort"
-                      type="number"
-                      value={newDevice.devicePort}
-                      onChange={(e) => setNewDevice({...newDevice, devicePort: parseInt(e.target.value)})}
-                      className="col-span-3"
-                    />
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <label htmlFor="deviceUsername" className="text-right">
-                      Username
-                    </label>
-                    <Input
-                      id="deviceUsername"
-                      value={newDevice.deviceUsername}
-                      onChange={(e) => setNewDevice({...newDevice, deviceUsername: e.target.value})}
-                      className="col-span-3"
-                    />
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <label htmlFor="devicePassword" className="text-right">
-                      Password
-                    </label>
-                    <Input
-                      id="devicePassword"
-                      type="password"
-                      value={newDevice.devicePassword}
-                      onChange={(e) => setNewDevice({...newDevice, devicePassword: e.target.value})}
-                      className="col-span-3"
-                    />
-                  </div>
-                </div>
-                
-                <DialogFooter>
-                  <DialogClose asChild>
-                    <Button variant="outline">Cancel</Button>
-                  </DialogClose>
-                  <Button onClick={addDevice}>Add Device</Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Device Name</TableHead>
-              <TableHead>IP Address</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Serial Number</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+    <div>
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-2xl font-bold">Hikvision Device Management</h2>
+        <Button onClick={() => setAddDeviceOpen(true)}>Add Device</Button>
+      </div>
+
+      <Table>
+        <TableCaption>A list of your devices.</TableCaption>
+        <TableHeader>
+          <TableRow>
+            <TableHead className="w-[100px]">Device ID</TableHead>
+            <TableHead>Name</TableHead>
+            <TableHead>IP Address</TableHead>
+            <TableHead>Username</TableHead>
+            <TableHead>Status</TableHead>
+            <TableHead className="text-right">Actions</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {devices.map((device) => (
+            <TableRow key={device.device_id}>
+              <TableCell className="font-medium">{device.device_id}</TableCell>
+              <TableCell>{device.name}</TableCell>
+              <TableCell>{device.ip_address}</TableCell>
+              <TableCell>{device.username}</TableCell>
+              <TableCell>
+                <Badge variant={device.status === 'active' ? 'default' : 'secondary'}>
+                  {device.status}
+                </Badge>
+              </TableCell>
+              <TableCell className="text-right">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="h-8 w-8 p-0">
+                      <span className="sr-only">Open menu</span>
+                      <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                    <DropdownMenuItem onClick={() => handleDeviceDelete(device.device_id)}>
+                      Delete
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem>
+                      <div className="flex items-center space-x-2">
+                        <span>Set Status:</span>
+                        <Switch
+                          checked={device.status === 'active'}
+                          onCheckedChange={(checked) => {
+                            const newStatus = checked ? 'active' : 'inactive';
+                            handleDeviceStatusChange(device.device_id, newStatus);
+                          }}
+                        />
+                      </div>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </TableCell>
             </TableRow>
-          </TableHeader>
-          <TableBody>
-            {devices.length > 0 ? (
-              devices.map((device) => (
-                <TableRow key={device.deviceId}>
-                  <TableCell className="font-medium">{device.deviceName}</TableCell>
-                  <TableCell>{device.deviceAddress}:{device.devicePort}</TableCell>
-                  <TableCell>
-                    {device.deviceStatus === 'online' ? (
-                      <Badge variant="outline" className="bg-green-100 text-green-800">
-                        <CheckCircle className="h-3 w-3 mr-1" /> Online
-                      </Badge>
-                    ) : device.deviceStatus === 'offline' ? (
-                      <Badge variant="outline" className="bg-red-100 text-red-800">
-                        <XCircle className="h-3 w-3 mr-1" /> Offline
-                      </Badge>
-                    ) : (
-                      <Badge variant="outline" className="bg-gray-100 text-gray-800">
-                        Unknown
-                      </Badge>
-                    )}
-                  </TableCell>
-                  <TableCell>{device.serialNumber}</TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => testDeviceConnection(device)}
-                        disabled={selectedDevice?.deviceId === device.deviceId && selectedDevice?.deviceStatus === 'unknown'}
-                      >
-                        {selectedDevice?.deviceId === device.deviceId && selectedDevice?.deviceStatus === 'unknown' ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <RotateCw className="h-4 w-4" />
-                        )}
-                        <span className="sr-only">Test Connection</span>
-                      </Button>
-                      
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button variant="outline" size="sm">
-                            <Edit className="h-4 w-4" />
-                            <span className="sr-only">Edit</span>
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                          <DialogHeader>
-                            <DialogTitle>Edit Device</DialogTitle>
-                            <DialogDescription>
-                              Update device information
-                            </DialogDescription>
-                          </DialogHeader>
-                          <div className="py-4">
-                            <p>Edit functionality would go here</p>
-                          </div>
-                          <DialogFooter>
-                            <DialogClose asChild>
-                              <Button>Close</Button>
-                            </DialogClose>
-                          </DialogFooter>
-                        </DialogContent>
-                      </Dialog>
-                      
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button variant="outline" size="sm" className="text-red-500 hover:text-red-600">
-                            <Trash2 className="h-4 w-4" />
-                            <span className="sr-only">Delete</span>
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              This will permanently delete the device "{device.deviceName}". This action cannot be undone.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction 
-                              onClick={() => deleteDevice(device.deviceId)}
-                              className="bg-red-500 hover:bg-red-600"
-                            >
-                              Delete
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={5} className="text-center py-6">
-                  <div className="flex flex-col items-center justify-center text-muted-foreground">
-                    <Cpu className="h-12 w-12 mb-2" />
-                    <h3 className="font-medium">No devices found</h3>
-                    <p className="text-sm">Click "Add Device" to add your first device</p>
-                  </div>
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </CardContent>
-      <CardFooter className="flex justify-between">
-        <div className="text-sm text-muted-foreground">
-          {devices.length > 0 ? (
-            <>Total: {devices.length} devices | Online: {devices.filter(d => d.deviceStatus === 'online').length}</>
-          ) : null}
-        </div>
-      </CardFooter>
-    </Card>
+          ))}
+        </TableBody>
+        <TableFooter>
+          <TableRow>
+            <TableCell colSpan={6}>
+              {devices.length} device(s)
+            </TableCell>
+          </TableRow>
+        </TableFooter>
+      </Table>
+
+      <Dialog open={addDeviceOpen} onOpenChange={setAddDeviceOpen}>
+        <DialogTrigger asChild>
+          <Button>Add Device</Button>
+        </DialogTrigger>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Add Hikvision Device</DialogTitle>
+            <DialogDescription>
+              Add a new Hikvision device to the system.
+            </DialogDescription>
+          </DialogHeader>
+          <Form {...deviceForm}>
+            <form onSubmit={deviceForm.handleSubmit(handleDeviceAdd)} className="space-y-4">
+              <FormField
+                control={deviceForm.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Device Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Device Name" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={deviceForm.control}
+                name="serialNumber"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Serial Number</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Serial Number" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={deviceForm.control}
+                name="ipAddress"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>IP Address</FormLabel>
+                    <FormControl>
+                      <Input placeholder="IP Address" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={deviceForm.control}
+                name="username"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Username</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Username" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={deviceForm.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Password</FormLabel>
+                    <FormControl>
+                      <Input type="password" placeholder="Password" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <div className="flex justify-end">
+                <Button type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? "Adding..." : "Add Device"}
+                </Button>
+              </div>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+    </div>
   );
 };
 
