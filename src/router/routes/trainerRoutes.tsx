@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { RouteObject } from 'react-router-dom';
-import TrainerPage from '@/pages/trainers/TrainerPage';
+import TrainerList from '@/pages/trainers/index';
 import TrainerClassesPage from '@/pages/trainers/TrainerClassesPage';
 import TrainerMemberProgressPage from '@/pages/trainers/TrainerMemberProgressPage';
 import TrainerAllocationPage from '@/pages/trainers/TrainerAllocationPage';
@@ -22,7 +22,7 @@ const TrainerProfilePage = () => <PlaceholderPage />;
 export const trainerRoutes: RouteObject[] = [
   {
     path: '/trainers',
-    element: <TrainerPage />
+    element: <TrainerList />
   },
   {
     path: '/trainers/classes',
@@ -46,7 +46,7 @@ export const trainerRoutes: RouteObject[] = [
   },
   {
     path: '/trainers/management',
-    element: <TrainerPage />
+    element: <TrainerList />
   },
   // Add missing routes from trainerNavigation.tsx
   {

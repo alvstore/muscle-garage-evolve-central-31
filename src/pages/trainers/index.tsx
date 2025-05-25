@@ -14,7 +14,7 @@ import { PlusCircle, Search, Star, Edit, Trash2, UserCheck, X } from 'lucide-rea
 import { useTrainers } from '@/hooks/trainers/use-trainers';
 import { CreateTrainerDialog } from '@/components/trainers/CreateTrainerDialog';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Trainer } from '@/types/trainer';
+import { Trainer } from '@/types/team/trainer';
 
 const TrainerList = () => {
   const [showCreateDialog, setShowCreateDialog] = useState(false);

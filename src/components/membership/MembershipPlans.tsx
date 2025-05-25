@@ -27,6 +27,9 @@ const MembershipPlans = () => {
   useEffect(() => {
     if (currentBranch?.id) {
       fetchMembershipPlans();
+    } else {
+      // Clear plans when no branch is selected
+      setPlans([]);
     }
   }, [currentBranch?.id]);
 
@@ -45,6 +48,15 @@ const MembershipPlans = () => {
   };
 
   const handleCreatePlan = () => {
+    console.log('Create plan button clicked');
+    console.log('Current branch:', currentBranch);
+    
+    // Check if branch is available
+    if (!currentBranch?.id) {
+      toast.error('Please select a branch first to create a membership plan');
+      return;
+    }
+    
     setSelectedPlan(null);
     setDialogMode('create');
     onOpen();
@@ -82,6 +94,12 @@ const MembershipPlans = () => {
   const handleSavePlan = async (planData: MembershipPlan) => {
     setIsSubmitting(true);
     try {
+      if (!currentBranch?.id) {
+        toast.error('Branch selection is required');
+        setIsSubmitting(false);
+        return;
+      }
+
       if (dialogMode === 'edit' && selectedPlan) {
         // Use the correct method signature that matches the service
         await membershipService.updateMembershipPlan(selectedPlan.id, planData);
@@ -90,10 +108,18 @@ const MembershipPlans = () => {
         // Include branch_id when creating a new membership plan
         const planWithBranch = {
           ...planData,
-          branch_id: currentBranch?.id
+          branch_id: currentBranch.id // Use non-optional branch_id
         };
-        await membershipService.createMembershipPlan(planWithBranch);
-        toast.success('Membership plan created successfully');
+        console.log('Creating plan with data:', planWithBranch);
+        const result = await membershipService.createMembershipPlan(planWithBranch);
+        
+        if (result) {
+          toast.success('Membership plan created successfully');
+        } else {
+          toast.error('Failed to create membership plan');
+          setIsSubmitting(false);
+          return;
+        }
       }
       
       fetchMembershipPlans();

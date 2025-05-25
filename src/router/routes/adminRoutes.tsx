@@ -4,7 +4,7 @@ import { AppRoute } from '@/types/route';
 import AdminDashboard from '@/pages/dashboard/AdminDashboard';
 import SystemBackupPage from '@/pages/admin/SystemBackupPage';
 import UserManagementPage from '@/pages/admin/UserManagementPage';
-import TrainerPage from '@/pages/trainers/TrainerPage';
+import TrainerList from '@/pages/trainers/index';
 import WebsiteManagementPage from '@/pages/website/WebsiteManagementPage';
 import { 
   LayoutDashboard, 
@@ -57,7 +57,7 @@ export const adminRoutes: AppRoute[] = [
   },
   {
     path: '/trainer-management',
-    element: <TrainerPage />,
+    element: <TrainerList />,
     meta: {
       title: 'Trainer Management',
       breadcrumb: 'Trainers',
