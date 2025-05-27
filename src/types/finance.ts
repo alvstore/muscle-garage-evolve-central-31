@@ -39,10 +39,14 @@ export interface FinancialTransaction {
   description: string;
   payment_method: PaymentMethod;
   reference_number?: string;
+  reference_id?: string;
   member_id?: string;
   invoice_id?: string;
   branch_id: string;
   created_at: string;
+  transaction_date?: string;
+  date?: string;
+  category?: string;
   is_recurring?: boolean;
   recurring_period?: RecurringPeriod;
 }
@@ -58,4 +62,41 @@ export interface PaymentIntegration {
   api_key: string;
   webhook_url?: string;
   branch_id: string;
+}
+
+export interface FinanceSummary {
+  totalRevenue: number;
+  totalExpenses: number;
+  profit: number;
+  netIncome: number;
+  revenueGrowth: number;
+  pendingInvoices: Array<{
+    id: string;
+    memberName: string;
+    amount: number;
+    dueDate: string;
+  }>;
+  pendingAmount: number;
+  monthlyRevenue: Array<{
+    month: string;
+    revenue: number;
+    expenses: number;
+    profit: number;
+  }>;
+  revenueByCategory: Array<{
+    category: string;
+    amount: number;
+  }>;
+  expensesByCategory: Array<{
+    category: string;
+    amount: number;
+  }>;
+  recentTransactions: Array<{
+    id: string;
+    type: string;
+    amount: number;
+    description: string;
+    date: string;
+    category: string;
+  }>;
 }

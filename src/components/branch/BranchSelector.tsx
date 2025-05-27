@@ -16,7 +16,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { useBranch } from '@/hooks/settings/use-branches';
-import { Branch } from '@/types';
+import { Branch } from '@/types/settings/branch';
 
 export interface BranchSelectorProps {
   branches: Branch[];

@@ -34,12 +34,24 @@ export interface Class {
 export interface Branch {
   id: string;
   name: string;
-  address?: string;
-  phone?: string;
-  email?: string;
+  address: string;
+  city: string;
+  state: string;
+  country: string;
+  phone: string;
+  email: string;
   is_active: boolean;
-  created_at?: string;
-  updated_at?: string;
+  created_at: string;
+  updated_at: string;
+  manager_id?: string | null;
+  branch_code?: string | null;
+  max_capacity?: number | null;
+  opening_hours?: string | null;
+  closing_hours?: string | null;
+  region?: string | null;
+  tax_rate?: number | null;
+  timezone?: string | null;
+  zip_code?: string;
 }
 
 export interface FollowUpTemplate {

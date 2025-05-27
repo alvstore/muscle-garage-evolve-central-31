@@ -1,16 +1,34 @@
 
-// Authentication hook
-import { useState, useEffect } from 'react';
+// Authentication hook with provider
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
-interface User {
+export interface User {
   id: string;
   email: string;
   name?: string;
+  full_name?: string;
   avatar?: string;
+  role?: string;
+  branch_id?: string;
 }
 
-export const useAuth = () => {
+interface AuthContextType {
+  user: User | null;
+  isLoading: boolean;
+  isAuthenticated: boolean;
+  role?: string;
+  login: (email: string, password: string) => Promise<{ success: boolean; error: any }>;
+  logout: () => Promise<void>;
+  register: (email: string, password: string, userData: any) => Promise<{ success: boolean; error: any }>;
+  forgotPassword: (email: string) => Promise<{ success: boolean; error: any }>;
+  resetPassword: (email: string) => Promise<{ success: boolean; error: any }>;
+  changePassword: (currentPassword: string, newPassword: string) => Promise<{ success: boolean; error: any }>;
+}
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -20,11 +38,21 @@ export const useAuth = () => {
       try {
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
+          // Fetch profile data
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', user.id)
+            .single();
+
           setUser({
             id: user.id,
             email: user.email || '',
             name: user.user_metadata?.full_name || user.email,
-            avatar: user.user_metadata?.avatar_url
+            full_name: user.user_metadata?.full_name || profile?.full_name,
+            avatar: user.user_metadata?.avatar_url,
+            role: profile?.role || 'member',
+            branch_id: profile?.branch_id
           });
         }
       } catch (error) {
@@ -40,11 +68,21 @@ export const useAuth = () => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (session?.user) {
+          // Fetch profile data
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', session.user.id)
+            .single();
+
           setUser({
             id: session.user.id,
             email: session.user.email || '',
             name: session.user.user_metadata?.full_name || session.user.email,
-            avatar: session.user.user_metadata?.avatar_url
+            full_name: session.user.user_metadata?.full_name || profile?.full_name,
+            avatar: session.user.user_metadata?.avatar_url,
+            role: profile?.role || 'member',
+            branch_id: profile?.branch_id
           });
         } else {
           setUser(null);
@@ -137,14 +175,28 @@ export const useAuth = () => {
     }
   };
 
-  return {
-    user,
-    isLoading,
-    login,
-    logout,
-    register,
-    forgotPassword,
-    resetPassword,
-    changePassword
-  };
+  return (
+    <AuthContext.Provider value={{
+      user,
+      isLoading,
+      isAuthenticated: !!user,
+      role: user?.role,
+      login,
+      logout,
+      register,
+      forgotPassword,
+      resetPassword,
+      changePassword
+    }}>
+      {children}
+    </AuthContext.Provider>
+  );
+};
+
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error("useAuth must be used within an AuthProvider");
+  }
+  return context;
 };
