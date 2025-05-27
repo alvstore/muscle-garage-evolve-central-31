@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -6,7 +7,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { hikvisionService, HikvisionEvent } from '@/integrations/hikvision/hikvisionService';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
-import { usePermissions } from '@/hooks/auth/use-permissions';
 
 interface HikvisionWebhookHandlerProps {
   onEventReceived?: (event: HikvisionEvent) => void;
@@ -20,7 +20,6 @@ const HikvisionWebhookHandler = ({
   const [events, setEvents] = useState<HikvisionEvent[]>([]);
   const [loading, setLoading] = useState(false);
   const [tab, setTab] = useState('recent');
-  const { can } = usePermissions();
   
   useEffect(() => {
     fetchRecentEvents();
@@ -72,11 +71,6 @@ const HikvisionWebhookHandler = ({
   };
   
   const handleSimulateEvent = async () => {
-    if (!can('log_attendance')) {
-      toast.error('You do not have permission to perform this action');
-      return;
-    }
-    
     setLoading(true);
     
     try {
@@ -110,7 +104,7 @@ const HikvisionWebhookHandler = ({
   const getEventBadgeVariant = (eventType: string) => {
     switch (eventType) {
       case 'entry':
-        return 'success';
+        return 'default';
       case 'exit':
         return 'secondary';
       case 'denied':
@@ -155,16 +149,14 @@ const HikvisionWebhookHandler = ({
             >
               Process Attendance
             </Button>
-            {can('log_attendance') && (
-              <Button
-                variant="default"
-                size="sm"
-                onClick={handleSimulateEvent}
-                disabled={loading}
-              >
-                Simulate Event
-              </Button>
-            )}
+            <Button
+              variant="default"
+              size="sm"
+              onClick={handleSimulateEvent}
+              disabled={loading}
+            >
+              Simulate Event
+            </Button>
           </div>
         </div>
         

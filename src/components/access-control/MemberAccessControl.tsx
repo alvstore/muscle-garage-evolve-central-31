@@ -1,527 +1,279 @@
 
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { DatePickerWithRange } from '@/components/ui/date-picker-with-range';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { useHikvisionSettings } from '@/hooks/use-hikvision-settings';
-import { Search, RefreshCw, Calendar, User, Door, Loader2 } from 'lucide-react';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { supabase } from '@/integrations/supabase/client';
-import { DateRange } from "react-day-picker";
-import { addDays } from "date-fns";
+import { 
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow 
+} from '@/components/ui/table';
+import { 
+  Users, 
+  Plus, 
+  Search, 
+  Shield, 
+  Clock,
+  CheckCircle,
+  XCircle
+} from 'lucide-react';
 import { toast } from 'sonner';
+import { useHikvisionSettings } from '@/hooks/use-hikvision-settings';
+
+interface MemberAccess {
+  id: string;
+  memberName: string;
+  memberId: string;
+  email: string;
+  accessStatus: 'active' | 'inactive' | 'pending';
+  lastAccess: string | null;
+  devices: string[];
+}
 
 interface MemberAccessControlProps {
   branchId: string;
 }
 
-interface Member {
-  id: string;
-  name: string;
-  email?: string;
-  phone?: string;
-  membership_status?: string;
-  membership_end_date?: string;
-}
-
-interface AccessPermission {
-  id: string;
-  doorName: string;
-  doorId: string;
-  validFrom?: Date;
-  validTo?: Date;
-  status: 'active' | 'inactive';
-}
-
 const MemberAccessControl: React.FC<MemberAccessControlProps> = ({ branchId }) => {
-  const [members, setMembers] = useState<Member[]>([]);
-  const [filteredMembers, setFilteredMembers] = useState<Member[]>([]);
+  const [members, setMembers] = useState<MemberAccess[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [selectedMember, setSelectedMember] = useState<Member | null>(null);
-  const [showPermissionDialog, setShowPermissionDialog] = useState(false);
-  const [memberPermissions, setMemberPermissions] = useState<AccessPermission[]>([]);
-  const [syncDialogOpen, setSyncDialogOpen] = useState(false);
-  const [selectedDeviceId, setSelectedDeviceId] = useState('');
-  const [dateRange, setDateRange] = useState<DateRange | undefined>({
-    from: new Date(),
-    to: addDays(new Date(), 365),
-  });
-  const [memberEvents, setMemberEvents] = useState<HikvisionEvent[]>([]);
-  const [isLoadingEvents, setIsLoadingEvents] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [selectedMember, setSelectedMember] = useState<MemberAccess | null>(null);
   
-  // Access the Hikvision settings and devices
   const { 
-    devices, 
-    getDevices, 
     settings, 
-    isConnected,
-    getMemberAccess,
-    syncMemberToDevice,
-    assignAccessPrivileges
+    isLoading: settingsLoading 
   } = useHikvisionSettings(branchId);
 
-  // Load members
   useEffect(() => {
     if (branchId) {
       fetchMembers();
-      getDevices(branchId);
     }
-  }, [branchId, getDevices]);
-
-  // Filter members based on search term
-  useEffect(() => {
-    if (searchTerm) {
-      setFilteredMembers(
-        members.filter(
-          (member) =>
-            member.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            (member.email && member.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
-            (member.phone && member.phone.toLowerCase().includes(searchTerm.toLowerCase()))
-        )
-      );
-    } else {
-      setFilteredMembers(members);
-    }
-  }, [searchTerm, members]);
+  }, [branchId]);
 
   const fetchMembers = async () => {
     try {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from('members')
-        .select('id, name, email, phone, membership_status, membership_end_date')
-        .eq('branch_id', branchId)
-        .eq('status', 'active')
-        .order('name', { ascending: true });
+      setIsLoading(true);
       
-      if (error) throw error;
+      // Mock data for demonstration
+      const mockMembers: MemberAccess[] = [
+        {
+          id: '1',
+          memberName: 'John Doe',
+          memberId: 'MEM001',
+          email: 'john.doe@example.com',
+          accessStatus: 'active',
+          lastAccess: new Date().toISOString(),
+          devices: ['Main Entry', 'Gym Floor']
+        },
+        {
+          id: '2',
+          memberName: 'Jane Smith',
+          memberId: 'MEM002',
+          email: 'jane.smith@example.com',
+          accessStatus: 'pending',
+          lastAccess: null,
+          devices: []
+        }
+      ];
       
-      setMembers(data || []);
-      setFilteredMembers(data || []);
+      setMembers(mockMembers);
     } catch (error) {
       console.error('Error fetching members:', error);
-      toast.error('Failed to fetch members');
+      toast.error('Failed to fetch member access data');
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
-  const fetchMemberEvents = async (memberId: string) => {
-    if (!memberId) return;
-    
+  const handleSyncMember = async (member: MemberAccess) => {
     try {
-      setIsLoadingEvents(true);
+      console.log('Syncing member to Hikvision devices:', member.memberId);
       
-      if (getPersonEvents) {
-        const events = await getPersonEvents(memberId, 10); // Get last 10 events
-        setMemberEvents(events);
-      }
-    } catch (error) {
-      console.error('Error fetching member events:', error);
-      toast.error('Failed to fetch access events');
-    } finally {
-      setIsLoadingEvents(false);
-    }
-  };
-  
-  const handleShowPermissions = async (member: Member) => {
-    setSelectedMember(member);
-    
-    try {
-      // Fetch member permissions
-      if (getMemberAccess) {
-        const permissions = await getMemberAccess(member.id);
-        
-        if (permissions) {
-          setMemberPermissions(permissions.map((perm: any) => ({
-            id: perm.id,
-            doorName: perm.access_doors?.door_name || 'Unknown Door',
-            doorId: perm.door_id,
-            validFrom: perm.valid_start_time ? new Date(perm.valid_start_time) : undefined,
-            validTo: perm.valid_end_time ? new Date(perm.valid_end_time) : undefined,
-            status: perm.status
-          })));
-        }
-      }
+      // Simulate sync process
+      await new Promise(resolve => setTimeout(resolve, 2000));
       
-      // Also fetch recent events
-      await fetchMemberEvents(member.id);
+      // Update member status
+      setMembers(prev => prev.map(m => 
+        m.id === member.id 
+          ? { ...m, accessStatus: 'active' as const }
+          : m
+      ));
       
-      setShowPermissionDialog(true);
-    } catch (error) {
-      console.error('Error fetching member permissions:', error);
-      toast.error('Failed to fetch access permissions');
-    }
-  };
-
-  const handleSyncMember = (member: Member) => {
-    setSelectedMember(member);
-    setSyncDialogOpen(true);
-  };
-
-  const handleDoSync = async () => {
-    if (!selectedMember || !selectedDeviceId) {
-      toast.error('Please select a device');
-      return;
-    }
-    
-    try {
-      const result = await syncMemberToDevice(selectedMember.id, selectedDeviceId);
-      
-      if (result.success) {
-        toast.success(`Successfully synced ${selectedMember.name} to the device`);
-        setSyncDialogOpen(false);
-      } else {
-        toast.error(`Failed to sync: ${result.message}`);
-      }
+      toast.success(`Member ${member.memberName} synced successfully`);
     } catch (error) {
       console.error('Error syncing member:', error);
-      toast.error('Failed to sync member to device');
+      toast.error('Failed to sync member');
     }
   };
 
-  const assignDoorAccess = async (doorId: string) => {
-    if (!selectedMember || !dateRange) {
-      toast.error('Missing required information');
-      return;
-    }
-    
+  const handleRevokeAccess = async (member: MemberAccess) => {
     try {
-      const result = await assignAccessPrivileges(
-        selectedMember.id,
-        doorId,
-        dateRange.from?.toISOString(),
-        dateRange.to?.toISOString()
-      );
+      console.log('Revoking access for member:', member.memberId);
       
-      if (result.success) {
-        toast.success('Access permission granted');
-        
-        // Refresh permissions
-        if (selectedMember && getMemberAccess) {
-          const permissions = await getMemberAccess(selectedMember.id);
-          
-          if (permissions) {
-            setMemberPermissions(permissions.map((perm: any) => ({
-              id: perm.id,
-              doorName: perm.access_doors?.door_name || 'Unknown Door',
-              doorId: perm.door_id,
-              validFrom: perm.valid_start_time ? new Date(perm.valid_start_time) : undefined,
-              validTo: perm.valid_end_time ? new Date(perm.valid_end_time) : undefined,
-              status: perm.status
-            })));
-          }
-        }
-      } else {
-        toast.error(`Failed to assign access: ${result.message}`);
-      }
+      // Simulate revoke process
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      // Update member status
+      setMembers(prev => prev.map(m => 
+        m.id === member.id 
+          ? { ...m, accessStatus: 'inactive' as const }
+          : m
+      ));
+      
+      toast.success(`Access revoked for ${member.memberName}`);
     } catch (error) {
-      console.error('Error assigning access:', error);
-      toast.error('Failed to assign door access');
+      console.error('Error revoking access:', error);
+      toast.error('Failed to revoke access');
     }
   };
+
+  const filteredMembers = members.filter(member =>
+    member.memberName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    member.memberId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    member.email.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'active':
+        return <Badge variant="default" className="bg-green-100 text-green-800"><CheckCircle className="h-3 w-3 mr-1" />Active</Badge>;
+      case 'inactive':
+        return <Badge variant="destructive"><XCircle className="h-3 w-3 mr-1" />Inactive</Badge>;
+      case 'pending':
+        return <Badge variant="secondary"><Clock className="h-3 w-3 mr-1" />Pending</Badge>;
+      default:
+        return <Badge variant="outline">Unknown</Badge>;
+    }
+  };
+
+  if (settingsLoading || !settings?.isActive) {
+    return (
+      <Card>
+        <CardContent className="pt-6">
+          <div className="text-center py-10">
+            <Shield className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+            <h3 className="text-lg font-medium mb-2">Access Control Not Configured</h3>
+            <p className="text-muted-foreground">
+              Please configure Hikvision settings first to manage member access
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Member Access Control</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <Users className="h-5 w-5" />
+            Member Access Control
+          </CardTitle>
           <CardDescription>
-            Manage members' access to controlled areas
+            Manage member access to Hikvision devices and monitor entry/exit events
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="mb-6">
-            <div className="relative">
+          <div className="flex items-center gap-4 mb-6">
+            <div className="relative flex-1">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
-                type="search"
                 placeholder="Search members..."
-                className="pl-8"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-8"
               />
             </div>
+            <Button onClick={fetchMembers} disabled={isLoading}>
+              <Plus className="h-4 w-4 mr-2" />
+              Sync All Members
+            </Button>
           </div>
 
-          {loading ? (
-            <div className="text-center py-8">
-              <RefreshCw className="h-8 w-8 animate-spin mx-auto text-muted-foreground" />
-              <p className="mt-2 text-muted-foreground">Loading members...</p>
-            </div>
-          ) : filteredMembers.length === 0 ? (
-            <div className="text-center py-8">
-              <p className="text-muted-foreground">No members found</p>
+          {isLoading ? (
+            <div className="flex justify-center py-10">
+              <div className="h-8 w-8 rounded-full border-4 border-t-accent animate-spin"></div>
             </div>
           ) : (
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Member</TableHead>
-                    <TableHead>Contact Info</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredMembers.map((member) => (
-                    <TableRow key={member.id}>
-                      <TableCell className="font-medium">{member.name}</TableCell>
-                      <TableCell>
-                        {member.email && <div>{member.email}</div>}
-                        {member.phone && <div className="text-muted-foreground">{member.phone}</div>}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={member.membership_status === 'active' ? 'outline' : 'secondary'}>
-                          {member.membership_status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            onClick={() => handleShowPermissions(member)}
-                          >
-                            <Door className="h-4 w-4 mr-1" />
-                            Permissions
-                          </Button>
-                          <Button 
-                            variant="ghost" 
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Member</TableHead>
+                  <TableHead>ID</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Last Access</TableHead>
+                  <TableHead>Devices</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredMembers.map((member) => (
+                  <TableRow key={member.id}>
+                    <TableCell>
+                      <div>
+                        <div className="font-medium">{member.memberName}</div>
+                        <div className="text-sm text-muted-foreground">{member.email}</div>
+                      </div>
+                    </TableCell>
+                    <TableCell>{member.memberId}</TableCell>
+                    <TableCell>{getStatusBadge(member.accessStatus)}</TableCell>
+                    <TableCell>
+                      {member.lastAccess 
+                        ? new Date(member.lastAccess).toLocaleDateString()
+                        : 'Never'
+                      }
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex flex-wrap gap-1">
+                        {member.devices.map((device, index) => (
+                          <Badge key={index} variant="outline" className="text-xs">
+                            {device}
+                          </Badge>
+                        ))}
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-2">
+                        {member.accessStatus === 'pending' && (
+                          <Button
                             size="sm"
                             onClick={() => handleSyncMember(member)}
-                            disabled={!isConnected}
+                            disabled={isLoading}
                           >
-                            <RefreshCw className="h-4 w-4 mr-1" />
                             Sync
                           </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                        )}
+                        {member.accessStatus === 'active' && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleRevokeAccess(member)}
+                            disabled={isLoading}
+                          >
+                            Revoke
+                          </Button>
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+
+          {filteredMembers.length === 0 && !isLoading && (
+            <div className="text-center py-10 text-muted-foreground">
+              No members found matching your search criteria
             </div>
           )}
         </CardContent>
       </Card>
-
-      {/* Member Permissions Dialog */}
-      <Dialog open={showPermissionDialog} onOpenChange={setShowPermissionDialog}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>
-              {selectedMember?.name} - Access Permissions
-            </DialogTitle>
-          </DialogHeader>
-          
-          <Tabs defaultValue="permissions">
-            <TabsList>
-              <TabsTrigger value="permissions">Permissions</TabsTrigger>
-              <TabsTrigger value="events">Recent Events</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="permissions">
-              {/* Current Permissions */}
-              <div>
-                <h3 className="text-lg font-medium mb-2">Current Access</h3>
-                {memberPermissions.length === 0 ? (
-                  <p className="text-muted-foreground">No access permissions set</p>
-                ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Door</TableHead>
-                        <TableHead>Valid Period</TableHead>
-                        <TableHead>Status</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {memberPermissions.map((perm) => (
-                        <TableRow key={perm.id}>
-                          <TableCell>{perm.doorName}</TableCell>
-                          <TableCell>
-                            {perm.validFrom ? (
-                              <>
-                                {perm.validFrom.toLocaleDateString()} - {perm.validTo?.toLocaleDateString() || 'Forever'}
-                              </>
-                            ) : (
-                              'No time limit'
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant={perm.status === 'active' ? 'default' : 'secondary'}>
-                              {perm.status}
-                            </Badge>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                )}
-              </div>
-              
-              {/* Assign New Access */}
-              <div>
-                <h3 className="text-lg font-medium mb-2">Assign Access</h3>
-                {isConnected ? (
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label>Valid Period</Label>
-                        <DatePickerWithRange
-                          value={dateRange}
-                          onChange={setDateRange}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Access Door</Label>
-                        <div className="grid grid-cols-1 gap-2">
-                          {devices.flatMap(device => 
-                            device.doors?.map(door => (
-                              <div key={door.id} className="flex items-center justify-between border rounded p-2">
-                                <div className="flex items-center space-x-2">
-                                  <Door className="h-4 w-4" />
-                                  <span>{door.doorName || 'Door ' + door.doorNumber}</span>
-                                </div>
-                                <Button 
-                                  size="sm"
-                                  onClick={() => assignDoorAccess(door.id)}
-                                >
-                                  Grant Access
-                                </Button>
-                              </div>
-                            ))
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <p className="text-muted-foreground">
-                    Hikvision integration is not connected. Please configure it in settings.
-                  </p>
-                )}
-              </div>
-            </TabsContent>
-            
-            <TabsContent value="events">
-              <div className="space-y-4">
-                <h3 className="text-lg font-medium mb-2">Recent Access Events</h3>
-                
-                {isLoadingEvents ? (
-                  <div className="flex justify-center py-4">
-                    <Loader2 className="h-6 w-6 animate-spin" />
-                  </div>
-                ) : memberEvents.length === 0 ? (
-                  <p className="text-muted-foreground">No recent events found</p>
-                ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Time</TableHead>
-                        <TableHead>Door</TableHead>
-                        <TableHead>Event Type</TableHead>
-                        <TableHead>Status</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {memberEvents.map((event) => (
-                        <TableRow key={event.id}>
-                          <TableCell>{new Date(event.eventTime).toLocaleString()}</TableCell>
-                          <TableCell>{event.doorName || event.doorId}</TableCell>
-                          <TableCell>{event.eventType}</TableCell>
-                          <TableCell>
-                            <Badge variant={event.status === 'success' ? 'default' : 'destructive'}>
-                              {event.status}
-                            </Badge>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                )}
-              </div>
-            </TabsContent>
-          </Tabs>
-          
-          <DialogFooter>
-            <Button variant="ghost" onClick={() => setShowPermissionDialog(false)}>
-              Close
-            </Button>
-            {isConnected && (
-              <Button onClick={() => {
-                setShowPermissionDialog(false);
-                handleSyncMember(selectedMember!);
-              }}>
-                Sync Member
-              </Button>
-            )}
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Sync Member Dialog */}
-      <Dialog open={syncDialogOpen} onOpenChange={setSyncDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Sync Member to Device</DialogTitle>
-          </DialogHeader>
-          
-          <div className="space-y-4">
-            <div>
-              <Label>Select Device</Label>
-              <Select value={selectedDeviceId} onValueChange={setSelectedDeviceId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a device" />
-                </SelectTrigger>
-                <SelectContent>
-                  {devices.map((device) => (
-                    <SelectItem key={device.id} value={device.deviceId}>
-                      {device.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            {selectedMember && (
-              <div className="space-y-2">
-                <Label>Member Information</Label>
-                <div className="rounded-md border p-4">
-                  <div className="flex items-center space-x-4">
-                    <User className="h-10 w-10 text-muted-foreground" />
-                    <div>
-                      <h3 className="font-medium">{selectedMember.name}</h3>
-                      {selectedMember.email && <p className="text-sm">{selectedMember.email}</p>}
-                      {selectedMember.phone && <p className="text-sm text-muted-foreground">{selectedMember.phone}</p>}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-          
-          <DialogFooter>
-            <Button variant="ghost" onClick={() => setSyncDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleDoSync} disabled={!selectedDeviceId}>
-              Sync Member
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };

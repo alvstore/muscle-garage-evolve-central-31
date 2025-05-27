@@ -1,87 +1,38 @@
 
 import React, { useState } from 'react';
-import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { format } from 'date-fns';
-import { toast } from 'sonner';
-import { useTrainers } from '@/hooks/trainers/use-trainers';
-import { useUploadImage } from '@/hooks/utils/use-upload-image';
-import { useBranch } from '@/hooks/settings/use-branches';
-
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Card } from '@/components/ui/card';
-import { Calendar } from '@/components/ui/calendar';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { CalendarIcon, Loader2, Trash2, Upload } from 'lucide-react';
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
-import {
-  LocalTabs,
-  LocalTabsContent,
-  LocalTabsList,
-  LocalTabsTrigger,
-} from '@/components/ui/local-tabs';
-import { cn } from '@/lib/utils';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { X, Upload, FileText, User, Phone, Mail, Calendar, MapPin, IdCard, Lock, FileCheck } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
+import { useTrainers } from '@/hooks/trainers/use-trainers';
+import { useUploadImage } from '@/hooks/utils/use-upload-image';
+import { toast } from 'sonner';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
-// Specialization options for trainers
-const SPECIALIZATIONS = [
-  'Strength Training',
-  'Cardio',
-  'Yoga',
-  'Pilates',
-  'CrossFit',
-  'Functional Training',
-  'HIIT',
-  'Bodybuilding',
-  'Weight Loss',
-  'Nutrition',
-  'Sports Conditioning',
-  'Rehabilitation',
-  'Senior Fitness',
-  'Group Exercise',
-  'Personal Training',
-  'Mixed Martial Arts',
-];
-
-// Form validation schema
-const formSchema = z.object({
-  // Basic Information
-  name: z.string().min(3, { message: 'Name must be at least 3 characters' }),
-  email: z.string().email({ message: 'Invalid email address' }),
-  phone: z.string().min(10, { message: 'Phone number is required' }).optional(),
-  gender: z.string().optional(),
-  dateOfBirth: z.date().optional(),
+const trainerSchema = z.object({
+  // Basic Info
+  fullName: z.string().min(2, 'Full name must be at least 2 characters'),
+  email: z.string().email('Invalid email address'),
+  phone: z.string().min(10, 'Phone number must be at least 10 digits'),
+  dateOfBirth: z.string().optional(),
+  gender: z.enum(['male', 'female', 'other']).optional(),
   
   // Professional Details
   employeeId: z.string().optional(),
-  joiningDate: z.date().optional(),
-  specialization: z.string().min(1, { message: 'Specialization is required' }),
+  joiningDate: z.string().optional(),
+  specializations: z.array(z.string()).min(1, 'At least one specialization is required'),
   experience: z.string().optional(),
+  hourlyRate: z.string().optional(),
   bio: z.string().optional(),
-  hourlyRate: z.string().optional().transform(val => val === '' ? null : val),
   
   // Contact Information
   address: z.string().optional(),
@@ -90,829 +41,615 @@ const formSchema = z.object({
   country: z.string().optional(),
   emergencyContactName: z.string().optional(),
   emergencyContactPhone: z.string().optional(),
-  emergencyContactRelation: z.string().optional(),
   
   // Login Credentials
-  password: z.string().min(8, { message: 'Password must be at least 8 characters' }),
+  password: z.string().min(8, 'Password must be at least 8 characters'),
   confirmPassword: z.string(),
   sendWelcomeEmail: z.boolean().default(true),
-  
-  // Branch details
-  branchId: z.string().optional(),
-  status: z.string().default('active'),
-}).refine(data => data.password === data.confirmPassword, {
+}).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
-  path: ['confirmPassword'],
+  path: ["confirmPassword"],
 });
 
-type FormValues = z.infer<typeof formSchema>;
+type TrainerFormData = z.infer<typeof trainerSchema>;
 
 interface CreateTrainerFormProps {
   onSuccess?: () => void;
 }
 
+const availableSpecializations = [
+  'Personal Training',
+  'Weight Training',
+  'Cardio',
+  'Yoga',
+  'Pilates',
+  'CrossFit',
+  'Zumba',
+  'Boxing',
+  'Swimming',
+  'Nutrition Counseling',
+  'Physiotherapy',
+  'Martial Arts'
+];
+
 export function CreateTrainerForm({ onSuccess }: CreateTrainerFormProps) {
-  const { createTrainer } = useTrainers();
-  const { uploadImage, isUploading } = useUploadImage();
-  const { branches, currentBranch } = useBranch();
-  
+  const [activeTab, setActiveTab] = useState('basic-info');
+  const [selectedSpecializations, setSelectedSpecializations] = useState<string[]>([]);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
-  const [documentFiles, setDocumentFiles] = useState<Record<string, File | null>>({
-    idProof: null,
-    certifications: null,
-    resume: null,
-    policeVerification: null,
-  });
-  const [documentPreviews, setDocumentPreviews] = useState<Record<string, string | null>>({
-    idProof: null,
-    certifications: null,
-    resume: null,
-    policeVerification: null,
-  });
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [documents, setDocuments] = useState<{
+    idProof?: File;
+    cv?: File;
+    certifications?: File[];
+    policeVerification?: File;
+  }>({});
+  
+  const { createTrainer } = useTrainers();
+  const { uploadImage, isUploading } = useUploadImage();
 
-  // Initialize form with default values
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
+  const form = useForm<TrainerFormData>({
+    resolver: zodResolver(trainerSchema),
     defaultValues: {
-      name: '',
-      email: '',
-      phone: '',
-      gender: '',
-      specialization: '',
-      bio: '',
-      address: '',
-      city: '',
-      state: '',
-      country: '',
-      branchId: currentBranch?.id || '',
-      status: 'active',
-      password: '',
-      confirmPassword: '',
+      specializations: [],
       sendWelcomeEmail: true,
+      gender: 'male',
     },
   });
 
-  // Handle avatar file change
-  const handleAvatarChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
     if (file) {
       setAvatarFile(file);
-      const fileUrl = URL.createObjectURL(file);
-      setAvatarPreview(fileUrl);
+      const reader = new FileReader();
+      reader.onload = () => setAvatarPreview(reader.result as string);
+      reader.readAsDataURL(file);
     }
   };
 
-  // Handle document file change
-  const handleDocumentChange = (type: string) => (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      setDocumentFiles(prev => ({ ...prev, [type]: file }));
-      const fileUrl = URL.createObjectURL(file);
-      setDocumentPreviews(prev => ({ ...prev, [type]: fileUrl }));
+  const handleDocumentUpload = (type: keyof typeof documents, file: File | File[]) => {
+    setDocuments(prev => ({
+      ...prev,
+      [type]: file
+    }));
+  };
+
+  const addSpecialization = (specialization: string) => {
+    if (!selectedSpecializations.includes(specialization)) {
+      const newSpecs = [...selectedSpecializations, specialization];
+      setSelectedSpecializations(newSpecs);
+      form.setValue('specializations', newSpecs);
     }
   };
 
-  // Remove avatar
-  const removeAvatar = () => {
-    setAvatarFile(null);
-    setAvatarPreview(null);
+  const removeSpecialization = (specialization: string) => {
+    const newSpecs = selectedSpecializations.filter(s => s !== specialization);
+    setSelectedSpecializations(newSpecs);
+    form.setValue('specializations', newSpecs);
   };
 
-  // Remove document
-  const removeDocument = (type: string) => {
-    setDocumentFiles(prev => ({ ...prev, [type]: null }));
-    setDocumentPreviews(prev => ({ ...prev, [type]: null }));
-  };
-
-  // Handle form submission
-  const onSubmit = async (values: FormValues) => {
+  const onSubmit = async (data: TrainerFormData) => {
     try {
-      setIsSubmitting(true);
-      
-      // Upload avatar if available
       let avatarUrl = null;
-      if (avatarFile) {
-        avatarUrl = await uploadImage({
-          file: avatarFile,
-          folder: 'trainers/avatars',
-        });
-      }
       
-      // Upload documents if available
-      const uploadedDocuments: Record<string, string | null> = {};
-      for (const [type, file] of Object.entries(documentFiles)) {
-        if (file) {
-          const documentUrl = await uploadImage({
-            file,
-            folder: `trainers/documents/${type}`,
-          });
-          uploadedDocuments[type] = documentUrl;
+      // Upload avatar if provided
+      if (avatarFile) {
+        const uploadResult = await uploadImage(avatarFile, 'trainer-avatars');
+        if (uploadResult?.publicUrl) {
+          avatarUrl = uploadResult.publicUrl;
         }
       }
-      
-      // Create trainer profile
-      const result = await createTrainer({
-        name: values.name,
-        email: values.email,
-        password: values.password,
-        phone: values.phone,
-        specialization: values.specialization,
-        bio: values.bio || '',
-      });
+
+      // Create trainer
+      const trainerData = {
+        email: data.email,
+        password: data.password,
+        name: data.fullName,
+        phone: data.phone,
+        specialization: selectedSpecializations[0], // Primary specialization
+        bio: data.bio || '',
+      };
+
+      const result = await createTrainer(trainerData);
       
       if (result) {
         toast.success('Trainer created successfully');
-        if (onSuccess) onSuccess();
+        onSuccess?.();
+      } else {
+        toast.error('Failed to create trainer');
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error creating trainer:', error);
-      toast.error(error.message || 'Failed to create trainer');
-    } finally {
-      setIsSubmitting(false);
+      toast.error('An error occurred while creating the trainer');
     }
   };
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)}>
-        <LocalTabs defaultValue="basic-info" className="w-full">
-          <LocalTabsList className="grid grid-cols-5 mb-6">
-            <LocalTabsTrigger value="basic-info">Basic Info</LocalTabsTrigger>
-            <LocalTabsTrigger value="professional">Professional</LocalTabsTrigger>
-            <LocalTabsTrigger value="contact">Contact</LocalTabsTrigger>
-            <LocalTabsTrigger value="login">Login Credentials</LocalTabsTrigger>
-            <LocalTabsTrigger value="documents">Documents</LocalTabsTrigger>
-          </LocalTabsList>
-          
-          {/* Basic Information Tab */}
-          <LocalTabsContent value="basic-info" className="space-y-4">
-            <div className="flex items-start gap-4 mb-6">
-              <div className="flex-shrink-0 relative">
-                <Avatar className="h-24 w-24">
+    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-5">
+          <TabsTrigger value="basic-info" className="text-xs">
+            <User className="h-4 w-4 mr-1" />
+            Basic Info
+          </TabsTrigger>
+          <TabsTrigger value="professional" className="text-xs">
+            <IdCard className="h-4 w-4 mr-1" />
+            Professional
+          </TabsTrigger>
+          <TabsTrigger value="contact" className="text-xs">
+            <Phone className="h-4 w-4 mr-1" />
+            Contact
+          </TabsTrigger>
+          <TabsTrigger value="credentials" className="text-xs">
+            <Lock className="h-4 w-4 mr-1" />
+            Credentials
+          </TabsTrigger>
+          <TabsTrigger value="documents" className="text-xs">
+            <FileCheck className="h-4 w-4 mr-1" />
+            Documents
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="basic-info" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <User className="h-5 w-5" />
+                Basic Information
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Avatar Upload */}
+              <div className="flex items-center gap-4">
+                <Avatar className="h-20 w-20">
                   {avatarPreview ? (
-                    <AvatarImage src={avatarPreview} alt="Avatar" />
+                    <AvatarImage src={avatarPreview} alt="Avatar preview" />
                   ) : (
-                    <AvatarFallback className="text-lg">
-                      {form.watch('name') ? form.watch('name').charAt(0).toUpperCase() : 'T'}
+                    <AvatarFallback>
+                      <User className="h-8 w-8" />
                     </AvatarFallback>
                   )}
                 </Avatar>
-                <input
-                  id="avatar-upload"
-                  type="file"
-                  accept="image/*"
-                  onChange={handleAvatarChange}
-                  className="hidden"
+                <div>
+                  <Label htmlFor="avatar" className="cursor-pointer">
+                    <div className="flex items-center gap-2 text-sm bg-secondary hover:bg-secondary/80 px-3 py-2 rounded-md">
+                      <Upload className="h-4 w-4" />
+                      Upload Photo
+                    </div>
+                  </Label>
+                  <input
+                    id="avatar"
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleAvatarChange}
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    JPG, PNG up to 5MB
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="fullName">Full Name *</Label>
+                  <Input
+                    id="fullName"
+                    {...form.register('fullName')}
+                    placeholder="Enter full name"
+                  />
+                  {form.formState.errors.fullName && (
+                    <p className="text-sm text-destructive">
+                      {form.formState.errors.fullName.message}
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email *</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    {...form.register('email')}
+                    placeholder="Enter email address"
+                  />
+                  {form.formState.errors.email && (
+                    <p className="text-sm text-destructive">
+                      {form.formState.errors.email.message}
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Phone Number *</Label>
+                  <Input
+                    id="phone"
+                    {...form.register('phone')}
+                    placeholder="Enter phone number"
+                  />
+                  {form.formState.errors.phone && (
+                    <p className="text-sm text-destructive">
+                      {form.formState.errors.phone.message}
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="dateOfBirth">Date of Birth</Label>
+                  <Input
+                    id="dateOfBirth"
+                    type="date"
+                    {...form.register('dateOfBirth')}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="gender">Gender</Label>
+                  <Select onValueChange={(value) => form.setValue('gender', value as any)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select gender" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="male">Male</SelectItem>
+                      <SelectItem value="female">Female</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="professional" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <IdCard className="h-5 w-5" />
+                Professional Details
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="employeeId">Employee ID</Label>
+                  <Input
+                    id="employeeId"
+                    {...form.register('employeeId')}
+                    placeholder="Auto-generated if empty"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="joiningDate">Joining Date</Label>
+                  <Input
+                    id="joiningDate"
+                    type="date"
+                    {...form.register('joiningDate')}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="experience">Experience (Years)</Label>
+                  <Input
+                    id="experience"
+                    {...form.register('experience')}
+                    placeholder="e.g., 3 years"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="hourlyRate">Hourly Rate</Label>
+                  <Input
+                    id="hourlyRate"
+                    {...form.register('hourlyRate')}
+                    placeholder="e.g., $50/hour"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Specializations *</Label>
+                <Select onValueChange={addSpecialization}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Add specialization" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableSpecializations.map((spec) => (
+                      <SelectItem key={spec} value={spec}>
+                        {spec}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                
+                {selectedSpecializations.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {selectedSpecializations.map((spec) => (
+                      <Badge key={spec} variant="secondary" className="flex items-center gap-1">
+                        {spec}
+                        <X
+                          className="h-3 w-3 cursor-pointer"
+                          onClick={() => removeSpecialization(spec)}
+                        />
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+                
+                {form.formState.errors.specializations && (
+                  <p className="text-sm text-destructive">
+                    {form.formState.errors.specializations.message}
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="bio">Bio</Label>
+                <Textarea
+                  id="bio"
+                  {...form.register('bio')}
+                  placeholder="Brief description about the trainer"
+                  rows={4}
                 />
-                <div className="absolute -bottom-2 -right-2 flex gap-1">
-                  <Button
-                    type="button"
-                    size="icon"
-                    variant="secondary"
-                    className="h-8 w-8 rounded-full"
-                    onClick={() => document.getElementById('avatar-upload')?.click()}
-                  >
-                    <Upload className="h-4 w-4" />
-                  </Button>
-                  {avatarPreview && (
-                    <Button
-                      type="button"
-                      size="icon"
-                      variant="destructive"
-                      className="h-8 w-8 rounded-full"
-                      onClick={removeAvatar}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="contact" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <MapPin className="h-5 w-5" />
+                Contact Information
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="address">Address</Label>
+                <Textarea
+                  id="address"
+                  {...form.register('address')}
+                  placeholder="Enter full address"
+                  rows={3}
+                />
+              </div>
+
+              <div className="grid grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="city">City</Label>
+                  <Input
+                    id="city"
+                    {...form.register('city')}
+                    placeholder="Enter city"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="state">State</Label>
+                  <Input
+                    id="state"
+                    {...form.register('state')}
+                    placeholder="Enter state"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="country">Country</Label>
+                  <Input
+                    id="country"
+                    {...form.register('country')}
+                    placeholder="Enter country"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="emergencyContactName">Emergency Contact Name</Label>
+                  <Input
+                    id="emergencyContactName"
+                    {...form.register('emergencyContactName')}
+                    placeholder="Enter emergency contact name"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="emergencyContactPhone">Emergency Contact Phone</Label>
+                  <Input
+                    id="emergencyContactPhone"
+                    {...form.register('emergencyContactPhone')}
+                    placeholder="Enter emergency contact phone"
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="credentials" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Lock className="h-5 w-5" />
+                Login Credentials
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="password">Password *</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    {...form.register('password')}
+                    placeholder="Enter password"
+                  />
+                  {form.formState.errors.password && (
+                    <p className="text-sm text-destructive">
+                      {form.formState.errors.password.message}
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="confirmPassword">Confirm Password *</Label>
+                  <Input
+                    id="confirmPassword"
+                    type="password"
+                    {...form.register('confirmPassword')}
+                    placeholder="Confirm password"
+                  />
+                  {form.formState.errors.confirmPassword && (
+                    <p className="text-sm text-destructive">
+                      {form.formState.errors.confirmPassword.message}
+                    </p>
                   )}
                 </div>
               </div>
-              <div>
-                <h3 className="text-lg font-medium">Profile Picture</h3>
-                <p className="text-sm text-muted-foreground">
-                  Upload a profile picture for the trainer
-                </p>
+
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="sendWelcomeEmail"
+                  checked={form.watch('sendWelcomeEmail')}
+                  onCheckedChange={(checked) => form.setValue('sendWelcomeEmail', checked)}
+                />
+                <Label htmlFor="sendWelcomeEmail">Send welcome email with login credentials</Label>
               </div>
-            </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Full Name *</FormLabel>
-                    <FormControl>
-                      <Input placeholder="John Doe" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+        <TabsContent value="documents" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5" />
+                Documents
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="idProof">ID Proof</Label>
+                  <Input
+                    id="idProof"
+                    type="file"
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) handleDocumentUpload('idProof', file);
+                    }}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Upload government issued ID (PDF, JPG, PNG)
+                  </p>
+                </div>
 
-              <FormField
-                control={form.control}
-                name="gender"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Gender</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select gender" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="male">Male</SelectItem>
-                        <SelectItem value="female">Female</SelectItem>
-                        <SelectItem value="other">Other</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                <div className="space-y-2">
+                  <Label htmlFor="cv">CV/Resume</Label>
+                  <Input
+                    id="cv"
+                    type="file"
+                    accept=".pdf,.doc,.docx"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) handleDocumentUpload('cv', file);
+                    }}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Upload CV or resume (PDF, DOC, DOCX)
+                  </p>
+                </div>
 
-              <FormField
-                control={form.control}
-                name="dateOfBirth"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Date of Birth</FormLabel>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button
-                            variant="outline"
-                            className={cn(
-                              "w-full pl-3 text-left font-normal",
-                              !field.value && "text-muted-foreground"
-                            )}
-                          >
-                            {field.value ? (
-                              format(field.value, "PPP")
-                            ) : (
-                              <span>Select date</span>
-                            )}
-                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={field.value}
-                          onSelect={field.onChange}
-                          disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
-                          initialFocus
-                          className="p-3 pointer-events-auto"
-                        />
-                      </PopoverContent>
-                    </Popover>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                <div className="space-y-2">
+                  <Label htmlFor="certifications">Certifications</Label>
+                  <Input
+                    id="certifications"
+                    type="file"
+                    multiple
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    onChange={(e) => {
+                      const files = Array.from(e.target.files || []);
+                      if (files.length > 0) handleDocumentUpload('certifications', files);
+                    }}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Upload training certifications (Multiple files allowed)
+                  </p>
+                </div>
 
-              <FormField
-                control={form.control}
-                name="branchId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Branch</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select branch" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {branches?.map(branch => (
-                          <SelectItem key={branch.id} value={branch.id}>
-                            {branch.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                <div className="space-y-2">
+                  <Label htmlFor="policeVerification">Police Verification</Label>
+                  <Input
+                    id="policeVerification"
+                    type="file"
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) handleDocumentUpload('policeVerification', file);
+                    }}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Upload police verification document
+                  </p>
+                </div>
+              </div>
 
-              <FormField
-                control={form.control}
-                name="status"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Status</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select status" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="active">Active</SelectItem>
-                        <SelectItem value="inactive">Inactive</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-          </LocalTabsContent>
-          
-          {/* Professional Details Tab */}
-          <LocalTabsContent value="professional" className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="employeeId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Employee ID</FormLabel>
-                    <FormControl>
-                      <Input placeholder="EMP-1234" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="joiningDate"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Joining Date</FormLabel>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button
-                            variant="outline"
-                            className={cn(
-                              "w-full pl-3 text-left font-normal",
-                              !field.value && "text-muted-foreground"
-                            )}
-                          >
-                            {field.value ? (
-                              format(field.value, "PPP")
-                            ) : (
-                              <span>Select date</span>
-                            )}
-                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={field.value}
-                          onSelect={field.onChange}
-                          disabled={(date) => date > new Date()}
-                          initialFocus
-                          className="p-3 pointer-events-auto"
-                        />
-                      </PopoverContent>
-                    </Popover>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="specialization"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Specialization *</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select specialization" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {SPECIALIZATIONS.map(specialization => (
-                          <SelectItem key={specialization} value={specialization}>
-                            {specialization}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="experience"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Experience (Years)</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="number" 
-                        placeholder="2" 
-                        {...field} 
-                        onChange={(e) => field.onChange(e.target.value || '')}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="hourlyRate"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Hourly Rate</FormLabel>
-                    <FormControl>
-                      <Input 
-                        placeholder="₹500" 
-                        {...field} 
-                        onChange={(e) => field.onChange(e.target.value || '')}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <FormField
-              control={form.control}
-              name="bio"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Bio</FormLabel>
-                  <FormControl>
-                    <Textarea 
-                      placeholder="Trainer bio and professional details..." 
-                      className="min-h-[150px]" 
-                      {...field} 
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
+              {/* Document preview section */}
+              {Object.keys(documents).length > 0 && (
+                <div className="mt-4">
+                  <h4 className="text-sm font-medium mb-2">Uploaded Documents:</h4>
+                  <div className="space-y-2">
+                    {Object.entries(documents).map(([type, file]) => (
+                      <div key={type} className="flex items-center gap-2 text-sm">
+                        <FileText className="h-4 w-4" />
+                        <span className="capitalize">{type.replace(/([A-Z])/g, ' $1')}: </span>
+                        <span className="text-muted-foreground">
+                          {Array.isArray(file) ? `${file.length} files` : (file as File).name}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               )}
-            />
-          </LocalTabsContent>
-          
-          {/* Contact Information Tab */}
-          <LocalTabsContent value="contact" className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email *</FormLabel>
-                    <FormControl>
-                      <Input type="email" placeholder="trainer@example.com" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
 
-              <FormField
-                control={form.control}
-                name="phone"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Phone *</FormLabel>
-                    <FormControl>
-                      <Input placeholder="+91 9876543210" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+      <div className="flex justify-between pt-6 border-t">
+        <Button type="button" variant="outline" onClick={() => {
+          const tabs = ['basic-info', 'professional', 'contact', 'credentials', 'documents'];
+          const currentIndex = tabs.indexOf(activeTab);
+          if (currentIndex > 0) {
+            setActiveTab(tabs[currentIndex - 1]);
+          }
+        }} disabled={activeTab === 'basic-info'}>
+          Previous
+        </Button>
 
-              <FormField
-                control={form.control}
-                name="address"
-                render={({ field }) => (
-                  <FormItem className="col-span-2">
-                    <FormLabel>Address</FormLabel>
-                    <FormControl>
-                      <Input placeholder="1234 Main St" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="city"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>City</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Mumbai" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="state"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>State</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Maharashtra" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="country"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Country</FormLabel>
-                    <FormControl>
-                      <Input placeholder="India" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <h3 className="text-lg font-medium pt-4">Emergency Contact</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="emergencyContactName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Contact Name</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Jane Doe" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="emergencyContactPhone"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Contact Phone</FormLabel>
-                    <FormControl>
-                      <Input placeholder="+91 9876543210" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="emergencyContactRelation"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Relationship</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Spouse" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-          </LocalTabsContent>
-          
-          {/* Login Credentials Tab */}
-          <LocalTabsContent value="login" className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="password"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Password *</FormLabel>
-                    <FormControl>
-                      <Input type="password" placeholder="********" {...field} />
-                    </FormControl>
-                    <FormDescription>
-                      Must be at least 8 characters
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="confirmPassword"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Confirm Password *</FormLabel>
-                    <FormControl>
-                      <Input type="password" placeholder="********" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <FormField
-              control={form.control}
-              name="sendWelcomeEmail"
-              render={({ field }) => (
-                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 shadow-sm mt-4">
-                  <div className="space-y-0.5">
-                    <FormLabel>Send Welcome Email</FormLabel>
-                    <FormDescription>
-                      Send a welcome email with login instructions to the trainer
-                    </FormDescription>
-                  </div>
-                  <FormControl>
-                    <Switch
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-          </LocalTabsContent>
-          
-          {/* Documents Tab */}
-          <LocalTabsContent value="documents" className="space-y-4">
-            <Card className="p-4">
-              <h3 className="font-medium mb-2">ID Proof</h3>
-              <div className="flex items-center gap-4 mb-4">
-                <input
-                  id="id-proof-upload"
-                  type="file"
-                  accept=".pdf,.jpg,.jpeg,.png"
-                  onChange={handleDocumentChange('idProof')}
-                  className="hidden"
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => document.getElementById('id-proof-upload')?.click()}
-                >
-                  <Upload className="h-4 w-4 mr-2" />
-                  Upload ID Proof
-                </Button>
-                {documentPreviews.idProof && (
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-muted-foreground truncate max-w-[200px]">
-                      {documentFiles.idProof?.name}
-                    </span>
-                    <Button
-                      type="button"
-                      size="icon"
-                      variant="ghost"
-                      className="h-8 w-8 text-destructive"
-                      onClick={() => removeDocument('idProof')}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                )}
-              </div>
-
-              <h3 className="font-medium mb-2">Certifications</h3>
-              <div className="flex items-center gap-4 mb-4">
-                <input
-                  id="certifications-upload"
-                  type="file"
-                  accept=".pdf,.jpg,.jpeg,.png"
-                  onChange={handleDocumentChange('certifications')}
-                  className="hidden"
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => document.getElementById('certifications-upload')?.click()}
-                >
-                  <Upload className="h-4 w-4 mr-2" />
-                  Upload Certifications
-                </Button>
-                {documentPreviews.certifications && (
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-muted-foreground truncate max-w-[200px]">
-                      {documentFiles.certifications?.name}
-                    </span>
-                    <Button
-                      type="button"
-                      size="icon"
-                      variant="ghost"
-                      className="h-8 w-8 text-destructive"
-                      onClick={() => removeDocument('certifications')}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                )}
-              </div>
-
-              <h3 className="font-medium mb-2">Resume/CV</h3>
-              <div className="flex items-center gap-4 mb-4">
-                <input
-                  id="resume-upload"
-                  type="file"
-                  accept=".pdf,.doc,.docx"
-                  onChange={handleDocumentChange('resume')}
-                  className="hidden"
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => document.getElementById('resume-upload')?.click()}
-                >
-                  <Upload className="h-4 w-4 mr-2" />
-                  Upload Resume/CV
-                </Button>
-                {documentPreviews.resume && (
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-muted-foreground truncate max-w-[200px]">
-                      {documentFiles.resume?.name}
-                    </span>
-                    <Button
-                      type="button"
-                      size="icon"
-                      variant="ghost"
-                      className="h-8 w-8 text-destructive"
-                      onClick={() => removeDocument('resume')}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                )}
-              </div>
-
-              <h3 className="font-medium mb-2">Police Verification</h3>
-              <div className="flex items-center gap-4">
-                <input
-                  id="police-verification-upload"
-                  type="file"
-                  accept=".pdf,.jpg,.jpeg,.png"
-                  onChange={handleDocumentChange('policeVerification')}
-                  className="hidden"
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => document.getElementById('police-verification-upload')?.click()}
-                >
-                  <Upload className="h-4 w-4 mr-2" />
-                  Upload Verification
-                </Button>
-                {documentPreviews.policeVerification && (
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-muted-foreground truncate max-w-[200px]">
-                      {documentFiles.policeVerification?.name}
-                    </span>
-                    <Button
-                      type="button"
-                      size="icon"
-                      variant="ghost"
-                      className="h-8 w-8 text-destructive"
-                      onClick={() => removeDocument('policeVerification')}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                )}
-              </div>
-            </Card>
-          </LocalTabsContent>
-        </LocalTabs>
-
-        <div className="flex justify-end gap-2 mt-6">
-          <Button
-            type="submit"
-            disabled={isSubmitting}
-            className="px-6"
-          >
-            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Create Trainer
-          </Button>
+        <div className="flex gap-2">
+          {activeTab !== 'documents' ? (
+            <Button type="button" onClick={() => {
+              const tabs = ['basic-info', 'professional', 'contact', 'credentials', 'documents'];
+              const currentIndex = tabs.indexOf(activeTab);
+              if (currentIndex < tabs.length - 1) {
+                setActiveTab(tabs[currentIndex + 1]);
+              }
+            }}>
+              Next
+            </Button>
+          ) : (
+            <Button 
+              type="submit" 
+              disabled={form.formState.isSubmitting || isUploading}
+            >
+              {form.formState.isSubmitting || isUploading ? 'Creating...' : 'Create Trainer'}
+            </Button>
+          )}
         </div>
-      </form>
-    </Form>
+      </div>
+    </form>
   );
 }

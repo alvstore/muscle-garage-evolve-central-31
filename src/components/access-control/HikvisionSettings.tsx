@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { 
   Card, CardHeader, CardTitle, CardDescription, 
@@ -11,7 +10,7 @@ import { useBranch } from '@/hooks/settings/use-branches';
 import { toast } from 'sonner';
 import { Loader2, Save, RefreshCw, CheckCircle } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
-import { supabase } from '@/services/api/supabaseClient';
+import { supabase } from '@/integrations/supabase/client';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface HikvisionSettingsProps {
@@ -25,6 +24,7 @@ interface HikvisionConfig {
   api_url: string;
   is_active: boolean;
   branch_id: string;
+  site_id?: string;
   devices: any[];
   created_at?: string;
   updated_at?: string;
@@ -40,6 +40,7 @@ const HikvisionSettings: React.FC<HikvisionSettingsProps> = ({ onUpdated }) => {
     api_url: 'https://open.hikvision.com',
     is_active: false,
     branch_id: '',
+    site_id: '',
     devices: []
   });
   const [isTesting, setIsTesting] = useState(false);
@@ -72,6 +73,7 @@ const HikvisionSettings: React.FC<HikvisionSettingsProps> = ({ onUpdated }) => {
             api_url: 'https://open.hikvision.com',
             is_active: false,
             branch_id: currentBranch.id,
+            site_id: '',
             devices: []
           });
         }
