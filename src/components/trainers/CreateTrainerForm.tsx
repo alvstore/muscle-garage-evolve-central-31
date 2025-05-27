@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
-import { useTrainers } from '@/hooks/classes/use-trainers';
+import { useTrainers } from '@/hooks/trainers/use-trainers';
 import { useUploadImage } from '@/hooks/utils/use-upload-image';
 import { useBranch } from '@/hooks/settings/use-branches';
 
