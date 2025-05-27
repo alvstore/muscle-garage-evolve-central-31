@@ -46,3 +46,5 @@ export interface Feedback {
   title: string;
   type: string;
 }
+
+export type FeedbackType = 'general' | 'trainer' | 'class' | 'fitness-plan';

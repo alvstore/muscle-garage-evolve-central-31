@@ -12,12 +12,12 @@ interface AuthContextType {
   isAuthenticated: boolean;
   role?: UserRole | null;
   // Authentication methods
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<{ success: boolean; error: any }>;
   logout: () => Promise<void>;
-  register: (email: string, password: string, userData: any) => Promise<void>;
-  forgotPassword: (email: string) => Promise<void>;
-  resetPassword: (email: string) => Promise<void>;
-  changePassword: (currentPassword: string, newPassword: string) => Promise<void>;
+  register: (email: string, password: string, userData: any) => Promise<{ success: boolean; error: any }>;
+  forgotPassword: (email: string) => Promise<{ success: boolean; error: any }>;
+  resetPassword: (email: string) => Promise<{ success: boolean; error: any }>;
+  changePassword: (currentPassword: string, newPassword: string) => Promise<{ success: boolean; error: any }>;
   // Alias methods for backward compatibility
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
@@ -208,9 +208,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (error) {
         throw error;
       }
+      return { success: true, error: null };
     } catch (error) {
       console.error("Reset password error:", error);
-      throw error;
+      return { success: false, error };
     } finally {
       setIsLoading(false);
     }
@@ -239,9 +240,24 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   // Alias methods for backward compatibility
-  const login = signIn;
+  const login = async (email: string, password: string) => {
+    try {
+      await signIn(email, password);
+      return { success: true, error: null };
+    } catch (error) {
+      return { success: false, error };
+    }
+  };
+
   const logout = signOut;
-  const register = signUp;
+  const register = async (email: string, password: string, userData: any) => {
+    try {
+      await signUp(email, password, userData);
+      return { success: true, error: null };
+    } catch (error) {
+      return { success: false, error };
+    }
+  };
   const forgotPassword = resetPassword;
   
   const changePassword = async (currentPassword: string, newPassword: string) => {
@@ -251,12 +267,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         password: newPassword
       });
       if (error) throw error;
-      setIsLoading(false);
-      return Promise.resolve();
+      return { success: true, error: null };
     } catch (error) {
       console.error('Error changing password:', error);
+      return { success: false, error };
+    } finally {
       setIsLoading(false);
-      return Promise.reject(error);
     }
   };
 

@@ -79,6 +79,7 @@ export interface FollowUpScheduled {
   created_at?: string;
   updated_at?: string;
   created_by?: string;
+  template_id?: string;
 }
 
 export interface FollowUpHistory {

@@ -26,9 +26,37 @@ export interface FinanceSummary {
   totalRevenue: number;
   totalExpenses: number;
   profit: number;
+  netIncome: number;
   revenueGrowth: number;
-  pendingInvoices: number;
+  pendingInvoices: Array<{
+    id: string;
+    memberName: string;
+    amount: number;
+    dueDate: string;
+  }>;
   pendingAmount: number;
+  monthlyRevenue: Array<{
+    month: string;
+    revenue: number;
+    expenses: number;
+    profit: number;
+  }>;
+  revenueByCategory: Array<{
+    category: string;
+    amount: number;
+  }>;
+  expensesByCategory: Array<{
+    category: string;
+    amount: number;
+  }>;
+  recentTransactions: Array<{
+    id: string;
+    type: string;
+    amount: number;
+    description: string;
+    date: string;
+    category: string;
+  }>;
 }
 
 export const useFinanceDashboard = (branchId?: string) => {
@@ -74,9 +102,40 @@ export const useFinanceDashboard = (branchId?: string) => {
         totalRevenue: 45000,
         totalExpenses: 25000,
         profit: 20000,
+        netIncome: 20000,
         revenueGrowth: 12.5,
-        pendingInvoices: 5,
-        pendingAmount: 7500
+        pendingInvoices: [
+          {
+            id: '1',
+            memberName: 'John Doe',
+            amount: 1500,
+            dueDate: new Date().toISOString()
+          }
+        ],
+        pendingAmount: 7500,
+        monthlyRevenue: [
+          { month: 'Jan', revenue: 40000, expenses: 22000, profit: 18000 },
+          { month: 'Feb', revenue: 42000, expenses: 23000, profit: 19000 },
+          { month: 'Mar', revenue: 45000, expenses: 25000, profit: 20000 }
+        ],
+        revenueByCategory: [
+          { category: 'Membership Fees', amount: 35000 },
+          { category: 'Personal Training', amount: 10000 }
+        ],
+        expensesByCategory: [
+          { category: 'Equipment', amount: 15000 },
+          { category: 'Utilities', amount: 10000 }
+        ],
+        recentTransactions: [
+          {
+            id: '1',
+            type: 'income',
+            amount: 1500,
+            description: 'Membership Fee - John Doe',
+            date: new Date().toISOString(),
+            category: 'Membership'
+          }
+        ]
       };
 
       setData(mockData);

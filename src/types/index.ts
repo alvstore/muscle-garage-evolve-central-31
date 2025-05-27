@@ -28,6 +28,18 @@ export interface Class {
   enrolled: number;
   status: string;
   branch_id: string;
+  location?: string;
+}
+
+export interface Branch {
+  id: string;
+  name: string;
+  address?: string;
+  phone?: string;
+  email?: string;
+  is_active: boolean;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface FollowUpTemplate {
@@ -38,3 +50,6 @@ export interface FollowUpTemplate {
   created_at?: string;
   created_by?: string;
 }
+
+// Re-export user types for compatibility
+export * from './auth/user';

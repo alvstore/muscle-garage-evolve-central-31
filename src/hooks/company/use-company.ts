@@ -16,6 +16,8 @@ export interface Company {
     qr_enabled: boolean;
     hikvision_enabled: boolean;
     device_config: any;
+    last_sync?: string;
+    sync_status?: string;
   };
 }
 
@@ -60,7 +62,9 @@ export const useCompany = () => {
         attendance_settings: {
           qr_enabled: true,
           hikvision_enabled: false,
-          device_config: {}
+          device_config: {},
+          last_sync: undefined,
+          sync_status: undefined
         }
       };
 

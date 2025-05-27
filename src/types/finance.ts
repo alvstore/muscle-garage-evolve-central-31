@@ -1,31 +1,36 @@
 
 export interface Invoice {
   id: string;
-  invoice_number: string;
+  invoice_number?: string;
   member_id: string;
   member_name?: string;
   amount: number;
   tax_amount?: number;
-  total_amount: number;
+  total_amount?: number;
   status: InvoiceStatus;
   due_date: string;
-  issued_date: string;
+  issued_date?: string;
+  payment_date?: string;
   items: InvoiceItem[];
   notes?: string;
-  branch_id: string;
-  created_at: string;
-  updated_at: string;
+  branch_id?: string;
+  created_at?: string;
+  updated_at?: string;
+  description?: string;
+  payment_method?: string;
 }
 
 export interface InvoiceItem {
   id: string;
   description: string;
   quantity: number;
-  unit_price: number;
+  unit_price?: number;
+  price?: number; // For backward compatibility
   total: number;
+  name?: string; // For backward compatibility
 }
 
-export type InvoiceStatus = 'draft' | 'sent' | 'paid' | 'overdue' | 'cancelled';
+export type InvoiceStatus = 'draft' | 'sent' | 'paid' | 'overdue' | 'cancelled' | 'pending';
 
 export interface FinancialTransaction {
   id: string;
