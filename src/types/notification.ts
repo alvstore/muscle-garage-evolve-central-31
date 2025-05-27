@@ -5,9 +5,11 @@ export interface Notification {
   message: string;
   type: 'info' | 'success' | 'warning' | 'error';
   read: boolean;
+  is_read: boolean;
   created_at: string;
   user_id?: string;
   branch_id?: string;
+  link?: string;
 }
 
 export interface Announcement {
@@ -31,4 +33,16 @@ export interface FeedbackSummary {
   member_id: string;
   branch_id: string;
   created_at: string;
+}
+
+export interface Feedback {
+  id: string;
+  rating: number;
+  category: string;
+  comment?: string;
+  member_id: string;
+  branch_id: string;
+  created_at: string;
+  title: string;
+  type: string;
 }

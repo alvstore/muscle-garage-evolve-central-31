@@ -20,6 +20,10 @@ export interface Lead {
   conversion_value?: number;
 }
 
+export type LeadSource = 'website' | 'social_media' | 'referral' | 'walk_in' | 'advertisement' | 'other';
+export type LeadStatus = 'new' | 'contacted' | 'qualified' | 'proposal' | 'negotiation' | 'closed_won' | 'closed_lost';
+export type FunnelStage = 'lead' | 'prospect' | 'opportunity' | 'customer';
+
 export interface FollowUpTemplate {
   id: string;
   name: string;
@@ -60,15 +64,18 @@ export interface AutomationRule {
   created_by?: string;
 }
 
-export type FollowUpType = 'email' | 'call' | 'meeting' | 'message' | 'other';
+export type FollowUpType = 'email' | 'call' | 'meeting' | 'message' | 'sms' | 'whatsapp' | 'other';
 
 export interface FollowUpScheduled {
   id: string;
   lead_id: string;
   type: FollowUpType;
   scheduled_at: string;
-  status: 'pending' | 'completed' | 'cancelled' | 'snoozed';
+  status: 'pending' | 'completed' | 'cancelled' | 'snoozed' | 'scheduled';
   notes?: string;
+  subject?: string;
+  content?: string;
+  leads?: any;
   created_at?: string;
   updated_at?: string;
   created_by?: string;
@@ -79,8 +86,9 @@ export interface FollowUpHistory {
   lead_id: string;
   type: FollowUpType;
   content: string;
-  status: 'sent' | 'delivered' | 'read' | 'failed';
+  status: 'sent' | 'delivered' | 'read' | 'failed' | 'scheduled' | 'completed';
   sent_at: string;
+  scheduled_at?: string;
   sent_by?: string;
   response?: string;
   response_at?: string;

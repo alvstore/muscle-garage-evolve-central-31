@@ -12,6 +12,11 @@ export interface Company {
   email?: string;
   website?: string;
   branches: Branch[];
+  attendance_settings?: {
+    qr_enabled: boolean;
+    hikvision_enabled: boolean;
+    device_config: any;
+  };
 }
 
 export interface Branch {
@@ -51,7 +56,12 @@ export const useCompany = () => {
         id: '1',
         name: 'Muscle Garage',
         email: 'info@musclegarage.com',
-        branches: branches || []
+        branches: branches || [],
+        attendance_settings: {
+          qr_enabled: true,
+          hikvision_enabled: false,
+          device_config: {}
+        }
       };
 
       setCompany(mockCompany);
@@ -63,10 +73,20 @@ export const useCompany = () => {
     }
   };
 
+  const updateCompany = async (updates: Partial<Company>) => {
+    try {
+      setCompany(prev => prev ? { ...prev, ...updates } : null);
+    } catch (err) {
+      console.error('Error updating company:', err);
+      setError(err instanceof Error ? err.message : 'Unknown error');
+    }
+  };
+
   return {
     company,
     isLoading,
     error,
-    refetch: fetchCompany
+    refetch: fetchCompany,
+    updateCompany
   };
 };

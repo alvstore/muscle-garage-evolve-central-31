@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Menu, Bell, X, Moon, Sun, ChevronDown, Search, CalendarDays } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -29,9 +28,10 @@ const mockNotifications = [
     title: 'New Member Joined',
     message: 'John Doe has just registered as a new member.',
     read: false,
+    is_read: false,
     created_at: new Date().toISOString(),
     user_id: 'system',
-    type: 'info',
+    type: 'info' as const,
     timestamp: new Date().toISOString()
   },
   {
@@ -39,9 +39,10 @@ const mockNotifications = [
     title: 'Membership Expiring Soon',
     message: 'Your membership will expire in 3 days. Please renew to continue access.',
     read: false,
+    is_read: false,
     created_at: new Date().toISOString(),
     user_id: 'system',
-    type: 'warning',
+    type: 'warning' as const,
     timestamp: new Date().toISOString()
   }
 ];
@@ -68,7 +69,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [notifications] = React.useState<Notification[]>(adaptedNotifications);
-  const [unreadCount, setUnreadCount] = useState(notifications.filter(n => !n.is_read).length);
+  const [unreadCount, setUnreadCount] = useState(notifications.filter(n => !n.read).length);
   
   const handleLogout = async () => {
     try {

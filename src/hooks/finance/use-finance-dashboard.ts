@@ -22,8 +22,18 @@ export interface FinanceDashboardData {
   }>;
 }
 
+export interface FinanceSummary {
+  totalRevenue: number;
+  totalExpenses: number;
+  profit: number;
+  revenueGrowth: number;
+  pendingInvoices: number;
+  pendingAmount: number;
+}
+
 export const useFinanceDashboard = (branchId?: string) => {
   const [data, setData] = useState<FinanceDashboardData | null>(null);
+  const [financeSummary, setFinanceSummary] = useState<FinanceSummary | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -60,7 +70,17 @@ export const useFinanceDashboard = (branchId?: string) => {
         ]
       };
 
+      const mockSummary: FinanceSummary = {
+        totalRevenue: 45000,
+        totalExpenses: 25000,
+        profit: 20000,
+        revenueGrowth: 12.5,
+        pendingInvoices: 5,
+        pendingAmount: 7500
+      };
+
       setData(mockData);
+      setFinanceSummary(mockSummary);
     } catch (err) {
       console.error('Error fetching finance data:', err);
       setError(err instanceof Error ? err.message : 'Unknown error');
@@ -69,10 +89,16 @@ export const useFinanceDashboard = (branchId?: string) => {
     }
   };
 
+  const refreshData = async () => {
+    await fetchFinanceData();
+  };
+
   return {
     data,
+    financeSummary,
     isLoading,
     error,
-    refetch: fetchFinanceData
+    refetch: fetchFinanceData,
+    refreshData
   };
 };

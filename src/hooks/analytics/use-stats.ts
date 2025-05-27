@@ -3,6 +3,11 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
+export interface DateRange {
+  from: Date;
+  to: Date;
+}
+
 export interface AnalyticsData {
   totalMembers: number;
   activeMembers: number;
