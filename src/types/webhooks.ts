@@ -12,6 +12,10 @@ export interface RazorpayWebhook {
       entity: RazorpaySubscription;
     };
   };
+  status?: 'success' | 'failed' | 'pending';
+  error?: string;
+  eventType?: RazorpayEventType;
+  createdAt?: number;
 }
 
 export type RazorpayEventType = 

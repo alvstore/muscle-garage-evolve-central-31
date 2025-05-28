@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import React from 'react';
 import {
   Navbar,
@@ -15,10 +16,34 @@ import {
 import { useAuth } from '@/hooks/auth/use-auth';
 import { useNavigate } from 'react-router-dom';
 import { siteConfig } from "@/configs/site";
+=======
+>>>>>>> 6fca2a270a91243c7869e83799bb7db479b7b9fd
 
-const DashboardNavbar = () => {
-  const { user, logout } = useAuth();
+import React from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '@/hooks/auth/use-auth';
+import { siteConfig } from "@/config/site";
+import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Menu, X, User } from 'lucide-react';
+
+interface DashboardNavbarProps {
+  user?: any;
+  onToggleSidebar?: () => void;
+}
+
+const DashboardNavbar: React.FC<DashboardNavbarProps> = ({ user, onToggleSidebar }) => {
+  const { user: authUser, logout } = useAuth();
   const navigate = useNavigate();
+  const currentUser = user || authUser;
 
   const handleLogout = async () => {
     try {
@@ -30,77 +55,110 @@ const DashboardNavbar = () => {
   };
 
   return (
-    <Navbar shouldHideOnScroll className="bg-background border-b border-border">
-      <NavbarBrand>
-        <Link href="/dashboard">
-          <p className="font-bold text-xl">{siteConfig.name}</p>
-        </Link>
-      </NavbarBrand>
-      <NavbarContent className="hidden sm:flex gap-4" justify="center">
-        <NavbarItem>
-          <Link color="foreground" href="/dashboard">
+    <nav className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-3">
+      <div className="flex justify-between items-center">
+        {/* Left side - Logo and menu toggle */}
+        <div className="flex items-center space-x-4">
+          {onToggleSidebar && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onToggleSidebar}
+              className="lg:hidden"
+            >
+              <Menu className="h-5 w-5" />
+            </Button>
+          )}
+          
+          <Link to="/dashboard" className="flex items-center">
+            <span className="font-bold text-xl text-primary">
+              {siteConfig?.name || 'Gym Management'}
+            </span>
+          </Link>
+        </div>
+
+        {/* Center - Navigation Links (hidden on mobile) */}
+        <div className="hidden md:flex items-center space-x-6">
+          <Link 
+            to="/dashboard" 
+            className="text-gray-600 hover:text-primary transition-colors"
+          >
             Dashboard
           </Link>
-        </NavbarItem>
-        <NavbarItem>
-          <Link color="foreground" href="/members">
+          <Link 
+            to="/members" 
+            className="text-gray-600 hover:text-primary transition-colors"
+          >
             Members
           </Link>
-        </NavbarItem>
-        <NavbarItem>
-          <Link color="foreground" href="/classes">
+          <Link 
+            to="/classes" 
+            className="text-gray-600 hover:text-primary transition-colors"
+          >
             Classes
           </Link>
-        </NavbarItem>
-        <NavbarItem>
-          <Link color="foreground" href="/finances">
+          <Link 
+            to="/finances" 
+            className="text-gray-600 hover:text-primary transition-colors"
+          >
             Finances
           </Link>
-        </NavbarItem>
-        <NavbarItem>
-          <Link color="foreground" href="/crm">
+          <Link 
+            to="/crm" 
+            className="text-gray-600 hover:text-primary transition-colors"
+          >
             CRM
           </Link>
-        </NavbarItem>
-        <NavbarItem>
-          <Link color="foreground" href="/settings">
+          <Link 
+            to="/settings" 
+            className="text-gray-600 hover:text-primary transition-colors"
+          >
             Settings
           </Link>
-        </NavbarItem>
-      </NavbarContent>
-      <NavbarContent justify="end">
-        {user ? (
-          <Dropdown placement="bottom-end">
-            <DropdownTrigger>
-              <User
-                as="button"
-                className="transition-opacity hover:opacity-80"
-                avatarProps={{
-                  src: user.avatar || "https://i.pravatar.cc/150?u=" + user.email,
-                }}
-                name={user.full_name || user.name || user.email}
-                description={user.email}
-              />
-            </DropdownTrigger>
-            <DropdownMenu aria-label="User menu actions">
-              <DropdownItem key="profile" className="h-14 gap-2">
-                <p className="font-semibold">Signed in as</p>
-                <p className="text-sm text-default-400">{user.email}</p>
-              </DropdownItem>
-              <DropdownItem key="logout" onClick={handleLogout}>
-                Log out
-              </DropdownItem>
+        </div>
+
+        {/* Right side - User menu */}
+        <div className="flex items-center">
+          {currentUser ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage 
+                      src={currentUser.avatar || `https://i.pravatar.cc/150?u=${currentUser.email}`} 
+                      alt={currentUser.full_name || currentUser.name || currentUser.email}
+                    />
+                    <AvatarFallback>
+                      <User className="h-4 w-4" />
+                    </AvatarFallback>
+                  </Avatar>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-56" align="end" forceMount>
+                <DropdownMenuLabel className="font-normal">
+                  <div className="flex flex-col space-y-1">
+                    <p className="text-sm font-medium leading-none">
+                      {currentUser.full_name || currentUser.name || 'User'}
+                    </p>
+                    <p className="text-xs leading-none text-muted-foreground">
+                      {currentUser.email}
+                    </p>
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleLogout}>
+                  Log out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
             </DropdownMenu>
-          </Dropdown>
-        ) : (
-          <NavbarItem>
-            <Button as={Link} className="font-medium" href="/login" color="primary">
-              Login
+          ) : (
+            <Button asChild>
+              <Link to="/login">Login</Link>
             </Button>
-          </NavbarItem>
-        )}
-      </NavbarContent>
-    </Navbar>
+          )}
+        </div>
+      </div>
+    </nav>
   );
 };
 

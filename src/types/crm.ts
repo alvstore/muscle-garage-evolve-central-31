@@ -1,11 +1,13 @@
+
 export interface Lead {
   id: string;
   name: string;
   email: string;
   phone?: string;
-  source: string; // Make source required to match usage
+  source: string;
   status: 'new' | 'contacted' | 'qualified' | 'proposal' | 'negotiation' | 'closed-won' | 'closed-lost';
   stage?: string;
+  funnel_stage?: 'lead' | 'prospect' | 'opportunity' | 'customer';
   priority?: 'low' | 'medium' | 'high';
   assigned_to?: string;
   notes?: string;

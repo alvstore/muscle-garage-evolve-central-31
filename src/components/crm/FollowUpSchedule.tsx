@@ -1,10 +1,9 @@
-
-import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Calendar, Clock, MessageCircle, Phone, RefreshCw, Trash2, Loader2, Mail } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { FollowUpType, FollowUpScheduled } from '@/types/crm';
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Calendar, Clock, User, Phone, Mail } from 'lucide-react';
+import { Lead, FollowUpScheduled } from '@/types/crm';
 import { Skeleton } from '@/components/ui/skeleton';
 import { followUpService } from '@/services/followUpService';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -37,10 +36,10 @@ const convertToScheduledFollowUp = (item: any): FollowUpScheduled => {
 };
 
 interface FollowUpScheduleProps {
-  isLoading?: boolean;
+  leadId?: string;
 }
 
-const FollowUpSchedule: React.FC<FollowUpScheduleProps> = ({ isLoading: propIsLoading = false }) => {
+const FollowUpSchedule: React.FC<FollowUpScheduleProps> = ({ leadId }) => {
   const { currentBranch } = useBranch();
   const queryClient = useQueryClient();
   const [filter, setFilter] = useState<'all' | 'today' | 'upcoming'>('all');
@@ -122,122 +121,83 @@ const FollowUpSchedule: React.FC<FollowUpScheduleProps> = ({ isLoading: propIsLo
   };
 
   return (
-    <Card>
-      <CardHeader className="pb-3">
-        <div className="flex justify-between items-center">
+    <div className="space-y-4">
+      <Card>
+        <CardHeader>
           <CardTitle>Scheduled Follow-ups</CardTitle>
-          <div className="flex gap-2">
-            <div className="flex rounded-md border overflow-hidden">
-              <Button 
-                variant={filter === 'all' ? 'default' : 'ghost'} 
-                size="sm"
-                onClick={() => setFilter('all')}
-                className="rounded-none"
-              >
-                All
-              </Button>
-              <Button 
-                variant={filter === 'today' ? 'default' : 'ghost'} 
-                size="sm"
-                onClick={() => setFilter('today')}
-                className="rounded-none"
-              >
-                Today
-              </Button>
-              <Button 
-                variant={filter === 'upcoming' ? 'default' : 'ghost'} 
-                size="sm"
-                onClick={() => setFilter('upcoming')}
-                className="rounded-none"
-              >
-                Upcoming
-              </Button>
+          <CardDescription>
+            Manage your upcoming follow-up activities
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div className="space-y-4">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="flex items-start space-x-4">
+                  <Skeleton className="h-12 w-12 rounded-full" />
+                  <div className="space-y-2 flex-1">
+                    <Skeleton className="h-4 w-3/4" />
+                    <Skeleton className="h-4 w-1/2" />
+                  </div>
+                </div>
+              ))}
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              className="flex items-center gap-1"
-              onClick={() => refetch()}
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <RefreshCw className="h-4 w-4" />
-              )}
-              <span>Refresh</span>
-            </Button>
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent>
-        {isLoading ? (
-          <div className="space-y-4">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="flex items-start space-x-4">
-                <Skeleton className="h-12 w-12 rounded-full" />
-                <div className="space-y-2 flex-1">
-                  <Skeleton className="h-4 w-3/4" />
-                  <Skeleton className="h-4 w-1/2" />
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : scheduledFollowUps.length === 0 ? (
-          <div className="text-center py-6">
-            <MessageCircle className="h-12 w-12 mx-auto text-gray-400" />
-            <h3 className="mt-2 text-lg font-medium">No scheduled follow-ups</h3>
-            <p className="text-sm text-gray-500 mt-1">Create a follow-up task to get started</p>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {scheduledFollowUps.map((followUp) => (
-              <div key={followUp.id} className="border rounded-lg p-4 hover:bg-gray-50 transition-colors">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <div className="font-medium">{followUp.subject}</div>
-                    <div className="text-sm text-muted-foreground">For: {followUp.lead_id}</div>
+          ) : scheduledFollowUps.length === 0 ? (
+            <div className="text-center py-6">
+              <MessageCircle className="h-12 w-12 mx-auto text-gray-400" />
+              <h3 className="mt-2 text-lg font-medium">No scheduled follow-ups</h3>
+              <p className="text-sm text-gray-500 mt-1">Create a follow-up task to get started</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {scheduledFollowUps.map((followUp) => (
+                <div key={followUp.id} className="border rounded-lg p-4 hover:bg-gray-50 transition-colors">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <div className="font-medium">{followUp.subject}</div>
+                      <div className="text-sm text-muted-foreground">For: {followUp.lead_id}</div>
+                    </div>
+                    <div className="flex space-x-1">
+                      {getTypeBadge(followUp.type)}
+                      {followUp.status === "completed" && (
+                        <Badge variant="secondary">Completed</Badge>
+                      )}
+                    </div>
                   </div>
-                  <div className="flex space-x-1">
-                    {getTypeBadge(followUp.type)}
-                    {followUp.status === "completed" && (
-                      <Badge variant="secondary">Completed</Badge>
-                    )}
+                  <div className="mt-2">
+                    <div className="text-sm text-muted-foreground line-clamp-2">{followUp.content}</div>
                   </div>
-                </div>
-                <div className="mt-2">
-                  <div className="text-sm text-muted-foreground line-clamp-2">{followUp.content}</div>
-                </div>
-                <div className="mt-3 flex justify-between items-center">
-                  <div className="flex items-center text-sm text-muted-foreground">
-                    <Calendar className="h-4 w-4 mr-1" />
-                    <span>{formatDate(followUp.scheduled_at)}</span>
-                    <Clock className="h-4 w-4 ml-3 mr-1" />
-                    <span>{formatTime(followUp.scheduled_at)}</span>
-                  </div>
-                  <div className="flex space-x-2">
-                    {followUp.type === "call" && (
-                      <Button size="sm" variant="outline">
-                        <Phone className="h-4 w-4 mr-1" />
-                        Call
+                  <div className="mt-3 flex justify-between items-center">
+                    <div className="flex items-center text-sm text-muted-foreground">
+                      <Calendar className="h-4 w-4 mr-1" />
+                      <span>{formatDate(followUp.scheduled_at)}</span>
+                      <Clock className="h-4 w-4 ml-3 mr-1" />
+                      <span>{formatTime(followUp.scheduled_at)}</span>
+                    </div>
+                    <div className="flex space-x-2">
+                      {followUp.type === "call" && (
+                        <Button size="sm" variant="outline">
+                          <Phone className="h-4 w-4 mr-1" />
+                          Call
+                        </Button>
+                      )}
+                      <Button 
+                        size="sm" 
+                        variant="ghost" 
+                        className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                        onClick={() => handleDelete(followUp.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
                       </Button>
-                    )}
-                    <Button 
-                      size="sm" 
-                      variant="ghost" 
-                      className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                      onClick={() => handleDelete(followUp.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </CardContent>
-    </Card>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 
