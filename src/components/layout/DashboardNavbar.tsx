@@ -1,24 +1,3 @@
-<<<<<<< HEAD
-import React from 'react';
-import {
-  Navbar,
-  NavbarBrand,
-  NavbarContent,
-  NavbarItem,
-  Link,
-  Button,
-  User,
-  Dropdown,
-  DropdownTrigger,
-  DropdownMenu,
-  DropdownItem,
-} from "@heroui/react";
-import { useAuth } from '@/hooks/auth/use-auth';
-import { useNavigate } from 'react-router-dom';
-import { siteConfig } from "@/configs/site";
-=======
->>>>>>> 6fca2a270a91243c7869e83799bb7db479b7b9fd
-
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/auth/use-auth';

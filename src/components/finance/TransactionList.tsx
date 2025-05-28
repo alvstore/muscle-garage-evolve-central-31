@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Search, Filter, Download } from 'lucide-react';
-import { financeService } from '@/services/financeService';
+import { financeService } from '@/services/finance/financeService';
 
 interface TransactionListProps {
   branchId?: string;
