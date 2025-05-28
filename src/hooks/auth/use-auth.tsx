@@ -37,27 +37,39 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // Check current auth state
     const checkAuth = async () => {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
+        // First try to get the session
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        
+        if (sessionError) throw sessionError;
+        
+        if (session?.user) {
           // Fetch profile data
-          const { data: profile } = await supabase
+          const { data: profile, error: profileError } = await supabase
             .from('profiles')
             .select('*')
-            .eq('id', user.id)
+            .eq('id', session.user.id)
             .single();
 
+          if (profileError) {
+            console.error('Profile fetch error:', profileError);
+            return;
+          }
+
           setUser({
-            id: user.id,
-            email: user.email || '',
-            name: user.user_metadata?.full_name || user.email,
-            full_name: user.user_metadata?.full_name || profile?.full_name,
-            avatar: user.user_metadata?.avatar_url,
+            id: session.user.id,
+            email: session.user.email || '',
+            name: session.user.user_metadata?.full_name || session.user.email,
+            full_name: session.user.user_metadata?.full_name || profile?.full_name,
+            avatar: session.user.user_metadata?.avatar_url,
             role: profile?.role || 'member',
             branch_id: profile?.branch_id
           });
         }
       } catch (error) {
         console.error('Auth check error:', error);
+        // Clear any invalid session
+        await supabase.auth.signOut();
+        setUser(null);
       } finally {
         setIsLoading(false);
       }
@@ -101,14 +113,50 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
+      }, {
+        // Ensure we get a session
+        shouldCreateUser: false,
       });
 
       if (error) throw error;
+      
+      // Force a session refresh
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError) throw sessionError;
+      
+      if (!session) {
+        throw new Error('No session after login');
+      }
+      
+      // Fetch profile data
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', session.user.id)
+        .single();
+
+      if (profileError) throw profileError;
+      
+      setUser({
+        id: session.user.id,
+        email: session.user.email || '',
+        name: session.user.user_metadata?.full_name || session.user.email,
+        full_name: session.user.user_metadata?.full_name || profile?.full_name,
+        avatar: session.user.user_metadata?.avatar_url,
+        role: profile?.role || 'member',
+        branch_id: profile?.branch_id
+      });
 
       return { success: true, error: null };
     } catch (error) {
       console.error('Login error:', error);
-      return { success: false, error };
+      // Clear any partial session on error
+      await supabase.auth.signOut();
+      setUser(null);
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Login failed' 
+      };
     } finally {
       setIsLoading(false);
     }
