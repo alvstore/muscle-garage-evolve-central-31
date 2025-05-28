@@ -1,23 +1,59 @@
 
-export interface WebhookLog {
+export interface RazorpayWebhook {
   id: string;
-  event_type: string;
-  payload: any;
-  status: 'success' | 'failed' | 'pending';
-  response_code?: number;
-  response_body?: string;
-  error_message?: string;
-  processed_at?: string;
-  created_at: string;
-  source: string;
+  entity: string;
+  event: RazorpayEventType;
+  created_at: number;
+  payload: {
+    payment?: {
+      entity: RazorpayPayment;
+    };
+    subscription?: {
+      entity: RazorpaySubscription;
+    };
+  };
 }
 
-export interface WebhookConfig {
+export type RazorpayEventType = 
+  | 'payment.captured'
+  | 'payment.failed'
+  | 'payment.authorized'
+  | 'subscription.charged'
+  | 'subscription.completed'
+  | 'subscription.cancelled'
+  | 'subscription.activated'
+  | 'subscription.updated';
+
+export interface RazorpayPayment {
   id: string;
-  name: string;
-  url: string;
-  events: string[];
-  is_active: boolean;
-  secret_key?: string;
-  branch_id: string;
+  entity: string;
+  amount: number;
+  currency: string;
+  status: string;
+  order_id: string;
+  method: string;
+  created_at: number;
+  email?: string;
+  contact?: string;
+}
+
+export interface RazorpaySubscription {
+  id: string;
+  entity: string;
+  plan_id: string;
+  customer_id: string;
+  status: string;
+  current_start?: number;
+  current_end?: number;
+  created_at: number;
+}
+
+export interface WebhookLog {
+  id: string;
+  event_type: RazorpayEventType;
+  payload: any;
+  status: 'success' | 'failed' | 'pending';
+  processed_at?: string;
+  error_message?: string;
+  created_at: string;
 }

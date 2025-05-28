@@ -1,9 +1,8 @@
-
 export interface Invoice {
   id: string;
   invoice_number?: string;
   member_id: string;
-  member_name?: string;
+  member_name?: string; // Add this for backward compatibility
   amount: number;
   tax_amount?: number;
   total_amount?: number;
@@ -18,6 +17,7 @@ export interface Invoice {
   updated_at?: string;
   description?: string;
   payment_method?: string;
+  membership_plan_id?: string; // Add this field
 }
 
 export interface InvoiceItem {
@@ -32,7 +32,7 @@ export interface InvoiceItem {
 
 export type InvoiceStatus = 'draft' | 'sent' | 'paid' | 'overdue' | 'cancelled' | 'pending';
 
-export interface FinancialTransaction {
+export interface Transaction {
   id: string;
   type: TransactionType;
   amount: number;
@@ -47,8 +47,11 @@ export interface FinancialTransaction {
   transaction_date?: string;
   date?: string;
   category?: string;
+  category_id?: string;
   is_recurring?: boolean;
   recurring_period?: RecurringPeriod;
+  recorded_by?: string;
+  status?: string;
 }
 
 export type TransactionType = 'income' | 'expense' | 'refund' | 'fee';

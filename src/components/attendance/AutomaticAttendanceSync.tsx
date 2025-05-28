@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -32,20 +33,19 @@ const AutomaticAttendanceSync: React.FC = () => {
         password: '',
       });
       setLastSync(company.attendance_settings.last_sync ? new Date(company.attendance_settings.last_sync) : null);
-      setSyncStatus(company.attendance_settings.sync_status || null);
+      setSyncStatus(company.attendance_settings.sync_status as 'success' | 'failed' || null);
     }
     setIsLoading(false);
   }, [company]);
 
   const syncAttendance = async () => {
-    // Placeholder for actual sync logic
-    return new Promise((resolve, reject) => {
+    return new Promise<void>((resolve, reject) => {
       setTimeout(() => {
         const success = Math.random() > 0.5;
         if (success) {
           setLastSync(new Date());
           setSyncStatus('success');
-          resolve(true);
+          resolve();
         } else {
           setSyncStatus('failed');
           reject(new Error('Sync failed'));
@@ -76,6 +76,7 @@ const AutomaticAttendanceSync: React.FC = () => {
     try {
       await updateCompany({
         attendance_settings: {
+          qr_enabled: true, // Add missing required property
           hikvision_enabled: isHikvisionEnabled,
           device_config: hikvisionConfig,
           last_sync: lastSync?.toISOString(),
@@ -96,6 +97,9 @@ const AutomaticAttendanceSync: React.FC = () => {
     try {
       await updateCompany({
         attendance_settings: {
+          qr_enabled: true, // Add missing required property
+          hikvision_enabled: isHikvisionEnabled,
+          device_config: hikvisionConfig,
           last_sync: null,
           sync_status: null,
         }

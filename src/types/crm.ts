@@ -1,27 +1,33 @@
-
 export interface Lead {
   id: string;
   name: string;
-  email?: string;
+  email: string;
   phone?: string;
-  source: string;
-  status: string;
-  funnel_stage: string;
-  notes?: string;
+  source: string; // Make source required to match usage
+  status: 'new' | 'contacted' | 'qualified' | 'proposal' | 'negotiation' | 'closed-won' | 'closed-lost';
+  stage?: string;
+  priority?: 'low' | 'medium' | 'high';
   assigned_to?: string;
-  branch_id?: string;
-  created_at?: string;
-  updated_at?: string;
-  tags?: string[];
-  interests?: string[];
-  last_contact_date?: string;
+  notes?: string;
   follow_up_date?: string;
+  last_contact_date?: string;
   conversion_date?: string;
   conversion_value?: number;
+  created_at: string;
+  updated_at: string;
+  branch_id?: string;
+  lead_score?: number;
+  interests?: string[];
+  budget_range?: string;
+  timeline?: string;
+  decision_maker?: boolean;
+  company?: string;
+  job_title?: string;
+  tags?: string[];
 }
 
 export type LeadSource = 'website' | 'social_media' | 'referral' | 'walk_in' | 'advertisement' | 'other';
-export type LeadStatus = 'new' | 'contacted' | 'qualified' | 'proposal' | 'negotiation' | 'closed_won' | 'closed_lost';
+export type LeadStatus = 'new' | 'contacted' | 'qualified' | 'proposal' | 'negotiation' | 'closed-won' | 'closed-lost';
 export type FunnelStage = 'lead' | 'prospect' | 'opportunity' | 'customer';
 
 export interface FollowUpTemplate {

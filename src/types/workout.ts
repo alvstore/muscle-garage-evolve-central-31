@@ -4,48 +4,42 @@ export interface WorkoutPlan {
   name: string;
   description?: string;
   trainer_id: string;
-  trainerId?: string; // For backward compatibility
   member_id?: string;
-  memberId?: string; // For backward compatibility
-  is_custom?: boolean;
-  isCustom?: boolean; // For backward compatibility
-  is_global?: boolean;
-  isGlobal?: boolean; // For backward compatibility
-  difficulty?: string;
-  created_at?: string;
-  createdAt?: string; // For backward compatibility
-  updated_at?: string;
-  updatedAt?: string; // For backward compatibility
+  is_global: boolean;
+  is_custom: boolean;
+  goal?: string;
+  duration_weeks?: number;
+  difficulty_level?: string;
   notes?: string;
-  target_goals?: string[]; // For compatibility with WorkoutPlanForm
-  workout_days?: WorkoutDay[]; // Ensure this field exists
-  workoutDays?: WorkoutDay[]; // For backward compatibility
+  created_at: string;
+  updated_at: string;
+  workout_days?: WorkoutDay[];
 }
 
 export interface WorkoutDay {
   id: string;
+  workout_plan_id: string;
+  day_number: number;
   name: string;
   description?: string;
-  workout_plan_id: string;
-  day_label?: string;
-  notes?: string;
-  created_at?: string;
-  updated_at?: string;
+  rest_day: boolean;
   exercises?: Exercise[];
+  created_at: string;
+  updated_at: string;
 }
 
 export interface Exercise {
   id: string;
-  name: string;
   workout_day_id: string;
+  name: string;
   sets: number;
   reps: number;
   weight?: number;
   rest?: number;
   rest_time?: string;
   notes?: string;
-  muscle_group_tag?: string;
   media_url?: string;
-  created_at?: string;
-  updated_at?: string;
+  muscle_group_tag?: string;
+  created_at: string;
+  updated_at: string;
 }

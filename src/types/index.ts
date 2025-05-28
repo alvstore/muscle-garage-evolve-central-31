@@ -1,10 +1,13 @@
-
 // Main types export file
 export * from './notification';
 export * from './crm';
 export * from './finance';
 export * from './permissions';
 export * from './webhooks';
+export * from './invoice';
+export * from './measurements';
+export * from './workout';
+export * from './diet';
 
 // Basic types
 export interface Member {
@@ -15,6 +18,13 @@ export interface Member {
   membership_status: string;
   created_at: string;
   branch_id: string;
+  first_name?: string;
+  last_name?: string;
+  status?: string;
+  membership_id?: string;
+  membership_start_date?: string;
+  membership_end_date?: string;
+  role?: string;
 }
 
 export interface Class {
