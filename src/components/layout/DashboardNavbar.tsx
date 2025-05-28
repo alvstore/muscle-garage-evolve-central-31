@@ -11,10 +11,10 @@ import {
   DropdownTrigger,
   DropdownMenu,
   DropdownItem,
-} from "@nextui-org/react";
+} from "@heroui/react";
 import { useAuth } from '@/hooks/auth/use-auth';
 import { useNavigate } from 'react-router-dom';
-import { siteConfig } from "@/config/site";
+import { siteConfig } from "@/configs/site";
 
 const DashboardNavbar = () => {
   const { user, logout } = useAuth();

@@ -12,20 +12,38 @@ const requiredBuckets = [
   'workouts'
 ];
 
-// Function to check if bucket exists
-const bucketExists = async (name: string): Promise<boolean> => {
+// Function to check if bucket exists and is accessible
+const bucketExists = async (name: string): Promise<{ exists: boolean; error?: string }> => {
   try {
-    // Instead of checking bucket metadata (which requires admin privileges),
-    // just try to list files in the bucket which only requires anon access
+    // Try to list files in the bucket (with minimal data transfer)
     const { data, error } = await supabase
       .storage
       .from(name)
-      .list();
+      .list('', { limit: 1, offset: 0 });
     
-    // If we can list files (even if empty), the bucket exists and is accessible
-    return !error;
+    if (error) {
+      // Check if the error is specifically about the bucket not existing
+      if (error.message?.includes('Bucket not found') || error.message?.includes('not found')) {
+        return { exists: false, error: 'Bucket does not exist' };
+      }
+      // For permission errors
+      if (error.message?.includes('permission denied') || error.message?.includes('not authorized')) {
+        return { 
+          exists: false, 
+          error: 'Permission denied. Please check your storage permissions.' 
+        };
+      }
+      return { exists: false, error: error.message || 'Unknown error' };
+    }
+    
+    // If we get here, the bucket exists and is accessible
+    return { exists: true };
   } catch (error) {
-    return false;
+    console.error(`Error checking bucket ${name}:`, error);
+    return { 
+      exists: false, 
+      error: error instanceof Error ? error.message : 'Unknown error occurred' 
+    };
   }
 };
 
@@ -59,24 +77,44 @@ const getBucketMetadata = async (name: string) => {
 export const ensureStorageBucketsExist = async (): Promise<void> => {
   try {
     // Check if user is authenticated
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
     
-    if (!user) {
+    if (authError || !user) {
+      console.log('User not authenticated, skipping bucket check');
       return;
     }
     
-    // Check if buckets exist without trying to create them
-    for (const bucket of requiredBuckets) {
-      const exists = await bucketExists(bucket);
-      if (!exists) {
-        toast(`Storage bucket ${bucket} not accessible. Contact administrator.`, {
-          description: "Some file upload features may not work correctly.",
-          duration: 5000,
-        });
-      }
+    // Check if buckets are accessible
+    const results = await Promise.all(
+      requiredBuckets.map(async (bucket) => {
+        const { exists, error } = await bucketExists(bucket);
+        return { bucket, exists, error };
+      })
+    );
+    
+    // Show warnings for any inaccessible buckets
+    const inaccessibleBuckets = results.filter(r => !r.exists);
+    if (inaccessibleBuckets.length > 0) {
+      console.warn('Some storage buckets are not accessible:', inaccessibleBuckets);
+      
+      // Show a single toast for all inaccessible buckets
+      const bucketList = inaccessibleBuckets.map(b => b.bucket).join(', ');
+      const errorMessage = inaccessibleBuckets[0].error || 'Bucket not accessible';
+      
+      toast.warning({
+        title: `Storage buckets not accessible: ${bucketList}`,
+        description: errorMessage
+      });
+      
+      // Log detailed errors for debugging
+      inaccessibleBuckets.forEach(({ bucket, error }) => {
+        console.error(`Bucket ${bucket} error:`, error);
+      });
     }
   } catch (error) {
-    // Error handled by toast notifications
+    console.error('Error in ensureStorageBucketsExist:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    toast.error(`Error checking storage buckets: ${errorMessage}`);
   }
 };
 

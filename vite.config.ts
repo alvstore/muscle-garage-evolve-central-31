@@ -10,7 +10,7 @@ export default defineConfig(({ mode }) => {
   return {
     server: {
       host: "::",
-      port: 8080,
+      port: 8000,
       proxy: {
         '/api/proxy/hikvision': {
           target: 'http://localhost:54321/functions/v1/hikvision-proxy',
@@ -21,7 +21,7 @@ export default defineConfig(({ mode }) => {
       // Enable HMR with explicit host for WSL or remote connections
       hmr: {
         host: 'localhost',
-        port: 8080,
+        port: 8000,
       },
     },
     plugins: [

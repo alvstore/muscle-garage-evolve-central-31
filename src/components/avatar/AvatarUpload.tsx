@@ -1,128 +1,86 @@
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
+import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Upload, X } from 'lucide-react';
-import { toast } from 'sonner';
 
 interface AvatarUploadProps {
-  initialImage?: string;
-  initialImageUrl?: string;
-  onImageChange?: (file: File | null) => void;
-  onImageUploaded?: (url: string) => void;
-  size?: 'sm' | 'md' | 'lg' | 'xl';
+  currentAvatar?: string;
+  onAvatarChange: (file: File | null) => void;
   disabled?: boolean;
-  name?: string;
 }
 
 const AvatarUpload: React.FC<AvatarUploadProps> = ({
-  initialImage,
-  initialImageUrl,
-  onImageChange,
-  onImageUploaded,
-  size = 'md',
-  disabled = false,
-  name = ''
+  currentAvatar,
+  onAvatarChange,
+  disabled = false
 }) => {
-  const [previewUrl, setPreviewUrl] = useState<string | null>(initialImage || initialImageUrl || null);
-  const [isUploading, setIsUploading] = useState(false);
+  const [preview, setPreview] = useState<string>(currentAvatar || '');
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const sizeClasses = {
-    sm: 'h-16 w-16',
-    md: 'h-24 w-24',
-    lg: 'h-32 w-32',
-    xl: 'h-40 w-40'
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    // Check file type
-    if (!file.type.startsWith('image/')) {
-      toast.error('Please select an image file');
-      return;
-    }
-
-    // Check file size (max 2MB)
-    if (file.size > 2 * 1024 * 1024) {
-      toast.error('Image size should be less than 2MB');
-      return;
-    }
-
-    // Create preview
-    const reader = new FileReader();
-    reader.onload = () => {
-      const result = reader.result as string;
-      setPreviewUrl(result);
-      
-      if (onImageUploaded) {
-        onImageUploaded(result);
-      }
-    };
-    reader.readAsDataURL(file);
-
-    // Call the callback
-    if (onImageChange) {
-      onImageChange(file);
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setPreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+      onAvatarChange(file);
     }
   };
 
-  const handleRemoveImage = () => {
-    setPreviewUrl(null);
-    if (onImageChange) {
-      onImageChange(null);
+  const handleRemove = () => {
+    setPreview('');
+    onAvatarChange(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
     }
-    if (onImageUploaded) {
-      onImageUploaded('');
-    }
-  };
-
-  const getInitials = (name: string) => {
-    if (!name) return 'U';
-    return name.split(' ').map(n => n[0]).join('').toUpperCase();
   };
 
   return (
-    <div className="flex flex-col items-center gap-2">
-      <div className="relative">
-        <Avatar className={`${sizeClasses[size]} border-2 border-primary/10`}>
-          {previewUrl ? (
-            <AvatarImage src={previewUrl} alt="Profile" />
-          ) : null}
-          <AvatarFallback className="bg-primary text-white">
-            {getInitials(name)}
-          </AvatarFallback>
-        </Avatar>
+    <div className="flex flex-col items-center space-y-4">
+      <Avatar className="w-24 h-24">
+        <AvatarImage src={preview} />
+        <AvatarFallback>
+          <Upload className="h-8 w-8 text-gray-400" />
+        </AvatarFallback>
+      </Avatar>
+      
+      <div className="flex space-x-2">
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={disabled}
+        >
+          <Upload className="h-4 w-4 mr-2" />
+          Upload
+        </Button>
         
-        {!disabled && (
-          <div className="absolute -bottom-2 -right-2 flex gap-1">
-            <label htmlFor="avatar-upload" className="cursor-pointer">
-              <div className="rounded-full bg-primary p-1.5 text-white shadow-sm hover:bg-primary/90">
-                <Upload className="h-3.5 w-3.5" />
-              </div>
-              <input
-                id="avatar-upload"
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={handleFileChange}
-                disabled={isUploading || disabled}
-              />
-            </label>
-            
-            {previewUrl && (
-              <button
-                type="button"
-                onClick={handleRemoveImage}
-                className="rounded-full bg-destructive p-1.5 text-white shadow-sm hover:bg-destructive/90"
-                disabled={isUploading || disabled}
-              >
-                <X className="h-3.5 w-3.5" />
-              </button>
-            )}
-          </div>
+        {preview && (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={handleRemove}
+            disabled={disabled}
+          >
+            <X className="h-4 w-4 mr-2" />
+            Remove
+          </Button>
         )}
       </div>
+      
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        onChange={handleFileSelect}
+        className="hidden"
+        disabled={disabled}
+      />
     </div>
   );
 };

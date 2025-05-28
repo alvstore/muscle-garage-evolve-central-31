@@ -4,13 +4,21 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
+// Define valid user roles
+export type UserRole = 'admin' | 'staff' | 'trainer' | 'member' | 'guest';
+
+// Type guard to check if a string is a valid UserRole
+export const isUserRole = (role: string): role is UserRole => {
+  return ['admin', 'staff', 'trainer', 'member', 'guest'].includes(role);
+};
+
 export interface User {
   id: string;
   email: string;
   name?: string;
   full_name?: string;
   avatar?: string;
-  role?: string;
+  role?: UserRole;
   branch_id?: string;
 }
 
@@ -18,7 +26,7 @@ interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  role?: string;
+  role?: UserRole;
   login: (email: string, password: string) => Promise<{ success: boolean; error: any }>;
   logout: () => Promise<void>;
   register: (email: string, password: string, userData: any) => Promise<{ success: boolean; error: any }>;
@@ -27,7 +35,20 @@ interface AuthContextType {
   changePassword: (currentPassword: string, newPassword: string) => Promise<{ success: boolean; error: any }>;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const defaultAuthContext: AuthContextType = {
+  user: null,
+  isLoading: true,
+  isAuthenticated: false,
+  role: undefined,
+  login: async () => ({ success: false, error: new Error('Auth not initialized') }),
+  logout: async () => {},
+  register: async () => ({ success: false, error: new Error('Auth not initialized') }),
+  forgotPassword: async () => ({ success: false, error: new Error('Auth not initialized') }),
+  resetPassword: async () => ({ success: false, error: new Error('Auth not initialized') }),
+  changePassword: async () => ({ success: false, error: new Error('Auth not initialized') }),
+};
+
+const AuthContext = createContext<AuthContextType>(defaultAuthContext);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
@@ -37,10 +58,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // Check current auth state
     const checkAuth = async () => {
       try {
+        setIsLoading(true);
         // First try to get the session
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
         
-        if (sessionError) throw sessionError;
+        if (sessionError) {
+          console.error('Session error:', sessionError);
+          throw sessionError;
+        }
         
         if (session?.user) {
           // Fetch profile data
@@ -49,19 +74,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             .select('*')
             .eq('id', session.user.id)
             .single();
-
+            
           if (profileError) {
-            console.error('Profile fetch error:', profileError);
-            return;
+            console.error('Profile error:', profileError);
+            throw profileError;
           }
+          
+          // Ensure the role is valid, default to 'member' if not
+          const userRole = profile?.role && isUserRole(profile.role) 
+            ? profile.role 
+            : 'member' as UserRole;
 
+          // Set user data from session and profile
           setUser({
             id: session.user.id,
             email: session.user.email || '',
-            name: session.user.user_metadata?.full_name || session.user.email,
-            full_name: session.user.user_metadata?.full_name || profile?.full_name,
-            avatar: session.user.user_metadata?.avatar_url,
-            role: profile?.role || 'member',
+            name: profile?.full_name || profile?.name || '',
+            full_name: profile?.full_name,
+            avatar: profile?.avatar_url,
+            role: userRole,
             branch_id: profile?.branch_id
           });
         }
@@ -115,45 +146,46 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         password,
       });
 
-      if (error) throw error;
-      
-      // Force a session refresh
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      if (sessionError) throw sessionError;
-      
-      if (!session) {
-        throw new Error('No session after login');
+      if (error) {
+        console.error('Login error:', error);
+        return { success: false, error };
       }
-      
-      // Fetch profile data
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', session.user.id)
-        .single();
 
-      if (profileError) throw profileError;
-      
-      setUser({
-        id: session.user.id,
-        email: session.user.email || '',
-        name: session.user.user_metadata?.full_name || session.user.email,
-        full_name: session.user.user_metadata?.full_name || profile?.full_name,
-        avatar: session.user.user_metadata?.avatar_url,
-        role: profile?.role || 'member',
-        branch_id: profile?.branch_id
-      });
+      if (data?.user) {
+        // Fetch profile data
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', data.user.id)
+          .single();
 
-      return { success: true, error: null };
+        if (profileError) {
+          console.error('Profile fetch error:', profileError);
+          return { success: false, error: profileError };
+        }
+
+        // Ensure the role is valid, default to 'member' if not
+        const userRole = profile?.role && isUserRole(profile.role) 
+          ? profile.role 
+          : 'member' as UserRole;
+
+        setUser({
+          id: data.user.id,
+          email: data.user.email || '',
+          name: profile?.full_name || profile?.name || data.user.email || '',
+          full_name: profile?.full_name,
+          avatar: profile?.avatar_url,
+          role: userRole,
+          branch_id: profile?.branch_id
+        });
+
+        return { success: true, error: null };
+      }
+
+      return { success: false, error: 'No user data returned' };
     } catch (error) {
       console.error('Login error:', error);
-      // Clear any partial session on error
-      await supabase.auth.signOut();
-      setUser(null);
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Login failed' 
-      };
+      return { success: false, error };
     } finally {
       setIsLoading(false);
     }
@@ -239,10 +271,4 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error("useAuth must be used within an AuthProvider");
-  }
-  return context;
-};
+export const useAuth = () => useContext(AuthContext);
