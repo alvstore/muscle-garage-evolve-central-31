@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { 
   Card, CardHeader, CardTitle, CardDescription, 
@@ -8,12 +9,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useBranch } from '@/hooks/settings/use-branches';
 import { toast } from 'sonner';
-import { Loader2, Save, RefreshCw, CheckCircle } from 'lucide-react';
+import { Loader2, Save, RefreshCw, CheckCircle, AlertCircle } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { supabase } from '@/integrations/supabase/client';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { hikvisionTokenManager } from '@/services/hikvision/tokenManager';
+import { Badge } from '@/components/ui/badge';
 
 interface HikvisionSettingsProps {
+  branchId: string;
   onUpdated?: () => void;
 }
 
@@ -30,27 +33,25 @@ interface HikvisionConfig {
   updated_at?: string;
 }
 
-const HikvisionSettings: React.FC<HikvisionSettingsProps> = ({ onUpdated }) => {
-  const { currentBranch } = useBranch();
+const HikvisionSettings: React.FC<HikvisionSettingsProps> = ({ branchId, onUpdated }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isTesting, setIsTesting] = useState(false);
+  const [connectionStatus, setConnectionStatus] = useState<'unknown' | 'connected' | 'failed'>('unknown');
   const [config, setConfig] = useState<HikvisionConfig>({
     app_key: '',
     app_secret: '',
     api_url: 'https://open.hikvision.com',
     is_active: false,
-    branch_id: '',
+    branch_id: branchId,
     site_id: '',
     devices: []
   });
-  const [isTesting, setIsTesting] = useState(false);
-  const [availableSites, setAvailableSites] = useState<{id: string, name: string}[]>([]);
-  const [isLoadingSites, setIsLoadingSites] = useState(false);
 
   // Load existing configuration
   useEffect(() => {
     async function fetchConfig() {
-      if (!currentBranch?.id) return;
+      if (!branchId) return;
       
       try {
         setIsLoading(true);
@@ -58,24 +59,17 @@ const HikvisionSettings: React.FC<HikvisionSettingsProps> = ({ onUpdated }) => {
         const { data, error } = await supabase
           .from('hikvision_api_settings')
           .select('*')
-          .eq('branch_id', currentBranch.id)
+          .eq('branch_id', branchId)
           .maybeSingle();
         
         if (error) throw error;
         
         if (data) {
           setConfig(data);
+          setConnectionStatus(data.is_active ? 'connected' : 'unknown');
         } else {
           // Create default config with branch ID
-          setConfig({
-            app_key: '',
-            app_secret: '',
-            api_url: 'https://open.hikvision.com',
-            is_active: false,
-            branch_id: currentBranch.id,
-            site_id: '',
-            devices: []
-          });
+          setConfig(prev => ({ ...prev, branch_id: branchId }));
         }
       } catch (error) {
         console.error('Error loading Hikvision settings:', error);
@@ -86,7 +80,7 @@ const HikvisionSettings: React.FC<HikvisionSettingsProps> = ({ onUpdated }) => {
     }
     
     fetchConfig();
-  }, [currentBranch?.id]);
+  }, [branchId]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -100,7 +94,7 @@ const HikvisionSettings: React.FC<HikvisionSettingsProps> = ({ onUpdated }) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!currentBranch?.id) {
+    if (!branchId) {
       toast.error('No branch selected');
       return;
     }
@@ -109,7 +103,7 @@ const HikvisionSettings: React.FC<HikvisionSettingsProps> = ({ onUpdated }) => {
       setIsSaving(true);
       const configToSave = { 
         ...config,
-        branch_id: currentBranch.id,
+        branch_id: branchId,
         updated_at: new Date().toISOString()
       };
       
@@ -147,7 +141,7 @@ const HikvisionSettings: React.FC<HikvisionSettingsProps> = ({ onUpdated }) => {
     }
   };
   
-  // Test connection and fetch sites
+  // Test connection using the new token manager
   const testConnection = async () => {
     if (!config.app_key || !config.app_secret || !config.api_url) {
       toast.error('Please fill in all required fields');
@@ -156,65 +150,50 @@ const HikvisionSettings: React.FC<HikvisionSettingsProps> = ({ onUpdated }) => {
     
     try {
       setIsTesting(true);
+      setConnectionStatus('unknown');
       
-      const { data, error } = await supabase.functions.invoke('hikvision-proxy', {
-        body: {
-          action: 'getToken',
-          apiUrl: config.api_url,
-          appKey: config.app_key,
-          secretKey: config.app_secret,
-          branchId: currentBranch?.id
-        }
-      });
-      
-      if (error) throw error;
-      
-      if (!data?.success) {
-        toast.error(`Connection failed: ${data?.error || 'Unknown error'}`);
-        return;
+      // Save settings first if not saved
+      if (!config.id) {
+        await handleSubmit({ preventDefault: () => {} } as React.FormEvent);
       }
       
-      toast.success('Connection successful!');
+      // Test token retrieval
+      await hikvisionTokenManager.refreshToken(branchId);
       
-      // Fetch available sites
-      fetchSites();
+      setConnectionStatus('connected');
+      toast.success('Successfully connected to Hikvision API!');
       
     } catch (error) {
       console.error('Error testing connection:', error);
+      setConnectionStatus('failed');
       toast.error(`Connection failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setIsTesting(false);
     }
   };
-  
-  const fetchSites = async () => {
-    if (!currentBranch?.id) return;
-    
-    try {
-      setIsLoadingSites(true);
-      
-      const { data, error } = await supabase.functions.invoke('hikvision-proxy', {
-        body: {
-          action: 'searchSites',
-          apiUrl: config.api_url,
-          branchId: currentBranch.id
-        }
-      });
-      
-      if (error) throw error;
-      
-      if (data?.success && data?.sites) {
-        setAvailableSites(data.sites.map((site: any) => ({
-          id: site.siteId,
-          name: site.siteName
-        })));
-      }
-      
-    } catch (error) {
-      console.error('Error fetching sites:', error);
-      toast.error('Failed to fetch sites');
-    } finally {
-      setIsLoadingSites(false);
+
+  const getConnectionStatusBadge = () => {
+    switch (connectionStatus) {
+      case 'connected':
+        return (
+          <Badge variant="outline" className="bg-green-100 text-green-800">
+            <CheckCircle className="h-3 w-3 mr-1" />
+            Connected
+          </Badge>
+        );
+      case 'failed':
+        return (
+          <Badge variant="destructive">
+            <AlertCircle className="h-3 w-3 mr-1" />
+            Failed
+          </Badge>
+        );
+      default:
+        return (
+          <Badge variant="outline" className="bg-gray-100 text-gray-600">
+            Unknown
+          </Badge>
+        );
     }
   };
   
@@ -233,13 +212,19 @@ const HikvisionSettings: React.FC<HikvisionSettingsProps> = ({ onUpdated }) => {
             </div>
           ) : (
             <>
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="is_active"
-                  checked={config.is_active}
-                  onCheckedChange={toggleActive}
-                />
-                <Label htmlFor="is_active">Enable Hikvision Integration</Label>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="is_active"
+                    checked={config.is_active}
+                    onCheckedChange={toggleActive}
+                  />
+                  <Label htmlFor="is_active">Enable Hikvision Integration</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <span className="text-sm text-muted-foreground">Status:</span>
+                  {getConnectionStatusBadge()}
+                </div>
               </div>
               
               <div className="grid gap-4">
@@ -251,6 +236,7 @@ const HikvisionSettings: React.FC<HikvisionSettingsProps> = ({ onUpdated }) => {
                     value={config.api_url}
                     onChange={handleInputChange}
                     placeholder="https://open.hikvision.com"
+                    disabled={!config.is_active}
                   />
                   <p className="text-sm text-muted-foreground">
                     Default: https://open.hikvision.com
@@ -265,6 +251,7 @@ const HikvisionSettings: React.FC<HikvisionSettingsProps> = ({ onUpdated }) => {
                     value={config.app_key}
                     onChange={handleInputChange}
                     placeholder="Enter your Hikvision App Key"
+                    disabled={!config.is_active}
                   />
                 </div>
                 
@@ -277,6 +264,7 @@ const HikvisionSettings: React.FC<HikvisionSettingsProps> = ({ onUpdated }) => {
                     value={config.app_secret}
                     onChange={handleInputChange}
                     placeholder="Enter your Hikvision App Secret"
+                    disabled={!config.is_active}
                   />
                 </div>
                 
@@ -285,7 +273,7 @@ const HikvisionSettings: React.FC<HikvisionSettingsProps> = ({ onUpdated }) => {
                     type="button" 
                     variant="outline" 
                     onClick={testConnection}
-                    disabled={isTesting}
+                    disabled={isTesting || !config.is_active || !config.app_key || !config.app_secret}
                   >
                     {isTesting ? (
                       <>
@@ -300,34 +288,16 @@ const HikvisionSettings: React.FC<HikvisionSettingsProps> = ({ onUpdated }) => {
                     )}
                   </Button>
                 </div>
-                
-                {availableSites.length > 0 && (
-                  <div className="space-y-2">
-                    <Label htmlFor="site_id">Select Site</Label>
-                    <Select 
-                      value={config.site_id} 
-                      onValueChange={(value) => setConfig(prev => ({ ...prev, site_id: value }))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a site" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {availableSites.map((site) => (
-                          <SelectItem key={site.id} value={site.id}>
-                            {site.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
               </div>
             </>
           )}
         </CardContent>
         
         <CardFooter>
-          <Button type="submit" disabled={isLoading || isSaving}>
+          <Button 
+            type="submit" 
+            disabled={isLoading || isSaving || !config.is_active || !config.app_key || !config.app_secret}
+          >
             {isSaving ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
