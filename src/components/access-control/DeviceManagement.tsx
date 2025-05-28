@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/table';
 import { HardDriveIcon, Plus, Wifi, WifiOff } from 'lucide-react';
 import { toast } from 'sonner';
-import { useHikvisionSettings } from '@/hooks/use-hikvision-settings';
+import { useHikvisionSettings } from '@/hooks/access/use-hikvision-settings';
 import HikvisionDeviceManager from './HikvisionDeviceManager';
 
 interface Device {

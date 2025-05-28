@@ -11,7 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { HikvisionDevice } from '@/types/settings/hikvision-types';
-import { useHikvisionSettings } from '@/hooks/use-hikvision-settings';
+import { useHikvisionSettings } from '@/hooks/access/use-hikvision-settings';
 import { useForm } from 'react-hook-form';
 import { PlusCircle, Edit, Trash2, Check, X, RefreshCw } from 'lucide-react';
 import { z } from 'zod';

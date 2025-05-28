@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { PlusCircle, Search, Star, Edit, Trash2, UserCheck, X } from 'lucide-react';
-import { useTrainers } from '@/hooks/trainers/use-trainers';
+import { useTrainers } from '@/hooks/team/use-trainers';
 import { CreateTrainerDialog } from '@/components/trainers/CreateTrainerDialog';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Trainer } from '@/types/team/trainer';

@@ -6,7 +6,7 @@ import { Plus } from "lucide-react";
 import MotivationalMessageForm from "@/components/communication/MotivationalMessageForm";
 import MotivationalMessagesList from "@/components/communication/MotivationalMessagesList";
 import { MotivationalMessage } from "@/types/communication/notification";
-import { useMotivationalMessages } from "@/hooks/members/use-motivational-messages";
+import { useMotivationalMessages } from "@/hooks/communication/use-motivational-messages";
 
 export default function MotivationalPage() {
   const [showForm, setShowForm] = useState(false);

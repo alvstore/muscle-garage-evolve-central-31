@@ -13,7 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { X, Upload, FileText, User, Phone, Mail, Calendar, MapPin, IdCard, Lock, FileCheck } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { useTrainers } from '@/hooks/trainers/use-trainers';
+import { useTrainers } from '@/hooks/team/use-trainers';
 import { useUploadImage } from '@/hooks/utils/use-upload-image';
 import { toast } from 'sonner';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';

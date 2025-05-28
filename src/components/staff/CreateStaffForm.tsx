@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Loader2, Upload, User, X } from 'lucide-react';
 import { useToast } from '@/hooks/ui/use-toast';
-import { useStaff } from '@/hooks/members/use-staff';
+import { useStaff } from '@/hooks/team/use-staff';
 import { useBranch } from '@/hooks/settings/use-branches';
 import { Card, CardContent } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';

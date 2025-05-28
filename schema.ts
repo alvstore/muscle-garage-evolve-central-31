@@ -9,6 +9,42 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      access_denial_logs: {
+        Row: {
+          branch_id: string | null
+          created_at: string | null
+          device_id: string | null
+          door_id: string | null
+          event_id: string | null
+          event_time: string | null
+          id: string
+          person_id: string | null
+          raw_data: Json | null
+        }
+        Insert: {
+          branch_id?: string | null
+          created_at?: string | null
+          device_id?: string | null
+          door_id?: string | null
+          event_id?: string | null
+          event_time?: string | null
+          id?: string
+          person_id?: string | null
+          raw_data?: Json | null
+        }
+        Update: {
+          branch_id?: string | null
+          created_at?: string | null
+          device_id?: string | null
+          door_id?: string | null
+          event_id?: string | null
+          event_time?: string | null
+          id?: string
+          person_id?: string | null
+          raw_data?: Json | null
+        }
+        Relationships: []
+      }
       access_doors: {
         Row: {
           branch_id: string
@@ -421,6 +457,39 @@ export type Database = {
             referencedColumns: ["branch_id"]
           },
         ]
+      }
+      audit_logs: {
+        Row: {
+          action: string
+          created_at: string
+          details: Json | null
+          entity_id: string | null
+          entity_type: string
+          id: string
+          ip_address: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          details?: Json | null
+          entity_id?: string | null
+          entity_type: string
+          id?: string
+          ip_address?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          details?: Json | null
+          entity_id?: string | null
+          entity_type?: string
+          id?: string
+          ip_address?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
       }
       automation_rules: {
         Row: {
@@ -1177,6 +1246,66 @@ export type Database = {
           },
         ]
       }
+      essl_api_settings: {
+        Row: {
+          additional_info: Json | null
+          api_key: string
+          api_url: string
+          branch_id: string
+          company_id: string | null
+          created_at: string
+          device_sn: string | null
+          id: string
+          last_sync: string | null
+          status: string | null
+          sync_status: string | null
+          updated_at: string
+        }
+        Insert: {
+          additional_info?: Json | null
+          api_key: string
+          api_url: string
+          branch_id: string
+          company_id?: string | null
+          created_at?: string
+          device_sn?: string | null
+          id?: string
+          last_sync?: string | null
+          status?: string | null
+          sync_status?: string | null
+          updated_at?: string
+        }
+        Update: {
+          additional_info?: Json | null
+          api_key?: string
+          api_url?: string
+          branch_id?: string
+          company_id?: string | null
+          created_at?: string
+          device_sn?: string | null
+          id?: string
+          last_sync?: string | null
+          status?: string | null
+          sync_status?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "essl_api_settings_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: true
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "essl_api_settings_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: true
+            referencedRelation: "member_attendance_heatmap"
+            referencedColumns: ["branch_id"]
+          },
+        ]
+      }
       essl_device_settings: {
         Row: {
           api_password: string | null
@@ -1538,6 +1667,7 @@ export type Database = {
           lead_id: string | null
           response: string | null
           response_at: string | null
+          scheduled_at: string | null
           sent_at: string | null
           sent_by: string | null
           status: string
@@ -1550,6 +1680,7 @@ export type Database = {
           lead_id?: string | null
           response?: string | null
           response_at?: string | null
+          scheduled_at?: string | null
           sent_at?: string | null
           sent_by?: string | null
           status: string
@@ -1562,6 +1693,7 @@ export type Database = {
           lead_id?: string | null
           response?: string | null
           response_at?: string | null
+          scheduled_at?: string | null
           sent_at?: string | null
           sent_by?: string | null
           status?: string
@@ -1728,22 +1860,7 @@ export type Database = {
           valid_end_time?: string | null
           valid_start_time?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "hikvision_access_privileges_door_id_fkey"
-            columns: ["door_id"]
-            isOneToOne: false
-            referencedRelation: "access_doors"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "hikvision_access_privileges_person_id_fkey"
-            columns: ["person_id"]
-            isOneToOne: false
-            referencedRelation: "hikvision_persons"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       hikvision_api_settings: {
         Row: {
@@ -1792,6 +1909,87 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      hikvision_devices: {
+        Row: {
+          additional_info: Json | null
+          branch_id: string
+          created_at: string
+          device_id: string
+          device_type: string | null
+          firmware_version: string | null
+          id: string
+          ip_address: string
+          last_online: string | null
+          last_sync: string | null
+          mac_address: string | null
+          model: string | null
+          name: string
+          password: string
+          port: number | null
+          serial_number: string | null
+          status: string | null
+          updated_at: string
+          username: string
+        }
+        Insert: {
+          additional_info?: Json | null
+          branch_id: string
+          created_at?: string
+          device_id: string
+          device_type?: string | null
+          firmware_version?: string | null
+          id?: string
+          ip_address: string
+          last_online?: string | null
+          last_sync?: string | null
+          mac_address?: string | null
+          model?: string | null
+          name: string
+          password: string
+          port?: number | null
+          serial_number?: string | null
+          status?: string | null
+          updated_at?: string
+          username: string
+        }
+        Update: {
+          additional_info?: Json | null
+          branch_id?: string
+          created_at?: string
+          device_id?: string
+          device_type?: string | null
+          firmware_version?: string | null
+          id?: string
+          ip_address?: string
+          last_online?: string | null
+          last_sync?: string | null
+          mac_address?: string | null
+          model?: string | null
+          name?: string
+          password?: string
+          port?: number | null
+          serial_number?: string | null
+          status?: string | null
+          updated_at?: string
+          username?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hikvision_devices_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hikvision_devices_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "member_attendance_heatmap"
+            referencedColumns: ["branch_id"]
+          },
+        ]
       }
       hikvision_events: {
         Row: {
@@ -1911,41 +2109,13 @@ export type Database = {
           sync_status?: string | null
           updated_at?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "hikvision_persons_branch_id_fkey"
-            columns: ["branch_id"]
-            isOneToOne: false
-            referencedRelation: "branches"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "hikvision_persons_branch_id_fkey"
-            columns: ["branch_id"]
-            isOneToOne: false
-            referencedRelation: "member_attendance_heatmap"
-            referencedColumns: ["branch_id"]
-          },
-          {
-            foreignKeyName: "hikvision_persons_member_id_fkey"
-            columns: ["member_id"]
-            isOneToOne: false
-            referencedRelation: "member_churn_risk"
-            referencedColumns: ["member_id"]
-          },
-          {
-            foreignKeyName: "hikvision_persons_member_id_fkey"
-            columns: ["member_id"]
-            isOneToOne: false
-            referencedRelation: "members"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       hikvision_tokens: {
         Row: {
           access_token: string
           area_domain: string | null
+          available_sites: Json | null
           branch_id: string
           created_at: string
           expire_time: string
@@ -1959,6 +2129,7 @@ export type Database = {
         Insert: {
           access_token: string
           area_domain?: string | null
+          available_sites?: Json | null
           branch_id: string
           created_at?: string
           expire_time: string
@@ -1972,6 +2143,7 @@ export type Database = {
         Update: {
           access_token?: string
           area_domain?: string | null
+          available_sites?: Json | null
           branch_id?: string
           created_at?: string
           expire_time?: string
@@ -2314,6 +2486,7 @@ export type Database = {
       leads: {
         Row: {
           assigned_to: string | null
+          branch_id: string | null
           conversion_date: string | null
           conversion_value: number | null
           created_at: string | null
@@ -2333,6 +2506,7 @@ export type Database = {
         }
         Insert: {
           assigned_to?: string | null
+          branch_id?: string | null
           conversion_date?: string | null
           conversion_value?: number | null
           created_at?: string | null
@@ -2352,6 +2526,7 @@ export type Database = {
         }
         Update: {
           assigned_to?: string | null
+          branch_id?: string | null
           conversion_date?: string | null
           conversion_value?: number | null
           created_at?: string | null
@@ -2370,6 +2545,20 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "fk_leads_branch_id"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_leads_branch_id"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "member_attendance_heatmap"
+            referencedColumns: ["branch_id"]
+          },
           {
             foreignKeyName: "leads_assigned_to_fkey"
             columns: ["assigned_to"]
@@ -2586,43 +2775,7 @@ export type Database = {
           valid_until?: string | null
           zone_id?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "member_access_overrides_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "member_access_overrides_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "trainer_utilization"
-            referencedColumns: ["trainer_id"]
-          },
-          {
-            foreignKeyName: "member_access_overrides_member_id_fkey"
-            columns: ["member_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "member_access_overrides_member_id_fkey"
-            columns: ["member_id"]
-            isOneToOne: false
-            referencedRelation: "trainer_utilization"
-            referencedColumns: ["trainer_id"]
-          },
-          {
-            foreignKeyName: "member_access_overrides_zone_id_fkey"
-            columns: ["zone_id"]
-            isOneToOne: false
-            referencedRelation: "access_zones"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       member_attendance: {
         Row: {
@@ -2809,14 +2962,20 @@ export type Database = {
       }
       members: {
         Row: {
+          access_control_id: string | null
+          address: string | null
           blood_group: string | null
           branch_id: string | null
+          city: string | null
+          country: string | null
           created_at: string | null
           date_of_birth: string | null
           email: string | null
           gender: string | null
           goal: string | null
           id: string
+          id_number: string | null
+          id_type: string | null
           membership_end_date: string | null
           membership_id: string | null
           membership_start_date: string | null
@@ -2824,20 +2983,28 @@ export type Database = {
           name: string
           occupation: string | null
           phone: string | null
+          state: string | null
           status: string | null
           trainer_id: string | null
           updated_at: string | null
           user_id: string | null
+          zip_code: string | null
         }
         Insert: {
+          access_control_id?: string | null
+          address?: string | null
           blood_group?: string | null
           branch_id?: string | null
+          city?: string | null
+          country?: string | null
           created_at?: string | null
           date_of_birth?: string | null
           email?: string | null
           gender?: string | null
           goal?: string | null
           id?: string
+          id_number?: string | null
+          id_type?: string | null
           membership_end_date?: string | null
           membership_id?: string | null
           membership_start_date?: string | null
@@ -2845,20 +3012,28 @@ export type Database = {
           name: string
           occupation?: string | null
           phone?: string | null
+          state?: string | null
           status?: string | null
           trainer_id?: string | null
           updated_at?: string | null
           user_id?: string | null
+          zip_code?: string | null
         }
         Update: {
+          access_control_id?: string | null
+          address?: string | null
           blood_group?: string | null
           branch_id?: string | null
+          city?: string | null
+          country?: string | null
           created_at?: string | null
           date_of_birth?: string | null
           email?: string | null
           gender?: string | null
           goal?: string | null
           id?: string
+          id_number?: string | null
+          id_type?: string | null
           membership_end_date?: string | null
           membership_id?: string | null
           membership_start_date?: string | null
@@ -2866,10 +3041,12 @@ export type Database = {
           name?: string
           occupation?: string | null
           phone?: string | null
+          state?: string | null
           status?: string | null
           trainer_id?: string | null
           updated_at?: string | null
           user_id?: string | null
+          zip_code?: string | null
         }
         Relationships: [
           {
@@ -3346,6 +3523,30 @@ export type Database = {
           },
         ]
       }
+      permissions: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           accessible_branch_ids: string[] | null
@@ -3361,6 +3562,8 @@ export type Database = {
           full_name: string | null
           gender: string | null
           id: string
+          id_number: string | null
+          id_type: string | null
           is_active: boolean | null
           is_branch_manager: boolean | null
           phone: string | null
@@ -3383,6 +3586,8 @@ export type Database = {
           full_name?: string | null
           gender?: string | null
           id: string
+          id_number?: string | null
+          id_type?: string | null
           is_active?: boolean | null
           is_branch_manager?: boolean | null
           phone?: string | null
@@ -3405,6 +3610,8 @@ export type Database = {
           full_name?: string | null
           gender?: string | null
           id?: string
+          id_number?: string | null
+          id_type?: string | null
           is_active?: boolean | null
           is_branch_manager?: boolean | null
           phone?: string | null
@@ -3656,6 +3863,38 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      role_permissions: {
+        Row: {
+          created_at: string
+          id: string
+          permission_id: string
+          role: Database["public"]["Enums"]["user_role"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          permission_id: string
+          role: Database["public"]["Enums"]["user_role"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          permission_id?: string
+          role?: Database["public"]["Enums"]["user_role"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "role_permissions_permission_id_fkey"
+            columns: ["permission_id"]
+            isOneToOne: false
+            referencedRelation: "permissions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       settings: {
         Row: {
@@ -4073,44 +4312,200 @@ export type Database = {
           },
         ]
       }
-      trainers: {
+      trainer_documents: {
         Row: {
-          avatar: string | null
-          bio: string | null
-          email: string
+          created_at: string | null
+          document_type: string
+          file_name: string
+          file_path: string
+          file_size: number | null
           id: string
-          name: string
-          phone: string | null
-          rating: number | null
-          role: string | null
-          specialty: string | null
-          status: string | null
+          is_verified: boolean | null
+          metadata: Json | null
+          mime_type: string | null
+          trainer_id: string
+          updated_at: string | null
+          verified_at: string | null
+          verified_by: string | null
         }
         Insert: {
-          avatar?: string | null
-          bio?: string | null
-          email: string
-          id: string
-          name: string
-          phone?: string | null
-          rating?: number | null
-          role?: string | null
-          specialty?: string | null
-          status?: string | null
+          created_at?: string | null
+          document_type: string
+          file_name: string
+          file_path: string
+          file_size?: number | null
+          id?: string
+          is_verified?: boolean | null
+          metadata?: Json | null
+          mime_type?: string | null
+          trainer_id: string
+          updated_at?: string | null
+          verified_at?: string | null
+          verified_by?: string | null
         }
         Update: {
-          avatar?: string | null
-          bio?: string | null
-          email?: string
+          created_at?: string | null
+          document_type?: string
+          file_name?: string
+          file_path?: string
+          file_size?: number | null
           id?: string
-          name?: string
-          phone?: string | null
-          rating?: number | null
-          role?: string | null
-          specialty?: string | null
-          status?: string | null
+          is_verified?: boolean | null
+          metadata?: Json | null
+          mime_type?: string | null
+          trainer_id?: string
+          updated_at?: string | null
+          verified_at?: string | null
+          verified_by?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "trainer_documents_trainer_id_fkey"
+            columns: ["trainer_id"]
+            isOneToOne: false
+            referencedRelation: "trainers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      trainer_schedule: {
+        Row: {
+          created_at: string | null
+          day_of_week: number
+          end_time: string
+          id: string
+          is_recurring: boolean | null
+          start_time: string
+          trainer_id: string
+          updated_at: string | null
+          valid_from: string | null
+          valid_until: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          day_of_week: number
+          end_time: string
+          id?: string
+          is_recurring?: boolean | null
+          start_time: string
+          trainer_id: string
+          updated_at?: string | null
+          valid_from?: string | null
+          valid_until?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          day_of_week?: number
+          end_time?: string
+          id?: string
+          is_recurring?: boolean | null
+          start_time?: string
+          trainer_id?: string
+          updated_at?: string | null
+          valid_from?: string | null
+          valid_until?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trainer_schedule_trainer_id_fkey"
+            columns: ["trainer_id"]
+            isOneToOne: false
+            referencedRelation: "trainers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      trainers: {
+        Row: {
+          bank_details: Json | null
+          bio: string | null
+          certifications: Json | null
+          created_at: string | null
+          emergency_contact: Json | null
+          employee_id: string | null
+          experience_years: number | null
+          hire_date: string | null
+          id: string
+          is_active: boolean | null
+          metadata: Json | null
+          monthly_salary: number | null
+          profile_id: string
+          rating: number | null
+          rating_average: number | null
+          rating_count: number | null
+          specializations: string[] | null
+          updated_at: string | null
+        }
+        Insert: {
+          bank_details?: Json | null
+          bio?: string | null
+          certifications?: Json | null
+          created_at?: string | null
+          emergency_contact?: Json | null
+          employee_id?: string | null
+          experience_years?: number | null
+          hire_date?: string | null
+          id?: string
+          is_active?: boolean | null
+          metadata?: Json | null
+          monthly_salary?: number | null
+          profile_id: string
+          rating?: number | null
+          rating_average?: number | null
+          rating_count?: number | null
+          specializations?: string[] | null
+          updated_at?: string | null
+        }
+        Update: {
+          bank_details?: Json | null
+          bio?: string | null
+          certifications?: Json | null
+          created_at?: string | null
+          emergency_contact?: Json | null
+          employee_id?: string | null
+          experience_years?: number | null
+          hire_date?: string | null
+          id?: string
+          is_active?: boolean | null
+          metadata?: Json | null
+          monthly_salary?: number | null
+          profile_id?: string
+          rating?: number | null
+          rating_average?: number | null
+          rating_count?: number | null
+          specializations?: string[] | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_profile"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_profile"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_utilization"
+            referencedColumns: ["trainer_id"]
+          },
+          {
+            foreignKeyName: "trainers_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trainers_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "trainer_utilization"
+            referencedColumns: ["trainer_id"]
+          },
+        ]
       }
       transactions: {
         Row: {
@@ -4174,6 +4569,30 @@ export type Database = {
             referencedColumns: ["branch_id"]
           },
         ]
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["user_role"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["user_role"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["user_role"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       webhook_logs: {
         Row: {
@@ -4630,6 +5049,36 @@ export type Database = {
       }
     }
     Functions: {
+      assign_membership_with_payment: {
+        Args:
+          | {
+              p_member_id: string
+              p_membership_plan_id: string
+              p_branch_id: string
+              p_start_date: string
+              p_end_date: string
+              p_total_amount: number
+              p_payment_method: string
+              p_payment_status: string
+              p_notes: string
+              p_recorded_by: string
+            }
+          | {
+              p_member_id: string
+              p_membership_plan_id: string
+              p_branch_id: string
+              p_start_date: string
+              p_end_date: string
+              p_total_amount: number
+              p_payment_method: string
+              p_payment_status: string
+              p_transaction_id?: string
+              p_reference_number?: string
+              p_notes?: string
+              p_recorded_by?: string
+            }
+        Returns: Json
+      }
       can_book_class: {
         Args: { user_uuid: string }
         Returns: boolean
@@ -4664,6 +5113,10 @@ export type Database = {
           amount: number
         }[]
       }
+      get_trainer_profile: {
+        Args: { p_trainer_id: string }
+        Returns: Json
+      }
       get_user_role: {
         Args: Record<PropertyKey, never> | { user_id: string }
         Returns: string
@@ -4683,9 +5136,30 @@ export type Database = {
           updated_at: string | null
         }[]
       }
+      has_permission: {
+        Args: { user_id: string; permission_name: string }
+        Returns: boolean
+      }
+      has_role: {
+        Args: {
+          user_id: string
+          role: Database["public"]["Enums"]["user_role"]
+        }
+        Returns: boolean
+      }
       is_admin: {
         Args: Record<PropertyKey, never>
         Returns: boolean
+      }
+      log_action: {
+        Args: {
+          action: string
+          entity_type: string
+          entity_id: string
+          details?: Json
+          ip_address?: string
+        }
+        Returns: string
       }
       mark_announcement_as_read: {
         Args: { announcement_uuid: string }
@@ -4694,6 +5168,10 @@ export type Database = {
       trainer_is_assigned_to_member: {
         Args: { trainer_uuid: string; member_uuid: string }
         Returns: boolean
+      }
+      update_trainer_rating: {
+        Args: { p_trainer_id: string; new_rating: number }
+        Returns: Json
       }
       upsert_settings_batch: {
         Args: { settings_array: Json }
@@ -4714,6 +5192,7 @@ export type Database = {
     }
     Enums: {
       class_status: "active" | "cancelled" | "completed"
+      user_role: "admin" | "staff" | "trainer" | "member" | "guest"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -4830,6 +5309,7 @@ export const Constants = {
   public: {
     Enums: {
       class_status: ["active", "cancelled", "completed"],
+      user_role: ["admin", "staff", "trainer", "member", "guest"],
     },
   },
 } as const

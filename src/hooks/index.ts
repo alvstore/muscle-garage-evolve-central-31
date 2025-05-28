@@ -39,7 +39,7 @@ export { useLocalStorage } from './utils/use-local-storage';
 
 // Hikvision
 // Hikvision hooks
-export { useHikvisionSettings } from './use-hikvision-settings';
+export { useHikvisionSettings } from './access/use-hikvision-settings';
 // Note: useHikvision from use-hikvision-consolidated has been deprecated in favor of useHikvisionSettings
 
 // Export from subdirectories

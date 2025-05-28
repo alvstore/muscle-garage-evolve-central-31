@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { useHikvisionSettings } from '@/hooks/use-hikvision-settings';
+import { useHikvisionSettings } from '@/hooks/access/use-hikvision-settings';
 import { toast } from '@/components/ui/use-toast';
 import { CheckCircle, XCircle, Loader2 } from 'lucide-react';
 

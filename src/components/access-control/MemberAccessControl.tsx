@@ -22,7 +22,7 @@ import {
   XCircle
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { useHikvisionSettings } from '@/hooks/use-hikvision-settings';
+import { useHikvisionSettings } from '@/hooks/access/use-hikvision-settings';
 
 interface MemberAccess {
   id: string;

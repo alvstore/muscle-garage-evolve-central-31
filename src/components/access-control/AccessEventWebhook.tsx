@@ -15,7 +15,7 @@ import {
   UserX, 
   Loader 
 } from 'lucide-react';
-import { useHikvisionSettings } from '@/hooks/use-hikvision-settings';
+import { useHikvisionSettings } from '@/hooks/access/use-hikvision-settings';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { HikvisionEvent } from '@/types/settings/hikvision-types';
