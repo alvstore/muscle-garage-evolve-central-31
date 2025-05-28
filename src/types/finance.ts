@@ -1,8 +1,9 @@
+
 export interface Invoice {
   id: string;
   invoice_number?: string;
   member_id: string;
-  member_name?: string; // Add this for backward compatibility
+  member_name?: string;
   amount: number;
   tax_amount?: number;
   total_amount?: number;
@@ -17,7 +18,7 @@ export interface Invoice {
   updated_at?: string;
   description?: string;
   payment_method?: string;
-  membership_plan_id?: string; // Add this field
+  membership_plan_id?: string;
 }
 
 export interface InvoiceItem {
@@ -25,9 +26,9 @@ export interface InvoiceItem {
   description: string;
   quantity: number;
   unit_price?: number;
-  price?: number; // For backward compatibility
+  price?: number;
   total: number;
-  name?: string; // For backward compatibility
+  name?: string;
 }
 
 export type InvoiceStatus = 'draft' | 'sent' | 'paid' | 'overdue' | 'cancelled' | 'pending';
@@ -103,3 +104,6 @@ export interface FinanceSummary {
     category: string;
   }>;
 }
+
+// For backward compatibility
+export type FinancialTransaction = Transaction;
