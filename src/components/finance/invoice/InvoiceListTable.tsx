@@ -1,30 +1,22 @@
 
 import React from 'react';
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { format } from 'date-fns';
+import { Button } from '@/components/ui/button';
 import { Invoice } from '@/types/finance';
-import { InvoiceActions } from './InvoiceActions';
+import { formatCurrency } from '@/utils/stringUtils';
+import { Eye, Edit, Trash2, Download, CreditCard, Send } from 'lucide-react';
 
-export interface InvoiceListTableProps {
+interface InvoiceListTableProps {
   invoices: Invoice[];
   isLoading: boolean;
   readonly?: boolean;
   allowPayment?: boolean;
   allowDownload?: boolean;
-  onEdit?: (invoice: Invoice) => void;
-  onMarkAsPaid?: (id: string) => void;
-  onSendPaymentLink?: (id: string) => void;
-  onDownload?: (id: string) => void;
-  onDelete?: (id: string) => void;
-  statusColors?: Record<string, string>;
+  onEdit: (invoice: Invoice) => void;
+  onMarkAsPaid: (id: string) => void;
+  onSendPaymentLink: (id: string) => void;
+  onDownload: (id: string) => void;
+  onDelete: (id: string) => void;
 }
 
 export const InvoiceListTable: React.FC<InvoiceListTableProps> = ({
@@ -39,62 +31,98 @@ export const InvoiceListTable: React.FC<InvoiceListTableProps> = ({
   onDownload,
   onDelete,
 }) => {
-  if (isLoading) {
-    return <div className="flex justify-center py-8">Loading invoices...</div>;
-  }
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'paid': return 'bg-green-100 text-green-800';
+      case 'pending': return 'bg-yellow-100 text-yellow-800';
+      case 'overdue': return 'bg-red-100 text-red-800';
+      case 'cancelled': return 'bg-gray-100 text-gray-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
 
-  if (!invoices || invoices.length === 0) {
-    return <div className="text-center py-10">No invoices found</div>;
+  if (isLoading) {
+    return <div>Loading invoices...</div>;
   }
 
   return (
     <div className="overflow-x-auto">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Invoice #</TableHead>
-            <TableHead>Member</TableHead>
-            <TableHead>Amount</TableHead>
-            <TableHead>Issue Date</TableHead>
-            <TableHead>Due Date</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead className="text-right">Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
+      <table className="w-full">
+        <thead>
+          <tr className="border-b">
+            <th className="text-left p-2">Invoice #</th>
+            <th className="text-left p-2">Member</th>
+            <th className="text-left p-2">Amount</th>
+            <th className="text-left p-2">Status</th>
+            <th className="text-left p-2">Due Date</th>
+            <th className="text-left p-2">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
           {invoices.map((invoice) => (
-            <TableRow key={invoice.id}>
-              <TableCell>{invoice.id.substring(0, 8)}...</TableCell>
-              <TableCell>{invoice.memberName || 'Unknown'}</TableCell>
-              <TableCell>${invoice.amount.toLocaleString()}</TableCell>
-              <TableCell>{format(new Date(invoice.issued_date), 'MMM d, yyyy')}</TableCell>
-              <TableCell>{format(new Date(invoice.due_date), 'MMM d, yyyy')}</TableCell>
-              <TableCell>
-                <Badge 
-                  variant={invoice.status === "paid" ? "default" : 
-                         invoice.status === "pending" ? "outline" : 
-                         "destructive"}
-                >
+            <tr key={invoice.id} className="border-b">
+              <td className="p-2">#{invoice.id.substring(0, 8)}</td>
+              <td className="p-2">{invoice.member_name || 'Unknown'}</td>
+              <td className="p-2">{formatCurrency(invoice.amount)}</td>
+              <td className="p-2">
+                <Badge className={getStatusColor(invoice.status)}>
                   {invoice.status}
                 </Badge>
-              </TableCell>
-              <TableCell>
-                <InvoiceActions
-                  invoice={invoice}
-                  readonly={readonly}
-                  allowPayment={allowPayment}
-                  allowDownload={allowDownload}
-                  onEdit={onEdit || (() => {})}
-                  onMarkAsPaid={onMarkAsPaid || (() => {})}
-                  onSendPaymentLink={onSendPaymentLink || (() => {})}
-                  onDownload={onDownload || (() => {})}
-                  onDelete={onDelete}
-                />
-              </TableCell>
-            </TableRow>
+              </td>
+              <td className="p-2">{new Date(invoice.due_date).toLocaleDateString()}</td>
+              <td className="p-2">
+                <div className="flex gap-1">
+                  {!readonly && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => onEdit(invoice)}
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                  )}
+                  {allowPayment && invoice.status !== 'paid' && (
+                    <>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => onMarkAsPaid(invoice.id)}
+                      >
+                        <CreditCard className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => onSendPaymentLink(invoice.id)}
+                      >
+                        <Send className="h-4 w-4" />
+                      </Button>
+                    </>
+                  )}
+                  {allowDownload && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => onDownload(invoice.id)}
+                    >
+                      <Download className="h-4 w-4" />
+                    </Button>
+                  )}
+                  {!readonly && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => onDelete(invoice.id)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+              </td>
+            </tr>
           ))}
-        </TableBody>
-      </Table>
+        </tbody>
+      </table>
     </div>
   );
 };
