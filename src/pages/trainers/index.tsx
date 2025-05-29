@@ -1,16 +1,11 @@
 
 import React, { useState, useEffect } from 'react';
 import { Container } from '@/components/ui/container';
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { PlusCircle, Search, Star, Edit, Trash2, UserCheck, X } from 'lucide-react';
+import { Edit, PlusCircle, Search, Star, Trash2, UserCheck, X } from 'lucide-react';
 import { useTrainers } from '@/hooks/team/use-trainers';
 import { toast } from 'sonner';
 import { CreateTeamMemberDialog } from '@/components/team/CreateTeamMemberDialog';
@@ -18,7 +13,7 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Trainer } from '@/types/team/trainer';
 
 const TrainerList = () => {
-  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [isCreateMemberDialogOpen, setIsCreateMemberDialogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredTrainers, setFilteredTrainers] = useState<Trainer[]>([]);
   const { trainers, isLoading, refetch, deleteTrainer } = useTrainers();
@@ -64,9 +59,11 @@ const TrainerList = () => {
               Manage your gym trainers and their assignments
             </p>
           </div>
-          <Button onClick={() => setShowCreateDialog(true)}>
-            <PlusCircle className="h-4 w-4 mr-2" />
-            Add Trainer
+          <Button
+            onClick={() => setIsCreateMemberDialogOpen(true)}
+            className="ml-auto"
+          >
+            <PlusCircle className="mr-2 h-4 w-4" /> Add Trainer
           </Button>
         </div>
 
@@ -187,13 +184,9 @@ const TrainerList = () => {
         )}
 
         <CreateTeamMemberDialog
-          open={showCreateDialog}
-          onOpenChange={setShowCreateDialog}
-          onSuccess={() => {
-            setShowCreateDialog(false);
-            refetch();
-            toast.success("Trainer created successfully");
-          }}
+          open={isCreateMemberDialogOpen}
+          onOpenChange={setIsCreateMemberDialogOpen}
+          onSuccess={refetch}
         />
       </div>
     </Container>

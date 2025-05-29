@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Container } from '@/components/ui/container';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -7,13 +7,13 @@ import { DataTable } from '@/components/ui/data-table';
 import { StaffMemberColumn } from '@/components/staff/StaffMemberColumn';
 import { useStaff } from '@/hooks/team/use-staff';
 import { useBranch } from '@/hooks/settings/use-branches';
-import { Check, Loader2, Plus, Search, Users } from 'lucide-react';
+import { Loader2, Plus, Search, Users } from 'lucide-react';
 import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
 import { CreateTeamMemberDialog } from '@/components/team/CreateTeamMemberDialog';
 
 const StaffListPage = () => {
-  const [isCreateStaffDialogOpen, setIsCreateStaffDialogOpen] = useState(false);
+  const [isCreateMemberDialogOpen, setIsCreateMemberDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('all');
   const { staff, isLoading, fetchStaff } = useStaff();
@@ -27,8 +27,9 @@ const StaffListPage = () => {
 
   // Filter staff based on search query and active tab
   const filteredStaff = staff.filter(member => {
+    const displayName = member.full_name || member.name || '';
     const matchesSearch = 
-      member.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      displayName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (member.email && member.email.toLowerCase().includes(searchQuery.toLowerCase())) ||
       (member.phone && member.phone.toLowerCase().includes(searchQuery.toLowerCase())) ||
       member.role.toLowerCase().includes(searchQuery.toLowerCase());
@@ -46,7 +47,7 @@ const StaffListPage = () => {
   };
 
   const handleCreateSuccess = () => {
-    setIsCreateStaffDialogOpen(false);
+    setIsCreateMemberDialogOpen(false);
     fetchStaff(); // Refresh the staff list
     toast.success("Team member created successfully");
   };
@@ -72,8 +73,9 @@ const StaffListPage = () => {
               />
             </div>
             
-            <Button onClick={() => setIsCreateStaffDialogOpen(true)}>
-              <Plus className="mr-2 h-4 w-4" /> Add Team Member
+            <Button onClick={() => setIsCreateMemberDialogOpen(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Add Team Member
             </Button>
           </div>
         </div>
@@ -116,8 +118,8 @@ const StaffListPage = () => {
         </Tabs>
 
         <CreateTeamMemberDialog 
-          open={isCreateStaffDialogOpen} 
-          onOpenChange={setIsCreateStaffDialogOpen} 
+          open={isCreateMemberDialogOpen} 
+          onOpenChange={setIsCreateMemberDialogOpen} 
           onSuccess={handleCreateSuccess} 
         />
       </div>

@@ -256,9 +256,11 @@ const TaskManagement = () => {
   
   // Handle select input changes
   const handleSelectChange = (name: string, value: string) => {
+    // Convert empty string to null for the assignedTo field
+    const newValue = (name === 'assignedTo' && value === '') ? null : value;
     setFormData(prev => ({
       ...prev,
-      [name]: value
+      [name]: newValue
     }));
   };
 
@@ -519,17 +521,17 @@ const TaskManagement = () => {
                 <div className="space-y-2">
                   <Label>Assign To</Label>
                   <Select 
-                    value={formData.assignedTo}
+                    value={formData.assignedTo || undefined}
                     onValueChange={(value) => handleSelectChange('assignedTo', value)}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select staff or trainer" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Unassigned</SelectItem>
+                      <SelectItem value="unassigned">Unassigned</SelectItem>
                       {staffMembers.map(staff => (
                         <SelectItem key={staff.id} value={staff.id}>
-                          {staff.name}
+                          {staff.full_name || staff.name}
                         </SelectItem>
                       ))}
                     </SelectContent>

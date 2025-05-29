@@ -6,7 +6,7 @@ import { useBranch } from '@/hooks/settings/use-branches';
 
 export interface StaffMember {
   id: string;
-  name: string;
+  full_name: string;
   email: string;
   phone?: string;
   role: string;
@@ -18,6 +18,8 @@ export interface StaffMember {
   id_number?: string;
   created_at: string;
   updated_at: string;
+  // For backward compatibility
+  name?: string;
 }
 
 export const useStaff = () => {
@@ -43,21 +45,25 @@ export const useStaff = () => {
       if (staffError) throw staffError;
       
       // Map the data to our StaffMember interface
-      const formattedStaff = staffProfiles.map(member => ({
-        id: member.id,
-        name: member.full_name || '',
-        email: member.email || '',
-        phone: member.phone || '',
-        role: member.role || 'staff',
-        department: member.department || '',
-        branch_id: member.branch_id || '',
-        avatar_url: member.avatar_url || '',
-        is_active: member.is_active !== undefined ? member.is_active : true,
-        id_type: member.id_type || '',
-        id_number: member.id_number || '',
-        created_at: member.created_at || '',
-        updated_at: member.updated_at || ''
-      }));
+      const formattedStaff = staffProfiles.map(member => {
+        const fullName = member.full_name || '';
+        return {
+          id: member.id,
+          full_name: fullName,
+          name: fullName, // For backward compatibility
+          email: member.email || '',
+          phone: member.phone || '',
+          role: member.role || 'staff',
+          department: member.department || '',
+          branch_id: member.branch_id || '',
+          avatar_url: member.avatar_url || '',
+          is_active: member.is_active !== undefined ? member.is_active : true,
+          id_type: member.id_type || '',
+          id_number: member.id_number || '',
+          created_at: member.created_at || '',
+          updated_at: member.updated_at || ''
+        };
+      });
       
       setStaff(formattedStaff);
     } catch (error) {

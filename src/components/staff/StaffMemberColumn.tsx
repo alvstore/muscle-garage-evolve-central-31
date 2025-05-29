@@ -30,19 +30,20 @@ const getInitials = (name: string) => {
 export const StaffMemberColumn = (onRefresh: () => void): ColumnDef<StaffMember>[] => {
   return [
     {
-      id: 'name',
+      id: 'full_name',
       header: 'Name',
-      accessorKey: 'name',
+      accessorKey: 'full_name',
       cell: ({ row }) => {
         const staff = row.original;
+        const displayName = staff.full_name || staff.name || '';
         return (
           <div className="flex items-center space-x-3">
             <Avatar className="h-9 w-9 shrink-0">
-              <AvatarImage src={staff.avatar_url || ''} alt={staff.name} />
-              <AvatarFallback>{getInitials(staff.name)}</AvatarFallback>
+              <AvatarImage src={staff.avatar_url || ''} alt={displayName} />
+              <AvatarFallback>{getInitials(displayName)}</AvatarFallback>
             </Avatar>
             <div className="min-w-0">
-              <p className="font-medium truncate">{staff.name}</p>
+              <p className="font-medium truncate">{displayName}</p>
               <p className="text-sm text-muted-foreground truncate">{staff.email}</p>
             </div>
           </div>
