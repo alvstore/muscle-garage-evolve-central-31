@@ -1,24 +1,24 @@
 export interface MembershipPlan {
-  id: string;
+  id?: string; // Optional for new plans
   name: string;
-  description?: string;
+  plan_name: string | null;
+  description: string | null;
   price: number;
   duration_days: number;
-  durationDays?: number; // For backward compatibility
-  features?: string[] | any[];
-  benefits?: string[] | any[]; // For backward compatibility
-  is_active?: boolean;
-  isActive?: boolean; // For backward compatibility
-  status?: string;
-  branch_id?: string;
-  created_at?: string;
-  updated_at?: string;
-  createdAt?: string; // For backward compatibility
-  updatedAt?: string; // For backward compatibility
-  duration_label?: string; // Added for MembershipPlanForm
-  allowed_classes?: ClassType; // Added for MembershipPlanForm
-  memberCount?: number; // For MembershipPlanCard
-  durationLabel?: string; // For backward compatibility
+  features: Record<string, any>;
+  is_active: boolean;
+  branch_id: string | null;
+  created_at: string;
+  updated_at: string;
+  
+  // For backward compatibility
+  durationDays: number;
+  isActive: boolean;
+  status?: MembershipPlanStatus; // Optional since not all database schemas have this
+  benefits: string[];
+  memberCount: number;
+  durationLabel: string;
+  allowed_classes?: ClassType; // Optional field - not all database schemas have this
 }
 
 // Add these missing types

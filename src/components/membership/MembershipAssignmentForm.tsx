@@ -1,5 +1,3 @@
-
-// Update the MembershipAssignmentForm component to use the new calculateEndDate and assignMembership methods
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,24 +6,18 @@ import {
   Select, SelectContent, SelectGroup, 
   SelectItem, SelectTrigger, SelectValue 
 } from '@/components/ui/select';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog';
+import { AccessibleDialog } from '@/components/ui/accessible-dialog';
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { format, addDays } from 'date-fns';
+import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { CalendarIcon, Loader2 } from 'lucide-react';
 import { membershipService } from '@/services/members/membershipService';
-import { MembershipPlan } from '@/types/members/member';
+import type { MembershipPlan } from '@/types/members/membership';
 import { useBranch } from '@/hooks/settings/use-branches';
 import { toast } from 'sonner';
 
@@ -35,14 +27,16 @@ interface MembershipAssignmentFormProps {
   memberId: string;
   memberName: string;
   onAssigned?: () => void;
+  onSuccess?: () => void;
 }
 
 const MembershipAssignmentForm: React.FC<MembershipAssignmentFormProps> = ({
-  isOpen,
-  onClose,
   memberId,
   memberName,
-  onAssigned
+  isOpen,
+  onClose,
+  onAssigned,
+  onSuccess,
 }) => {
   const { currentBranch } = useBranch();
   const [membershipPlans, setMembershipPlans] = useState<MembershipPlan[]>([]);
@@ -56,8 +50,7 @@ const MembershipAssignmentForm: React.FC<MembershipAssignmentFormProps> = ({
   const [discount, setDiscount] = useState<number>(0);
   const [amountPaid, setAmountPaid] = useState<number>(0);
   const [notes, setNotes] = useState<string>('');
-  
-  // Load membership plans
+
   useEffect(() => {
     const fetchMembershipPlans = async () => {
       try {
@@ -85,19 +78,16 @@ const MembershipAssignmentForm: React.FC<MembershipAssignmentFormProps> = ({
     if (isOpen) {
       fetchMembershipPlans();
     }
-  }, [isOpen, currentBranch?.id]);
-  
-  // Update end date and amount when plan changes
+  }, [isOpen, currentBranch?.id, onClose]);
+
   useEffect(() => {
     if (selectedPlanId && startDate) {
       const selectedPlan = membershipPlans.find(plan => plan.id === selectedPlanId);
       
       if (selectedPlan) {
-        // Update amount
         setAmount(selectedPlan.price);
         setAmountPaid(selectedPlan.price);
         
-        // Calculate end date based on duration
         const calculatedEndDate = membershipService.calculateEndDate(
           startDate,
           selectedPlan.duration_days
@@ -107,21 +97,18 @@ const MembershipAssignmentForm: React.FC<MembershipAssignmentFormProps> = ({
       }
     }
   }, [selectedPlanId, startDate, membershipPlans]);
-  
-  // Update amount paid when discount changes
+
   useEffect(() => {
     if (amount > 0) {
       const discountAmount = (amount * discount) / 100;
       setAmountPaid(amount - discountAmount);
     }
   }, [amount, discount]);
-  
-  // Handle start date changes
+
   const handleStartDateChange = (date: Date | undefined) => {
     if (date) {
       setStartDate(date);
       
-      // Recalculate end date if plan selected
       if (selectedPlanId) {
         const selectedPlan = membershipPlans.find(plan => plan.id === selectedPlanId);
         if (selectedPlan) {
@@ -134,67 +121,67 @@ const MembershipAssignmentForm: React.FC<MembershipAssignmentFormProps> = ({
       }
     }
   };
-  
-  // Handle plan selection
+
   const handlePlanChange = (planId: string) => {
     setSelectedPlanId(planId);
   };
-  
-  // Handle discount change
+
   const handleDiscountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = parseFloat(e.target.value);
     setDiscount(isNaN(value) ? 0 : Math.min(value, 100));
   };
-  
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!selectedPlanId || !startDate || !endDate) {
-      toast.error('Please fill all required fields');
+    if (!selectedPlanId || !startDate || !endDate || !currentBranch?.id) {
+      toast.error('Please fill in all required fields');
       return;
     }
     
+    setIsSubmitting(true);
+    
     try {
-      setIsSubmitting(true);
-      
-      const membershipData = {
+      const result = await membershipService.assignMembership({
         member_id: memberId,
         membership_id: selectedPlanId,
-        start_date: startDate.toISOString(),
-        end_date: endDate.toISOString(),
+        branch_id: currentBranch.id,
+        start_date: startDate,
+        end_date: endDate,
         total_amount: amount,
-        amount_paid: amountPaid,
-        payment_status: amountPaid >= amount ? 'paid' : 'partial',
-        status: 'active',
-        branch_id: currentBranch?.id
-      };
+        payment: {
+          amount: amountPaid,
+          method: 'cash',
+          status: amountPaid >= amount ? 'paid' : 'partial',
+          notes: notes
+        },
+        notes: notes
+      });
       
-      const success = await membershipService.assignMembership(membershipData);
-      
-      if (success) {
+      if (result.success) {
         toast.success('Membership assigned successfully');
-        if (onAssigned) {
-          onAssigned();
-        }
+        onSuccess?.();
+        onAssigned?.();
         onClose();
       } else {
-        toast.error('Failed to assign membership');
+        throw new Error(result.error || 'Failed to assign membership');
       }
     } catch (error) {
       console.error('Error assigning membership:', error);
-      toast.error('Failed to assign membership');
+      toast.error(error instanceof Error ? error.message : 'Failed to assign membership. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
   };
-  
+
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[500px]">
-        <DialogHeader>
-          <DialogTitle>Assign Membership</DialogTitle>
-        </DialogHeader>
-        
+    <AccessibleDialog
+      open={isOpen}
+      onOpenChange={onClose}
+      title="Assign Membership"
+      description={`Assign a membership plan to ${memberName}`}
+    >
+      <div className="p-4">
         {isLoading ? (
           <div className="flex items-center justify-center py-8">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -215,13 +202,11 @@ const MembershipAssignmentForm: React.FC<MembershipAssignmentFormProps> = ({
                   </SelectTrigger>
                   <SelectContent>
                     <SelectGroup>
-                      {membershipPlans.map((plan) =>
-                        plan.is_active && (
-                          <SelectItem key={plan.id} value={plan.id}>
-                            {plan.name} - ₹{plan.price} for {plan.duration_days} days
-                          </SelectItem>
-                        )
-                      )}
+                      {membershipPlans.map((plan) => (
+                        <SelectItem key={plan.id} value={plan.id || ''}>
+                          {plan.name} - ₹{plan.price} for {plan.duration_days} days
+                        </SelectItem>
+                      ))}
                     </SelectGroup>
                   </SelectContent>
                 </Select>
@@ -273,7 +258,6 @@ const MembershipAssignmentForm: React.FC<MembershipAssignmentFormProps> = ({
                       <Calendar
                         mode="single"
                         selected={endDate}
-                        onSelect={setEndDate}
                         disabled
                       />
                     </PopoverContent>
@@ -324,11 +308,12 @@ const MembershipAssignmentForm: React.FC<MembershipAssignmentFormProps> = ({
                   id="notes"
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
+                  placeholder="Any additional notes"
                 />
               </div>
             </div>
             
-            <DialogFooter>
+            <div className="flex justify-end gap-2 mt-4">
               <Button type="button" variant="outline" onClick={onClose}>
                 Cancel
               </Button>
@@ -342,11 +327,11 @@ const MembershipAssignmentForm: React.FC<MembershipAssignmentFormProps> = ({
                   "Assign Membership"
                 )}
               </Button>
-            </DialogFooter>
+            </div>
           </form>
         )}
-      </DialogContent>
-    </Dialog>
+      </div>
+    </AccessibleDialog>
   );
 };
 

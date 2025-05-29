@@ -2,181 +2,198 @@
 import React, { useState, useEffect } from 'react';
 import { PlusCircle, Trash, Edit } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import MembershipPlanCard from './MembershipPlanCard';
 import MembershipPlanForm from './MembershipPlanForm';
 import { membershipService } from '@/services';
 import { toast } from 'sonner';
 import { MembershipPlan } from "@/types/members/membership";
-import { useDisclosure } from '@/hooks/utils/use-disclosure';
-import EmptyState from '@/components/ui/empty-state';
 import { useBranch } from '@/hooks/settings/use-branches';
+import BranchSelector from '@/components/branch/BranchSelector';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const MembershipPlans = () => {
   const [plans, setPlans] = useState<MembershipPlan[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [selectedPlan, setSelectedPlan] = useState<MembershipPlan | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { isOpen, onOpen, onClose } = useDisclosure();
-  const { isOpen: isDeleteOpen, onOpen: onDeleteOpen, onClose: onDeleteClose } = useDisclosure();
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [dialogMode, setDialogMode] = useState<'create' | 'edit'>('create');
   const { currentBranch } = useBranch();
+  
+  // Simple dialog controls
+  const openDialog = (mode: 'create' | 'edit' = 'create') => {
+    if (!currentBranch?.id) {
+      toast.error('Please select a branch first');
+      return;
+    }
+    setDialogMode(mode);
+    setIsDialogOpen(true);
+  };
+  
+  const closeDialog = () => setIsDialogOpen(false);
+  const openDeleteDialog = () => setIsDeleteDialogOpen(true);
+  const closeDeleteDialog = () => setIsDeleteDialogOpen(false);
 
   // Fetch plans when component mounts or when branch changes
   useEffect(() => {
-    if (currentBranch?.id) {
-      fetchMembershipPlans();
-    } else {
-      // Clear plans when no branch is selected
-      setPlans([]);
-    }
+    const loadPlans = async () => {
+      if (!currentBranch?.id) {
+        setPlans([]);
+        setIsLoading(false);
+        return;
+      }
+      
+      try {
+        setIsLoading(true);
+        const data = await membershipService.getMembershipPlans(currentBranch.id);
+        setPlans(Array.isArray(data) ? data : []);
+      } catch (error) {
+        console.error('Failed to fetch membership plans:', error);
+        toast.error('Failed to load membership plans');
+        setPlans([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    loadPlans();
   }, [currentBranch?.id]);
 
-  const fetchMembershipPlans = async () => {
-    setIsLoading(true);
-    try {
-      // Pass the current branch ID to filter plans by branch
-      const data = await membershipService.getMembershipPlans(currentBranch?.id);
-      setPlans(data || []);
-    } catch (error) {
-      console.error('Failed to fetch membership plans:', error);
-      toast.error('Failed to fetch membership plans');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleCreatePlan = () => {
-    console.log('Create plan button clicked');
-    console.log('Current branch:', currentBranch);
-    
-    // Check if branch is available
-    if (!currentBranch?.id) {
-      toast.error('Please select a branch first to create a membership plan');
-      return;
-    }
-    
-    setSelectedPlan(null);
-    setDialogMode('create');
-    onOpen();
-  };
-
+  const handleCreatePlan = () => openDialog('create');
+  
   const handleEditPlan = (plan: MembershipPlan) => {
     setSelectedPlan(plan);
-    setDialogMode('edit');
-    onOpen();
+    openDialog('edit');
   };
-
+  
   const handleDeletePlan = (plan: MembershipPlan) => {
     setSelectedPlan(plan);
-    onDeleteOpen();
+    openDeleteDialog();
   };
-
+  
   const confirmDelete = async () => {
     if (!selectedPlan) return;
     
     setIsSubmitting(true);
     try {
-      // Use the correct method signature that matches the service
       await membershipService.deleteMembershipPlan(selectedPlan.id);
       toast.success('Membership plan deleted successfully');
-      fetchMembershipPlans();
-      onDeleteClose();
+      setPlans(plans.filter(p => p.id !== selectedPlan.id));
+      closeDeleteDialog();
     } catch (error) {
-      console.error('Failed to delete membership plan:', error);
+      console.error('Failed to delete plan:', error);
       toast.error('Failed to delete membership plan');
     } finally {
       setIsSubmitting(false);
     }
   };
-
+  
   const handleSavePlan = async (planData: MembershipPlan) => {
-    setIsSubmitting(true);
     try {
+      setIsSubmitting(true);
+      
       if (!currentBranch?.id) {
-        toast.error('Branch selection is required');
-        setIsSubmitting(false);
-        return;
-      }
-
-      if (dialogMode === 'edit' && selectedPlan) {
-        // Use the correct method signature that matches the service
-        await membershipService.updateMembershipPlan(selectedPlan.id, planData);
-        toast.success('Membership plan updated successfully');
-      } else {
-        // Include branch_id when creating a new membership plan
-        const planWithBranch = {
-          ...planData,
-          branch_id: currentBranch.id // Use non-optional branch_id
-        };
-        console.log('Creating plan with data:', planWithBranch);
-        const result = await membershipService.createMembershipPlan(planWithBranch);
-        
-        if (result) {
-          toast.success('Membership plan created successfully');
-        } else {
-          toast.error('Failed to create membership plan');
-          setIsSubmitting(false);
-          return;
-        }
+        throw new Error('No branch selected');
       }
       
-      fetchMembershipPlans();
-      onClose();
+      // Ensure branch_id is set from current branch
+      const planWithBranch = {
+        ...planData,
+        branch_id: currentBranch.id
+      };
+      
+      if (dialogMode === 'edit' && selectedPlan?.id) {
+        // Update existing plan
+        await membershipService.updateMembershipPlan(selectedPlan.id, planWithBranch);
+        toast.success('Membership plan updated successfully');
+      } else {
+        // Create new plan
+        await membershipService.createMembershipPlan(planWithBranch);
+        toast.success('Membership plan created successfully');
+      }
+      
+      // Refresh the plans list
+      const data = await membershipService.getMembershipPlans(currentBranch.id);
+      setPlans(data);
+      
+      closeDialog();
     } catch (error) {
-      console.error('Failed to save membership plan:', error);
-      toast.error('Failed to save membership plan');
+      console.error('Error saving membership plan:', error);
+      toast.error(`Failed to save membership plan: ${error.message}`);
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  if (isLoading) {
+  if (!currentBranch?.id) {
     return (
-      <div className="w-full h-64 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Select a Branch</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <p>Please select a branch to manage membership plans.</p>
+            <BranchSelector branches={[]} onSelect={() => {}} />
+          </div>
+        </CardContent>
+      </Card>
     );
   }
-
-  if (plans.length === 0) {
+  
+  if (isLoading) {
     return (
-      <EmptyState
-        title="No Membership Plans"
-        description="You haven't created any membership plans yet. Create your first plan to start enrolling members."
-        icon={<PlusCircle className="w-10 h-10" />}
-        actionLabel="Create Membership Plan"
-        onAction={handleCreatePlan}
-      />
+      <div className="space-y-4">
+        <div className="flex justify-between items-center">
+          <h2 className="text-2xl font-bold">Loading plans...</h2>
+          <Button disabled>
+            <PlusCircle className="h-4 w-4 mr-2" />
+            Create Plan
+          </Button>
+        </div>
+      </div>
     );
   }
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-2xl font-bold">Membership Plans</h2>
-          <p className="text-muted-foreground">Manage your gym's membership plans</p>
-        </div>
+        <p className="text-muted-foreground">
+          {plans.length} {plans.length === 1 ? 'plan' : 'plans'} for {currentBranch.name}
+        </p>
         <Button onClick={handleCreatePlan}>
           <PlusCircle className="h-4 w-4 mr-2" />
           Create Plan
         </Button>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {plans.map((plan) => (
-          <MembershipPlanCard
-            key={plan.id}
-            plan={plan}
-            onEdit={() => handleEditPlan(plan)}
-            onDelete={() => handleDeletePlan(plan)}
-          />
-        ))}
-      </div>
+      {!plans || plans.length === 0 ? (
+        <Alert>
+          <PlusCircle className="h-4 w-4" />
+          <AlertTitle>No plans yet</AlertTitle>
+          <AlertDescription>
+            Get started by creating your first membership plan.
+          </AlertDescription>
+        </Alert>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {plans?.map((plan) => (
+            plan && plan.id ? (
+              <MembershipPlanCard
+                key={plan.id}
+                plan={plan}
+                onEdit={() => handleEditPlan(plan)}
+                onDelete={() => handleDeletePlan(plan)}
+              />
+            ) : null
+          ))}
+        </div>
+      )}
 
-      <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
             <DialogTitle>{dialogMode === 'create' ? 'Create Membership Plan' : 'Edit Membership Plan'}</DialogTitle>
@@ -189,27 +206,28 @@ const MembershipPlans = () => {
           <MembershipPlanForm
             plan={selectedPlan}
             onSave={handleSavePlan}
-            onCancel={onClose}
+            onCancel={closeDialog}
             isSubmitting={isSubmitting}
+            isEditing={dialogMode === 'edit'}
+            branchId={currentBranch?.id}
+            key={currentBranch?.id} // Force re-render when branch changes
           />
         </DialogContent>
       </Dialog>
 
-      <Dialog open={isDeleteOpen} onOpenChange={(open) => !open && onDeleteClose()}>
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Delete Membership Plan</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete the "{selectedPlan?.name}" membership plan? This action cannot be undone.
+              Are you sure you want to delete this membership plan? This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
-          <div className="flex justify-end space-x-2 mt-4">
-            <Button variant="outline" onClick={onDeleteClose} disabled={isSubmitting}>Cancel</Button>
-            <Button 
-              variant="destructive" 
-              onClick={confirmDelete} 
-              disabled={isSubmitting}
-            >
+          <div className="flex justify-end space-x-4 mt-4">
+            <Button variant="outline" onClick={closeDeleteDialog} disabled={isSubmitting}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={confirmDelete} disabled={isSubmitting}>
               {isSubmitting ? 'Deleting...' : 'Delete Plan'}
             </Button>
           </div>

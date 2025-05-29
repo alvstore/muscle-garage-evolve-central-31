@@ -1007,10 +1007,13 @@ const MemberProfilePage = () => {
       </Container>
 
       <Dialog open={isAddMembershipOpen} onOpenChange={setIsAddMembershipOpen}>
-        <DialogContent className="max-w-3xl">
+        <DialogContent 
+          className="max-w-3xl"
+          aria-describedby="assign-membership-description"
+        >
           <DialogHeader>
             <DialogTitle>Assign Membership</DialogTitle>
-            <DialogDescription>
+            <DialogDescription id="assign-membership-description">
               Assign a membership plan to {member.name}
             </DialogDescription>
           </DialogHeader>
