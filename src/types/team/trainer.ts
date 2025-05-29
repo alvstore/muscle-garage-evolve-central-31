@@ -1,44 +1,50 @@
 // Base user role type
-export type UserRole = 'admin' | 'staff' | 'trainer' | 'member' | 'guest';
+import { UserRole } from '../auth/user';
 
-// Profile interface from the profiles table
-export interface Profile {
+// User data from auth.users
+export interface User {
   id: string;
-  full_name: string | null;
-  email: string | null;
+  email: string;
   phone: string | null;
-  avatar_url: string | null;
-  gender: string | null;
-  date_of_birth: string | null;
-  address: string | null;
-  city: string | null;
-  state: string | null;
-  country: string | null;
-  id_number: string | null;
-  id_type: string | null;
-  is_active: boolean | null;
-  is_branch_manager: boolean | null;
-  rating: number | null;
-  role: string;
-  department: string | null;
-  branch_id: string | null;
-  accessible_branch_ids: string[] | null;
-  created_at: string | null;
-  updated_at: string | null;
-  
-  // Joined fields
-  user_roles?: {
-    id: string;
-    role: UserRole;
-    created_at: string;
-    updated_at: string;
-  }[];
+  raw_user_meta_data?: {
+    full_name?: string;
+    avatar_url?: string;
+    [key: string]: any;
+  };
+  created_at: string;
+  updated_at: string;
+}
+
+// User role from user_roles table
+export interface UserRoleRecord {
+  id: string;
+  user_id: string;
+  role: UserRole;
+  created_at: string;
+  updated_at: string;
+}
+
+// User input for creating a new user
+export interface CreateUserInput {
+  email: string;
+  password: string;
+  phone?: string | null;
+  full_name?: string;
+  avatar_url?: string | null;
+}
+
+// User input for updating a user
+export interface UpdateUserInput {
+  email?: string;
+  phone?: string | null;
+  full_name?: string;
+  avatar_url?: string | null;
 }
 
 // Trainer interface with relationships
 export interface Trainer {
   id: string;
-  profile_id: string;
+  user_id: string;
   employee_id: string | null;
   hire_date: string | null;
   experience_years: number | null;
@@ -72,14 +78,15 @@ export interface Trainer {
   updated_at: string | null;
   metadata: Record<string, any> | null;
   
-  // Joined fields
-  profile?: Profile;
+  // Joined fields from auth.users
+  user?: User;
   
   // Computed fields (not in the database)
   role?: UserRole;
   email?: string | null;
   full_name?: string | null;
   phone_number?: string | null;
+  avatar_url?: string | null;
 }
 
 export interface TrainerDocument {
@@ -133,10 +140,7 @@ export interface CreateProfileInput {
 }
 
 export interface CreateTrainerInput {
-  // Profile information (for creating/updating the associated profile)
-  profile: CreateProfileInput;
-  
-  // Trainer-specific fields
+  user_id: string; // Reference to auth.users table
   employee_id?: string | null;
   hire_date?: string | null;
   experience_years?: number | null;
@@ -174,8 +178,8 @@ export type UpdateProfileInput = Partial<Omit<CreateProfileInput, 'email'>> & {
 };
 
 export type UpdateTrainerInput = {
-  // Profile information (for updating the associated profile)
-  profile?: UpdateProfileInput;
+  // User information
+  user?: UpdateUserInput;
   
   // Trainer-specific fields
   employee_id?: string | null;

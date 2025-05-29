@@ -83,19 +83,13 @@ export const adminNavSections: NavSection[] = [
     ]
   },
   {
-    name: "Staff",
+    name: "Team Management",
     items: [
       {
         href: "/staff",
-        label: "Staff List",
+        label: "Team Members",
         permission: "manage_staff",
         icon: <Users className="h-5 w-5" />
-      },
-      {
-        href: "/trainers",
-        label: "Trainers",
-        permission: "manage_trainers",
-        icon: <UserRound className="h-5 w-5" />
       }
     ]
   },

@@ -4,7 +4,7 @@ import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useIsMobile } from "@/hooks/ui/use-mobile";
 import { useAuth } from "@/hooks/auth/use-auth";
 import DashboardSidebar from "./DashboardSidebar";
-import MemberSidebar from "./MemberSidebar";
+import MemberSidebar from "../members/MemberSidebar";
 import TrainerSidebar from "./TrainerSidebar";
 import DashboardHeader from "@/components/dashboard/sections/DashboardHeader";
 import { Toaster } from "sonner";

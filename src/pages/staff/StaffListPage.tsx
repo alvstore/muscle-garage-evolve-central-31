@@ -5,12 +5,12 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DataTable } from '@/components/ui/data-table';
 import { StaffMemberColumn } from '@/components/staff/StaffMemberColumn';
-import CreateStaffForm from '@/components/staff/CreateStaffForm';
 import { useStaff } from '@/hooks/team/use-staff';
 import { useBranch } from '@/hooks/settings/use-branches';
 import { Check, Loader2, Plus, Search, Users } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
+import { CreateTeamMemberDialog } from '@/components/team/CreateTeamMemberDialog';
 
 const StaffListPage = () => {
   const [isCreateStaffDialogOpen, setIsCreateStaffDialogOpen] = useState(false);
@@ -48,6 +48,7 @@ const StaffListPage = () => {
   const handleCreateSuccess = () => {
     setIsCreateStaffDialogOpen(false);
     fetchStaff(); // Refresh the staff list
+    toast.success("Team member created successfully");
   };
 
   return (
@@ -55,8 +56,8 @@ const StaffListPage = () => {
       <div className="py-6 space-y-4">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold">Staff Management</h1>
-            <p className="text-muted-foreground">Manage your gym staff and trainers</p>
+            <h1 className="text-2xl font-bold">Team Management</h1>
+            <p className="text-muted-foreground">Manage your gym staff, trainers, and administrators</p>
           </div>
           
           <div className="flex items-center gap-2">
@@ -64,7 +65,7 @@ const StaffListPage = () => {
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
                 type="search"
-                placeholder="Search staff..."
+                placeholder="Search team members..."
                 className="pl-8 w-full"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -72,7 +73,7 @@ const StaffListPage = () => {
             </div>
             
             <Button onClick={() => setIsCreateStaffDialogOpen(true)}>
-              <Plus className="mr-2 h-4 w-4" /> Add Staff
+              <Plus className="mr-2 h-4 w-4" /> Add Team Member
             </Button>
           </div>
         </div>
@@ -114,14 +115,11 @@ const StaffListPage = () => {
           </TabsContent>
         </Tabs>
 
-        <Dialog open={isCreateStaffDialogOpen} onOpenChange={setIsCreateStaffDialogOpen}>
-          <DialogContent className="sm:max-w-[600px]">
-            <DialogHeader>
-              <DialogTitle>Add New Staff Member</DialogTitle>
-            </DialogHeader>
-            <CreateStaffForm onSuccess={handleCreateSuccess} />
-          </DialogContent>
-        </Dialog>
+        <CreateTeamMemberDialog 
+          open={isCreateStaffDialogOpen} 
+          onOpenChange={setIsCreateStaffDialogOpen} 
+          onSuccess={handleCreateSuccess} 
+        />
       </div>
     </Container>
   );

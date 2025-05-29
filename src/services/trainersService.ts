@@ -1,28 +1,16 @@
 import { supabase } from '@/integrations/supabase/client';
-import { Trainer, TrainerDocument, TrainerSchedule, CreateTrainerInput } from '@/types/team/trainer';
+import { Trainer, TrainerDocument, TrainerSchedule, CreateTrainerInput, UpdateTrainerInput } from '@/types/team/trainer';
 
 export const trainersService = {
-  // Get all trainers with their profiles
+  // Get all trainers with their user information
   async getTrainers(options: { 
     activeOnly?: boolean;
     branchId?: string; 
   } = { activeOnly: true }) {
     const { activeOnly = true, branchId } = options;
     let query = supabase
-      .from('trainers')
-      .select(`
-        *,
-        profile:profiles!inner(
-          id,
-          full_name,
-          email,
-          phone,
-          avatar_url,
-          gender,
-          date_of_birth,
-          branch_id
-        )
-      `)
+      .from('trainers_with_users')
+      .select('*')
       .order('created_at', { ascending: false });
 
     if (activeOnly) {
@@ -30,7 +18,7 @@ export const trainersService = {
     }
 
     if (branchId) {
-      query = query.eq('profile.branch_id', branchId);
+      query = query.eq('branch_id', branchId);
     }
 
     const { data, error } = await query;
@@ -40,21 +28,41 @@ export const trainersService = {
       throw error;
     }
 
-    return data as unknown as Trainer[];
+    // Transform the data to match the Trainer interface
+    const trainers = data.map(trainer => ({
+      ...trainer,
+      // Add computed fields from user data
+      full_name: trainer.full_name,
+      email: trainer.email,
+      role: 'trainer'
+    }));
+
+    return trainers as Trainer[];
   },
 
-  // Get a single trainer by ID with full profile
+  // Get a single trainer by ID with full user information
   async getTrainerById(id: string) {
     const { data, error } = await supabase
-      .rpc('get_trainer_profile', { p_trainer_id: id })
+      .from('trainers_with_users')
+      .select('*')
+      .eq('id', id)
       .single();
 
     if (error) {
       console.error('Error fetching trainer:', error);
       throw error;
     }
+    
+    // Transform the data to match the Trainer interface
+    const trainer = {
+      ...data,
+      // Add computed fields from user data
+      full_name: data.full_name,
+      email: data.email,
+      role: 'trainer'
+    };
 
-    return data as Trainer;
+    return trainer as Trainer;
   },
 
   // Create a new trainer
@@ -80,12 +88,13 @@ export const trainersService = {
       console.error('Error creating trainer:', error);
       throw error;
     }
-
-    return data as Trainer;
+    
+    // Fetch the complete trainer data with user information
+    return this.getTrainerById(data.id);
   },
 
   // Update a trainer
-  async updateTrainer(id: string, updates: Partial<CreateTrainerInput>) {
+  async updateTrainer(id: string, updates: UpdateTrainerInput) {
     // Extract the bio from updates if it exists
     const { bio, ...updatesWithoutBio } = updates;
     
@@ -110,8 +119,9 @@ export const trainersService = {
       console.error('Error updating trainer:', error);
       throw error;
     }
-
-    return data as Trainer;
+    
+    // Fetch the complete trainer data with user information
+    return this.getTrainerById(id);
   },
 
   // Rate a trainer

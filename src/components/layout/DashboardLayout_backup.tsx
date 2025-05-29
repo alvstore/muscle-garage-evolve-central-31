@@ -9,7 +9,7 @@ import { Loader2, UserCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import DashboardSidebar from "./DashboardSidebar";
-import MemberSidebar from "./MemberSidebar";
+import MemberSidebar from "../members/MemberSidebar";
 import TrainerSidebar from "./TrainerSidebar";
 import DashboardHeader from "@/components/dashboard/sections/DashboardHeader";
 import { Toaster } from "sonner";

@@ -12,7 +12,8 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { PlusCircle, Search, Star, Edit, Trash2, UserCheck, X } from 'lucide-react';
 import { useTrainers } from '@/hooks/team/use-trainers';
-import { CreateTrainerDialog } from '@/components/trainers/CreateTrainerDialog';
+import { toast } from 'sonner';
+import { CreateTeamMemberDialog } from '@/components/team/CreateTeamMemberDialog';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Trainer } from '@/types/team/trainer';
 
@@ -185,12 +186,13 @@ const TrainerList = () => {
           </div>
         )}
 
-        <CreateTrainerDialog
+        <CreateTeamMemberDialog
           open={showCreateDialog}
           onOpenChange={setShowCreateDialog}
           onSuccess={() => {
             setShowCreateDialog(false);
             refetch();
+            toast.success("Trainer created successfully");
           }}
         />
       </div>
