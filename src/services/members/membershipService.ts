@@ -2,6 +2,56 @@ import { supabase } from '@/integrations/supabase/client';
 import { MembershipPlan } from '@/types/members/membership';
 import { toast } from 'sonner';
 
+// Helper function to send notifications
+const sendNotification = async (
+  userId: string, 
+  title: string, 
+  message: string, 
+  type: 'success' | 'error' | 'info' | 'warning' = 'info'
+) => {
+  try {
+    const { error } = await supabase
+      .from('notifications')
+      .insert({
+        user_id: userId,
+        title,
+        message,
+        type,
+        is_read: false,
+        created_at: new Date().toISOString()
+      });
+      
+    if (error) {
+      console.error('Failed to send notification:', error);
+      return false;
+    }
+    return true;
+  } catch (error) {
+    console.error('Error in sendNotification:', error);
+    return false;
+  }
+};
+
+export type PaymentMethod = 'cash' | 'card' | 'bank_transfer' | 'upi' | 'other';
+
+export interface PaymentDetails {
+  amount: number;
+  method: PaymentMethod;
+  transaction_id?: string;
+  reference_number?: string;
+  paid_at?: string;
+  notes?: string;
+}
+
+export interface MembershipAssignmentResult {
+  success: boolean;
+  membership_id?: string;
+  invoice_id?: string;
+  transaction_id?: string;
+  message?: string;
+  error?: string;
+}
+
 interface MembershipData {
   id: string;
   membership_id: string;
@@ -33,162 +83,181 @@ export const membershipService = {
 
   /**
    * Assign a membership to a member with payment details
-   * @param membershipData Membership and payment details
-   * @returns Result with success status and IDs of created records
+   * @param memberId ID of the member
+   * @param membershipId ID of the membership plan
+   * @param payment Payment details
+   * @param options Additional options (startDate, endDate, notes, etc.)
+   * @returns MembershipAssignmentResult with status and created record IDs
    */
-  assignMembership: async (membershipData: {
-    member_id: string;
-    membership_id: string;  // Changed from membership_plan_id to match DB
-    branch_id: string;
-    start_date?: string | Date;
-    end_date: string | Date;
-    payment?: {
-      amount?: number;
-      method?: string;
-      status?: string;
-      transaction_id?: string;
-      reference_number?: string;
+  assignMembership: async (
+    memberId: string,
+    membershipId: string,
+    payment: PaymentDetails,
+    options: {
+      branchId?: string;
+      startDate?: Date;
+      endDate?: Date;
       notes?: string;
-    };
-    total_amount?: number;
-    notes?: string;
-  }): Promise<{
-    success: boolean;
-    membership_id?: string;
-    invoice_id?: string;
-    transaction_id?: string;
-    reference_number?: string;
-    error?: string;
-  }> => {
+      staffId?: string;
+    } = {}
+  ): Promise<MembershipAssignmentResult> => {
     const client = supabase;
+    const staffId = options.staffId || memberId; // Fallback to memberId if staffId not provided
     
     try {
-      // 1. Start a transaction
+      // 1. Validate input
+      if (!memberId || !membershipId) {
+        throw new Error('Member ID and Membership ID are required');
+      }
+
+      // 2. Get membership plan details
       const { data: membershipPlan, error: planError } = await client
         .from('memberships')
         .select('*')
-        .eq('id', membershipData.membership_id)
+        .eq('id', membershipId)
         .single();
 
       if (planError || !membershipPlan) {
-        console.error('Error fetching membership plan:', planError);
-        return { success: false, error: 'Invalid membership plan' };
+        throw new Error('Invalid membership plan');
       }
 
-      // 2. Prepare dates
-      const startDate = membershipData.start_date ? new Date(membershipData.start_date) : new Date();
-      const endDate = new Date(membershipData.end_date);
-      
-      // 3. Calculate amounts
-      const totalAmount = membershipData.total_amount || membershipPlan.price;
-      const paymentAmount = membershipData.payment?.amount || totalAmount;
-      const paymentStatus = paymentAmount >= totalAmount ? 'paid' : 'partial';
-      const paymentMethod = membershipData.payment?.method || 'cash';
-      const transactionId = membershipData.payment?.transaction_id || '';
-      const referenceNumber = membershipData.payment?.reference_number || '';
-      const notes = membershipData.notes || '';
+      // 3. Prepare dates
+      const startDate = options.startDate || new Date();
+      const endDate = options.endDate || membershipService.calculateEndDate(
+        startDate,
+        membershipPlan.duration_days || 30
+      );
 
-      // 4. Create membership record
-      const { data: newMembership, error: membershipError } = await client
+      // 4. Calculate payment status
+      const totalAmount = membershipPlan.price;
+      const paymentStatus = payment.amount >= totalAmount ? 'paid' : 
+                          payment.amount > 0 ? 'partial' : 'pending';
+
+      // 5. Create membership record
+      const { data: membership, error: membershipError } = await client
         .from('member_memberships')
         .insert({
-          member_id: membershipData.member_id,
-          membership_id: membershipData.membership_id,  // Changed to match DB column
-          branch_id: membershipData.branch_id,
+          member_id: memberId,
+          membership_id: membershipId,
+          branch_id: options.branchId || null,
           start_date: startDate.toISOString().split('T')[0],
           end_date: endDate.toISOString().split('T')[0],
           status: 'active',
           total_amount: totalAmount,
-          amount_paid: paymentAmount,
+          amount_paid: payment.amount,
           payment_status: paymentStatus,
-          payment_method: paymentMethod,
-          transaction_id: transactionId,
-          reference_number: referenceNumber,
-          notes: notes,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
+          notes: options.notes
         })
         .select()
         .single();
-        
-      if (membershipError) {
-        console.error('Error creating membership:', membershipError);
-        return { success: false, error: membershipError.message };
-      }
+      
+      if (membershipError) throw membershipError;
 
-      // 5. Create invoice
+      // 6. Create invoice
       const dueDate = new Date();
       dueDate.setDate(dueDate.getDate() + 7);
-      
-      const { data: newInvoice, error: invoiceError } = await client
+
+      const invoiceData = {
+        member_id: memberId,
+        membership_plan_id: membershipId,
+        branch_id: options.branchId || null,
+        amount: totalAmount,
+        status: paymentStatus,
+        issued_date: new Date().toISOString(),
+        due_date: dueDate.toISOString(),
+        paid_date: paymentStatus === 'paid' ? new Date().toISOString() : null,
+        payment_method: paymentStatus === 'paid' ? payment.method : null,
+        description: `Membership: ${membershipPlan.name}`,
+        items: [{
+          id: `item-${Date.now()}`,
+          name: `Membership: ${membershipPlan.name}`,
+          description: membershipPlan.description || '',
+          quantity: 1,
+          unit_price: totalAmount,
+          total: totalAmount
+        }],
+        created_by: staffId,
+        notes: options.notes
+      };
+
+      const { data: invoice, error: invoiceError } = await client
         .from('invoices')
-        .insert({
-          member_id: membershipData.member_id,
-          membership_id: membershipData.membership_id,  // Changed to match DB column
-          branch_id: membershipData.branch_id,
-          amount: totalAmount,
-          status: paymentStatus,
-          payment_method: paymentMethod,
-          payment_date: paymentStatus === 'paid' ? new Date().toISOString() : null,
-          due_date: dueDate.toISOString(),
-          description: `Membership: ${membershipPlan.name}`,
-          notes: notes,
-          reference_number: referenceNumber,
-          items: [{
-            description: `Membership: ${membershipPlan.name}`,
-            amount: totalAmount,
-            quantity: 1,
-            total: totalAmount
-          }],
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        })
+        .insert(invoiceData)
         .select()
         .single();
 
-      if (invoiceError) {
-        console.error('Error creating invoice:', invoiceError);
-        return { success: false, error: invoiceError.message };
-      }
+      if (invoiceError) throw invoiceError;
 
-      // 6. Create transaction record if payment was made
-      if (paymentAmount > 0) {
-        const { error: transactionError } = await client
+      // 7. Record payment if any amount was paid
+      let transactionId: string | undefined;
+      
+      if (payment.amount > 0) {
+        const { data: transaction, error: transactionError } = await client
           .from('transactions')
           .insert({
             type: 'income',
-            amount: paymentAmount,
+            amount: payment.amount,
+            transaction_date: payment.paid_at || new Date().toISOString(),
             description: `Membership payment: ${membershipPlan.name}`,
-            payment_method: paymentMethod,
-            status: paymentStatus,
-            reference_id: newMembership.id,
-            reference_type: 'membership',
-            member_id: membershipData.member_id,
-            branch_id: membershipData.branch_id,
-            notes: notes,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          });
+            payment_method: payment.method,
+            status: 'completed',
+            reference_id: invoice.id,
+            reference_type: 'invoice',
+            member_id: memberId,
+            branch_id: options.branchId || null,
+            recorded_by: staffId,
+            notes: payment.notes
+          })
+          .select()
+          .single();
 
-        if (transactionError) {
-          console.error('Error creating transaction:', transactionError);
-          return { success: false, error: transactionError.message };
+        if (transactionError) throw transactionError;
+        transactionId = transaction.id;
+      }
+
+      // 8. Send notifications
+      try {
+        // Notify member
+        await sendNotification(
+          memberId,
+          'Membership Assigned',
+          `You have been assigned a ${membershipPlan.name} membership. Status: ${paymentStatus.toUpperCase()}`,
+          paymentStatus === 'paid' ? 'success' : 'info'
+        );
+
+        // Notify staff if different from member
+        if (staffId !== memberId) {
+          const { data: member } = await client
+            .from('profiles')
+            .select('name')
+            .eq('id', memberId)
+            .single();
+
+          await sendNotification(
+            staffId,
+            'Membership Assignment',
+            `Assigned ${membershipPlan.name} to ${member?.name || 'member'}. Status: ${paymentStatus.toUpperCase()}`,
+            'success'
+          );
         }
+      } catch (notificationError) {
+        console.error('Error sending notifications:', notificationError);
+        // Don't fail the whole process if notifications fail
       }
 
       return {
         success: true,
-        membership_id: newMembership.id,
-        invoice_id: newInvoice.id,
+        membership_id: membership.id,
+        invoice_id: invoice.id,
         transaction_id: transactionId,
-        reference_number: referenceNumber
+        message: `Membership assigned successfully. Status: ${paymentStatus.toUpperCase()}`
       };
 
-    } catch (err) {
-      console.error('Error in membership assignment process:', err);
-      return { 
-        success: false, 
-        error: err instanceof Error ? err.message : 'Unknown error occurred' 
+    } catch (error) {
+      console.error('Error in assignMembership:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to assign membership'
       };
     }
   },
@@ -259,24 +328,33 @@ export const membershipService = {
    * @param branchId The ID of the branch
    * @returns Array of membership plans
    */
-  getMembershipPlans(branchId: string): Promise<MembershipPlan[]> {
-    return new Promise(async (resolve, reject) => {
-      try {
-        const { data, error } = await supabase
-          .from('memberships')
-          .select('*')
-          .eq('branch_id', branchId)
-          .order('created_at', { ascending: false });
+  getMembershipPlans: async (branchId: string): Promise<MembershipPlan[]> => {
+    try {
+      const { data, error } = await supabase
+        .from('memberships')
+        .select('*')
+        .eq('branch_id', branchId)
+        .order('created_at', { ascending: false });
 
-        if (error) throw error;
-        resolve(data || []);
-      } catch (error) {
-        console.error('Error fetching membership plans:', error);
-        reject(error);
-      }
-    });
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching membership plans:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Calculate the end date based on start date and duration in days
+   * @param startDate The start date of the membership
+   * @param durationDays The duration of the membership in days
+   * @returns The calculated end date
+   */
+  calculateEndDate: (startDate: Date, durationDays: number): Date => {
+    const endDate = new Date(startDate);
+    endDate.setDate(endDate.getDate() + durationDays);
+    return endDate;
   }
-
 };
 
 export default membershipService;

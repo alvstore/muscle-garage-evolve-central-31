@@ -15,13 +15,11 @@ export type PaymentStatus =
   | 'refunded';
 
 export interface PaymentDetails {
+  amount: number;
   method: PaymentMethod;
-  status: PaymentStatus;
   transaction_id?: string;
   reference_number?: string;
-  amount?: number;
-  amount_paid?: number;
-  payment_date?: string;
+  paid_at?: string;
   notes?: string;
 }
 

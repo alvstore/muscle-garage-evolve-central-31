@@ -21,6 +21,17 @@ import type { MembershipPlan } from '@/types/members/membership';
 import { useBranch } from '@/hooks/settings/use-branches';
 import { toast } from 'sonner';
 
+type PaymentMethod = 'cash' | 'card' | 'bank_transfer' | 'upi' | 'other';
+
+interface PaymentDetails {
+  amount: number;
+  method: PaymentMethod;
+  transaction_id?: string;
+  reference_number?: string;
+  paid_at?: string;
+  notes?: string;
+}
+
 interface MembershipAssignmentFormProps {
   isOpen: boolean;
   onClose: () => void;
@@ -48,6 +59,7 @@ const MembershipAssignmentForm: React.FC<MembershipAssignmentFormProps> = ({
   const [startDate, setStartDate] = useState<Date | undefined>(new Date());
   const [endDate, setEndDate] = useState<Date | undefined>(new Date());
   const [discount, setDiscount] = useState<number>(0);
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('cash');
   const [amountPaid, setAmountPaid] = useState<number>(0);
   const [notes, setNotes] = useState<string>('');
 
@@ -131,35 +143,65 @@ const MembershipAssignmentForm: React.FC<MembershipAssignmentFormProps> = ({
     setDiscount(isNaN(value) ? 0 : Math.min(value, 100));
   };
 
+  const validateForm = (): { isValid: boolean; message?: string } => {
+    if (!selectedPlanId) {
+      return { isValid: false, message: 'Please select a membership plan' };
+    }
+    if (!startDate) {
+      return { isValid: false, message: 'Please select a start date' };
+    }
+    if (!endDate) {
+      return { isValid: false, message: 'Please select an end date' };
+    }
+    if (!currentBranch?.id) {
+      return { isValid: false, message: 'No branch selected' };
+    }
+    if (amount <= 0) {
+      return { isValid: false, message: 'Amount must be greater than 0' };
+    }
+    if (amountPaid < 0) {
+      return { isValid: false, message: 'Paid amount cannot be negative' };
+    }
+    if (amountPaid > amount) {
+      return { isValid: false, message: 'Paid amount cannot be greater than total amount' };
+    }
+    return { isValid: true };
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!selectedPlanId || !startDate || !endDate || !currentBranch?.id) {
-      toast.error('Please fill in all required fields');
+    const { isValid, message } = validateForm();
+    if (!isValid) {
+      toast.error(message || 'Please fill in all required fields');
       return;
     }
     
     setIsSubmitting(true);
     
     try {
-      const result = await membershipService.assignMembership({
-        member_id: memberId,
-        membership_id: selectedPlanId,
-        branch_id: currentBranch.id,
-        start_date: startDate,
-        end_date: endDate,
-        total_amount: amount,
-        payment: {
-          amount: amountPaid,
-          method: 'cash',
-          status: amountPaid >= amount ? 'paid' : 'partial',
-          notes: notes
-        },
-        notes: notes
-      });
+      const paymentDetails: PaymentDetails = {
+        amount: amountPaid,
+        method: paymentMethod, // Use the selected payment method
+        notes: notes || undefined
+      };
+      
+      const result = await membershipService.assignMembership(
+        memberId,
+        selectedPlanId!,
+        paymentDetails,
+        {
+          branchId: currentBranch?.id,
+          startDate: startDate ? new Date(startDate) : undefined,
+          endDate: endDate ? new Date(endDate) : undefined,
+          notes: notes || undefined,
+          // In a real app, you'd get the staff ID from your auth context
+          staffId: undefined // Will fall back to memberId
+        }
+      );
       
       if (result.success) {
-        toast.success('Membership assigned successfully');
+        toast.success(result.message || 'Membership assigned successfully');
         onSuccess?.();
         onAssigned?.();
         onClose();

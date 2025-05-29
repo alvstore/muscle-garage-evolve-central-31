@@ -43,6 +43,7 @@ export const useMembershipAssignment = () => {
           total_amount: data.amount || membershipPlan.price,
           amount_paid: data.amountPaid || 0,
           payment_status: data.paymentStatus,
+          status: 'active',
           branch_id: currentBranch?.id,
           trainer_id: data.trainerId || null
         })
