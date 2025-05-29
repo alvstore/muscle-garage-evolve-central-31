@@ -38,19 +38,34 @@ serve(async (req) => {
 
     console.log(`[Hikvision Auth] Processing request for branch: ${branchId}, forceRefresh: ${forceRefresh}`);
 
+    if (!branchId) {
+      return new Response(
+        JSON.stringify({ error: 'Branch ID is required' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     // Get API settings for the branch
     const { data: settings, error: settingsError } = await supabase
       .from('hikvision_api_settings')
       .select('*')
       .eq('branch_id', branchId)
       .eq('is_active', true)
-      .single();
+      .maybeSingle();
 
-    if (settingsError || !settings) {
-      console.error('[Hikvision Auth] API settings not found:', settingsError);
+    if (settingsError) {
+      console.error('[Hikvision Auth] Error fetching settings:', settingsError);
       return new Response(
-        JSON.stringify({ error: 'Hikvision API settings not configured for this branch' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ error: `Database error: ${settingsError.message}` }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (!settings) {
+      console.error('[Hikvision Auth] No API settings found for branch:', branchId);
+      return new Response(
+        JSON.stringify({ error: 'Hikvision API settings not configured for this branch. Please configure the settings first.' }),
+        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
@@ -61,7 +76,7 @@ serve(async (req) => {
         .select('*')
         .eq('branch_id', branchId)
         .gte('expire_time', new Date().toISOString())
-        .single();
+        .maybeSingle();
 
       if (existingToken) {
         console.log('[Hikvision Auth] Using existing valid token');
@@ -97,8 +112,9 @@ serve(async (req) => {
       console.error('[Hikvision Auth] Token request failed:', tokenData);
       return new Response(
         JSON.stringify({ 
-          error: `Hikvision API error: ${tokenData.errorMsg || 'Unknown error'}`,
-          errorCode: tokenData.errorCode 
+          error: `Hikvision API error: ${tokenData.errorMsg || 'Authentication failed'}`,
+          errorCode: tokenData.errorCode,
+          details: 'Please check your API credentials and try again.'
         }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
@@ -149,7 +165,10 @@ serve(async (req) => {
   } catch (error) {
     console.error('[Hikvision Auth] Unexpected error:', error);
     return new Response(
-      JSON.stringify({ error: 'Internal server error' }),
+      JSON.stringify({ 
+        error: 'Internal server error',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

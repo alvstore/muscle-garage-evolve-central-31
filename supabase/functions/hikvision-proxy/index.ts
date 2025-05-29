@@ -31,18 +31,33 @@ serve(async (req) => {
 
     console.log(`[Hikvision Proxy] ${method} ${endpoint} for branch: ${branchId}`);
 
+    if (!branchId) {
+      return new Response(
+        JSON.stringify({ error: 'Branch ID is required' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     // Get API settings
     const { data: settings, error: settingsError } = await supabase
       .from('hikvision_api_settings')
       .select('*')
       .eq('branch_id', branchId)
       .eq('is_active', true)
-      .single();
+      .maybeSingle();
 
-    if (settingsError || !settings) {
+    if (settingsError) {
+      console.error('[Hikvision Proxy] Error fetching settings:', settingsError);
       return new Response(
-        JSON.stringify({ error: 'Hikvision API settings not configured' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ error: `Database error: ${settingsError.message}` }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (!settings) {
+      return new Response(
+        JSON.stringify({ error: 'Hikvision API settings not configured for this branch. Please configure the settings first.' }),
+        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
@@ -58,7 +73,7 @@ serve(async (req) => {
         .select('*')
         .eq('branch_id', branchId)
         .gte('expire_time', new Date().toISOString())
-        .single();
+        .maybeSingle();
 
       if (!tokenData) {
         // Try to refresh token
@@ -74,7 +89,7 @@ serve(async (req) => {
         const authResult = await authResponse.json();
         if (!authResult.success) {
           return new Response(
-            JSON.stringify({ error: 'Failed to authenticate with Hikvision API' }),
+            JSON.stringify({ error: 'Failed to authenticate with Hikvision API. Please check your credentials.' }),
             { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
           );
         }
@@ -130,7 +145,10 @@ serve(async (req) => {
   } catch (error) {
     console.error('[Hikvision Proxy] Error:', error);
     return new Response(
-      JSON.stringify({ error: 'Internal server error', details: error.message }),
+      JSON.stringify({ 
+        error: 'Internal server error', 
+        details: error instanceof Error ? error.message : 'Unknown error'
+      }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
