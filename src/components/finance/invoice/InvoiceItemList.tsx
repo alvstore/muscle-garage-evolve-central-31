@@ -29,7 +29,7 @@ const InvoiceItemRow = ({ item, onUpdate, onRemove, canDelete }: InvoiceItemProp
       <Input
         type="number"
         placeholder="Unit Price"
-        value={item.price} // Using price instead of unitPrice
+        value={item.price}
         onChange={(e) => onUpdate(item.id, "price", Number(e.target.value))}
         min="0"
         required
@@ -49,7 +49,7 @@ const InvoiceItemRow = ({ item, onUpdate, onRemove, canDelete }: InvoiceItemProp
   </div>
 );
 
-export const InvoiceItemList = ({ items, onAddItem, onUpdateItem, onRemoveItem }: InvoiceItemListProps) => (
+export const InvoiceItemList = ({ items, onAdd, onUpdate, onRemove }: InvoiceItemListProps) => (
   <div className="mt-4">
     <div className="flex justify-between items-center mb-2">
       <h3 className="text-sm font-medium">Invoice Items</h3>
@@ -57,7 +57,7 @@ export const InvoiceItemList = ({ items, onAddItem, onUpdateItem, onRemoveItem }
         type="button" 
         variant="outline" 
         size="sm"
-        onClick={onAddItem}
+        onClick={onAdd}
         className="flex items-center gap-1"
       >
         <PlusIcon className="h-4 w-4" /> Add Item
@@ -67,8 +67,8 @@ export const InvoiceItemList = ({ items, onAddItem, onUpdateItem, onRemoveItem }
       <InvoiceItemRow 
         key={item.id}
         item={item}
-        onUpdate={onUpdateItem}
-        onRemove={onRemoveItem}
+        onUpdate={onUpdate}
+        onRemove={onRemove}
         canDelete={items.length > 1}
       />
     ))}

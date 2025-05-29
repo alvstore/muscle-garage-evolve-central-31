@@ -24,9 +24,9 @@ const WebhookLogs: React.FC = () => {
   const fetchLogs = async () => {
     setLoading(true);
     try {
-      let status: 'success' | 'error' | 'pending' | undefined;
+      let status: 'success' | 'failed' | 'pending' | undefined;
       if (statusFilter !== 'all') {
-        status = statusFilter as 'success' | 'error' | 'pending';
+        status = statusFilter as 'success' | 'failed' | 'pending';
       }
       
       let eventType: RazorpayEventType | undefined;
@@ -59,8 +59,8 @@ const WebhookLogs: React.FC = () => {
     switch (status) {
       case 'success':
         return <Badge className="bg-green-500 hover:bg-green-600"><CheckCircle className="w-3 h-3 mr-1" /> Success</Badge>;
-      case 'error':
-        return <Badge variant="destructive"><AlertTriangle className="w-3 h-3 mr-1" /> Error</Badge>;
+      case 'failed':
+        return <Badge variant="destructive"><AlertTriangle className="w-3 h-3 mr-1" /> Failed</Badge>;
       case 'pending':
         return <Badge variant="outline" className="border-yellow-500 text-yellow-500"><Clock className="w-3 h-3 mr-1" /> Pending</Badge>;
       default:
@@ -104,7 +104,7 @@ const WebhookLogs: React.FC = () => {
                 <SelectContent>
                   <SelectItem value="all">All Statuses</SelectItem>
                   <SelectItem value="success">Success</SelectItem>
-                  <SelectItem value="error">Error</SelectItem>
+                  <SelectItem value="failed">Failed</SelectItem>
                   <SelectItem value="pending">Pending</SelectItem>
                 </SelectContent>
               </Select>
@@ -168,16 +168,18 @@ const WebhookLogs: React.FC = () => {
                       {format(new Date(log.createdAt), 'dd MMM yyyy, HH:mm')}
                     </TableCell>
                     <TableCell className="max-w-[200px] truncate">
-                      {log.status === 'error' ? (
+                      {log.status === 'failed' ? (
                         <span className="text-red-500">{log.error}</span>
                       ) : (
                         <span className="text-muted-foreground">
-                          {log.payload?.entity ? `Entity: ${log.payload.entity}` : 'Webhook received'}
+                          {log.payload?.payment ? `Payment ID: ${log.payload.payment.entity.id}` : 
+                           log.payload?.subscription ? `Subscription ID: ${log.payload.subscription.entity.id}` : 
+                           'Webhook received'}
                         </span>
                       )}
                     </TableCell>
                     <TableCell className="text-right">
-                      {log.status === 'error' && (
+                      {log.status === 'failed' && (
                         <Button 
                           variant="outline" 
                           size="sm" 
