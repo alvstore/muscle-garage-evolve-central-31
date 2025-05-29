@@ -21,52 +21,52 @@ const TrainerProfilePage = () => <PlaceholderPage />;
 
 export const trainerRoutes: RouteObject[] = [
   {
-    path: '/trainers',
+    path: 'trainers',
     element: <TrainerList />
   },
   {
-    path: '/trainers/classes',
+    path: 'trainers/classes',
     element: <TrainerClassesPage />
   },
   {
-    path: '/trainers/members',
+    path: 'trainers/members',
     element: <TrainerMemberProgressPage />
   },
   {
-    path: '/trainers/allocation',
+    path: 'trainers/allocation',
     element: <TrainerAllocationPage />
   },
   {
-    path: '/trainers/allocate/:id',
+    path: 'trainers/allocate/:id',
     element: <TrainerMemberAllocationPage />
   },
   {
-    path: '/trainers/announcements',
+    path: 'trainers/announcements',
     element: <TrainerAnnouncementPage />
   },
   {
-    path: '/trainers/management',
+    path: 'trainers/management',
     element: <TrainerList />
   },
   // Add missing routes from trainerNavigation.tsx
   {
-    path: '/trainers/attendance',
+    path: 'trainers/attendance',
     element: <TrainerAttendancePage />
   },
   {
-    path: '/trainers/pt-plans',
+    path: 'trainers/pt-plans',
     element: <TrainerPTPlansPage />
   },
   {
-    path: '/trainers/workout-plans',
+    path: 'trainers/workout-plans',
     element: <TrainerWorkoutPlansPage />
   },
   {
-    path: '/trainers/workout-assignments',
+    path: 'trainers/workout-assignments',
     element: <TrainerWorkoutAssignmentsPage />
   },
   {
-    path: '/trainers/diet-plans',
+    path: 'trainers/diet-plans',
     element: <TrainerDietPlansPage />
   },
   {
@@ -74,11 +74,11 @@ export const trainerRoutes: RouteObject[] = [
     element: <TrainerMemberProgressPage />
   },
   {
-    path: '/trainers/tasks',
+    path: 'trainers/tasks',
     element: <TrainerTasksPage />
   },
   {
-    path: '/trainers/profile',
+    path: 'trainers/profile',
     element: <TrainerProfilePage />
   }
 ];

@@ -2,7 +2,6 @@
 import React from 'react';
 import { RouteObject } from 'react-router-dom';
 import PrivateRoute from '@/components/auth/PrivateRoute';
-import InvoicePage from '@/pages/finance/InvoicePage';
 import InvoicesPage from '@/pages/finance/InvoicesPage';
 import NewInvoicePage from '@/pages/finance/NewInvoicePage';
 import TransactionPage from '@/pages/finance/TransactionPage';
@@ -12,7 +11,7 @@ import ExpenseRecordsPage from '@/pages/finance/ExpenseRecordsPage';
 
 export const financeRoutes: RouteObject[] = [
   {
-    path: '/finance/dashboard',
+    path: 'finance/dashboard',
     element: (
       <PrivateRoute allowedRoles={['admin', 'staff']}>
         <FinanceDashboardPage />
@@ -20,7 +19,7 @@ export const financeRoutes: RouteObject[] = [
     )
   },
   {
-    path: '/finance/invoices',
+    path: 'finance/invoices',
     element: (
       <PrivateRoute allowedRoles={['admin', 'staff']}>
         <InvoicesPage />
@@ -28,7 +27,7 @@ export const financeRoutes: RouteObject[] = [
     )
   },
   {
-    path: '/finance/invoices/new',
+    path: 'finance/invoices/new',
     element: (
       <PrivateRoute allowedRoles={['admin', 'staff']}>
         <NewInvoicePage />
@@ -36,7 +35,7 @@ export const financeRoutes: RouteObject[] = [
     )
   },
   {
-    path: '/finance/transactions',
+    path: 'finance/transactions',
     element: (
       <PrivateRoute allowedRoles={['admin', 'staff']}>
         <TransactionPage />
@@ -44,7 +43,7 @@ export const financeRoutes: RouteObject[] = [
     )
   },
   {
-    path: '/finance/income',
+    path: 'finance/income',
     element: (
       <PrivateRoute allowedRoles={['admin', 'staff']}>
         <IncomeRecordsPage />
@@ -52,7 +51,7 @@ export const financeRoutes: RouteObject[] = [
     )
   },
   {
-    path: '/finance/expenses',
+    path: 'finance/expenses',
     element: (
       <PrivateRoute allowedRoles={['admin', 'staff']}>
         <ExpenseRecordsPage />

@@ -1,58 +1,47 @@
+import React, { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth, UserRole } from '@/hooks/auth/use-auth';
+import { Loader2 } from 'lucide-react';
 
-import { useEffect } from "react";
-import { Navigate } from "react-router-dom";
-import AdminDashboard from "./AdminDashboard";
-import StaffDashboard from "./StaffDashboard";
-import TrainerDashboard from "./TrainerDashboard";
-import MemberDashboard from "./MemberDashboard";
-import { UserRole } from "@/types";
-import { useAuth } from "@/hooks/auth/use-auth";
-import { Loader2 } from "lucide-react";
+// Define valid dashboard roles
+type DashboardRole = Exclude<UserRole, 'guest'>;
 
-const Dashboard = () => {
-  const { user, userRole, isLoading } = useAuth();
-  
+/**
+ * Dashboard component that redirects to the appropriate role-specific dashboard.
+ */
+const Dashboard: React.FC = () => {
+  const navigate = useNavigate();
+  const { user, isLoading, role } = useAuth();
+
   useEffect(() => {
-    if (user) {
-      console.log("User role in dashboard:", user.role);
+    if (!isLoading) {
+      // Default to member dashboard if no user is logged in
+      const userRole = role === 'guest' ? 'member' : role;
+      
+      // Ensure the role is a valid dashboard role
+      const validRoles: DashboardRole[] = ['admin', 'staff', 'trainer', 'member'];
+      const validRole = validRoles.includes(userRole as DashboardRole) 
+        ? userRole as DashboardRole 
+        : 'member';
+      
+      // Only navigate if we're not already on the correct path
+      if (!window.location.pathname.includes(`/dashboard/${validRole}`)) {
+        navigate(`/dashboard/${validRole}`, { replace: true });
+      }
     }
-  }, [user]);
+  }, [isLoading, role, navigate]);
 
   if (isLoading) {
     return (
-      <div className="flex h-screen items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="h-12 w-12 mx-auto animate-spin text-primary" />
-          <p className="mt-4 text-lg font-medium">Loading dashboard...</p>
-        </div>
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin" />
       </div>
     );
   }
 
-  if (!user) {
-    return <Navigate to="/login" replace />;
-  }
-
-  const renderDashboard = (role: UserRole) => {
-    switch (role) {
-      case "admin":
-        return <AdminDashboard />;
-      case "staff":
-        return <StaffDashboard />;
-      case "trainer":
-        return <TrainerDashboard />;
-      case "member":
-        return <MemberDashboard />;
-      default:
-        return <Navigate to="/unauthorized" replace />;
-    }
-  };
-
-  // Use userRole from the fetched profile, falling back to user.role if needed
-  // Make sure to cast to UserRole type
-  const effectiveRole = userRole || (user.role as UserRole);
-  
-  return renderDashboard(effectiveRole);
+  // This component doesn't render anything visible
+  // as it's only responsible for redirecting
+  return null;
 };
 
 export default Dashboard;

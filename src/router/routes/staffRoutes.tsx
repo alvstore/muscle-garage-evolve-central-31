@@ -8,7 +8,7 @@ import StaffDietPlansPage from '@/pages/staff/StaffDietPlansPage';
 
 export const staffRoutes: RouteObject[] = [
   {
-    path: '/staff',
+    path: 'staff',
     element: (
       <PrivateRoute allowedRoles={['admin', 'staff']}>
         <StaffListPage />
@@ -16,7 +16,7 @@ export const staffRoutes: RouteObject[] = [
     )
   },
   {
-    path: '/staff/list',
+    path: 'staff/list',
     element: (
       <PrivateRoute allowedRoles={['admin', 'staff']}>
         <StaffListPage />
@@ -24,7 +24,7 @@ export const staffRoutes: RouteObject[] = [
     )
   },
   {
-    path: '/staff/edit/:id',
+    path: 'staff/edit/:id',
     element: (
       <PrivateRoute allowedRoles={['admin', 'staff']}>
         <StaffEditPage />
@@ -32,7 +32,7 @@ export const staffRoutes: RouteObject[] = [
     )
   },
   {
-    path: '/fitness/diet-plans',
+    path: 'fitness/diet-plans',
     element: (
       <PrivateRoute allowedRoles={['admin', 'staff']}>
         <StaffDietPlansPage />

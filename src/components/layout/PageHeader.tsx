@@ -8,12 +8,19 @@ import {
   BreadcrumbSeparator
 } from '@/components/ui/breadcrumb';
 import { useLocation } from 'react-router-dom';
-import { adminRoutes } from '@/router/routes/adminRoutes';
+// Import route files
+import { adminDashboardRoutes } from '@/router/routes/admin/dashboardRoutes';
+import { adminMembershipRoutes } from '@/router/routes/admin/membershipRoutes';
+import { adminWebsiteRoutes } from '@/router/routes/admin/websiteRoutes';
 import { settingsRoutes } from '@/router/routes/settingsRoutes';
 import { crmRoutes } from '@/router/routes/crmRoutes';
 import { classRoutes } from '@/router/routes/classRoutes';
 import { generateBreadcrumbs } from '@/utils/route-navigation';
 import { ChevronRight, Home } from 'lucide-react';
+import { AppRoute } from '@/types/route';
+import { RouteObject } from 'react-router-dom';
+
+type AnyRoute = AppRoute | RouteObject;
 
 interface PageHeaderProps {
   title?: string;
@@ -21,28 +28,60 @@ interface PageHeaderProps {
   actions?: React.ReactNode;
 }
 
+// Type guard to check if a route has meta property
+const isAppRoute = (route: AnyRoute): route is AppRoute => {
+  return 'meta' in route;
+};
+
+// Helper function to flatten nested routes
+const flattenRoutes = (routes: AnyRoute[]): AnyRoute[] => {
+  return routes.reduce<AnyRoute[]>((acc, route) => {
+    acc.push(route);
+    if (route.children) {
+      acc.push(...flattenRoutes(route.children));
+    }
+    return acc;
+  }, []);
+};
+
 const PageHeader: React.FC<PageHeaderProps> = ({
   title,
   description,
   actions
 }) => {
   const location = useLocation();
-  const combinedRoutes = [
+  
+  // Combine all admin routes
+  const adminRoutes = [
+    ...(adminDashboardRoutes || []),
+    ...(adminMembershipRoutes || []),
+    ...(adminWebsiteRoutes || [])
+  ] as AnyRoute[];
+  
+  const allRoutes = [
     ...adminRoutes,
     ...settingsRoutes,
     ...crmRoutes,
     ...classRoutes,
-    // Add other route arrays here
   ];
   
-  const breadcrumbs = generateBreadcrumbs(location.pathname, combinedRoutes);
+  const flattenedRoutes = flattenRoutes(allRoutes);
+  const breadcrumbs = generateBreadcrumbs(location.pathname, flattenedRoutes);
   
   // Get title from route metadata if not provided
   const routeTitle = title || (() => {
     const path = location.pathname;
-    // Look for route with matching path property instead of directly using path
-    const matchingRoute = combinedRoutes.find(r => r && typeof r === 'object' && 'path' in r && r.path === path);
-    return matchingRoute && matchingRoute.meta?.title || 'Dashboard';
+    const matchingRoute = flattenedRoutes.find(r => r.path === path);
+    
+    if (!matchingRoute) return 'Dashboard';
+    
+    // Handle both AppRoute and RouteObject
+    if (isAppRoute(matchingRoute)) {
+      return matchingRoute.meta?.title || 'Dashboard';
+    }
+    
+    // For RouteObject, use the path as the title
+    return matchingRoute.path || 'Dashboard';
   })();
 
   // Render breadcrumb items

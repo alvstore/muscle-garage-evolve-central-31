@@ -13,7 +13,7 @@ import TaskManagerPage from '@/pages/communication/TaskManagerPage';
 
 export const communicationRoutes: RouteObject[] = [
   {
-    path: '/notifications',
+    path: 'notifications',
     element: (
       <PrivateRoute allowedRoles={['admin', 'staff', 'trainer', 'member']}>
         <NotificationsPage />
@@ -21,7 +21,7 @@ export const communicationRoutes: RouteObject[] = [
     )
   },
   {
-    path: '/communication/feedback',
+    path: 'feedback',
     element: (
       <PrivateRoute>
         <FeedbackPage />
@@ -29,7 +29,7 @@ export const communicationRoutes: RouteObject[] = [
     )
   },
   {
-    path: '/communication/announcements',
+    path: 'announcements',
     element: (
       <PrivateRoute>
         <AnnouncementPage />
@@ -37,7 +37,7 @@ export const communicationRoutes: RouteObject[] = [
     )
   },
   {
-    path: '/communication/reminders',
+    path: 'reminders',
     element: (
       <PrivateRoute allowedRoles={['admin', 'staff']}>
         <ReminderPage />
@@ -45,7 +45,7 @@ export const communicationRoutes: RouteObject[] = [
     )
   },
   {
-    path: '/communication/motivational',
+    path: 'motivational',
     element: (
       <PrivateRoute allowedRoles={['admin', 'staff', 'trainer']}>
         <MotivationalPage />
@@ -53,7 +53,7 @@ export const communicationRoutes: RouteObject[] = [
     )
   },
   {
-    path: '/communication/notifications',
+    path: 'notifications',
     element: (
       <PrivateRoute allowedRoles={['admin', 'staff', 'trainer', 'member']}>
         <NotificationsPage />
@@ -61,7 +61,7 @@ export const communicationRoutes: RouteObject[] = [
     )
   },
   {
-    path: '/communication/tasks',
+    path: 'tasks',
     element: (
       <PrivateRoute allowedRoles={['admin', 'staff', 'trainer']}>
         <TaskManagerPage />

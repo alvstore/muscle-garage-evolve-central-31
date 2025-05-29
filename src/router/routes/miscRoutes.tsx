@@ -11,7 +11,7 @@ import ReportsPage from '@/pages/reports/ReportsPage';
 
 export const miscRoutes: RouteObject[] = [
   {
-    path: '/inventory',
+    path: 'inventory',
     element: (
       <PrivateRoute allowedRoles={['admin', 'staff']}>
         <InventoryPage />
@@ -19,7 +19,7 @@ export const miscRoutes: RouteObject[] = [
     )
   },
   {
-    path: '/frontpages',
+    path: 'frontpages',
     element: (
       <PrivateRoute allowedRoles={['admin']}>
         <FrontPagesWrapper />
@@ -27,7 +27,7 @@ export const miscRoutes: RouteObject[] = [
     )
   },
   {
-    path: '/branches',
+    path: 'branches',
     element: (
       <PrivateRoute allowedRoles={['admin']}>
         <BranchesPage />
@@ -35,7 +35,7 @@ export const miscRoutes: RouteObject[] = [
     )
   },
   {
-    path: '/reports',
+    path: 'reports',
     element: (
       <PrivateRoute allowedRoles={['admin', 'staff', 'trainer']}>
         <ReportsPage />

@@ -7,7 +7,7 @@ import SystemBackupPage from '@/pages/admin/SystemBackupPage';
 
 export const adminDashboardRoutes: RouteObject[] = [
   {
-    path: '/',
+    path: '',
     element: (
       <PrivateRoute allowedRoles={['admin', 'staff']}>
         <AdminDashboard />
@@ -15,7 +15,7 @@ export const adminDashboardRoutes: RouteObject[] = [
     )
   },
   {
-    path: '/system-backup',
+    path: 'system-backup',
     element: (
       <PrivateRoute allowedRoles={['admin']}>
         <SystemBackupPage />

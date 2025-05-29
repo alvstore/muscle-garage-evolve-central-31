@@ -7,7 +7,7 @@ import MembershipPage from '@/pages/membership/MembershipPage';
 
 export const adminMembershipRoutes: RouteObject[] = [
   {
-    path: '/members',
+    path: 'members',
     element: (
       <PrivateRoute allowedRoles={['admin', 'staff']}>
         <MembersListPage />
@@ -15,7 +15,7 @@ export const adminMembershipRoutes: RouteObject[] = [
     )
   },
   {
-    path: '/memberships',
+    path: 'memberships',
     element: (
       <PrivateRoute allowedRoles={['admin', 'staff']}>
         <MembershipPage />

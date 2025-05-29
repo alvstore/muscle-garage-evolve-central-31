@@ -11,13 +11,34 @@ import ClassPage from '@/pages/classes/ClassPage';
 import MembershipPage from '@/pages/membership/MembershipPage';
 import AttendancePage from '@/pages/attendance/AttendancePage';
 
-// Admin/Staff specific pages - reusing trainer components but with different permissions
+// Admin/Staff specific pages
 import TrainerWorkoutPlansPage from '@/pages/trainers/TrainerWorkoutPlansPage';
 import TrainerDietPlansPage from '@/pages/trainers/TrainerDietPlansPage';
+import MemberProgressPage from '@/pages/members/MemberProgressPage';
+import AdminDietPlansPage from '@/pages/admin/AdminDietPlansPage';
 
 export const fitnessRoutes: RouteObject[] = [
+  // Admin-specific fitness routes
   {
-    path: '/fitness-plans',
+    path: 'admin/diet-plans',
+    element: (
+      <PrivateRoute allowedRoles={['admin']}>
+        <AdminDietPlansPage />
+      </PrivateRoute>
+    )
+  },
+  {
+    path: 'members/progress',
+    element: (
+      <PrivateRoute allowedRoles={['admin', 'staff']}>
+        <MemberProgressPage />
+      </PrivateRoute>
+    )
+  },
+  
+  // General fitness routes
+  {
+    path: 'fitness-plans',
     element: (
       <PrivateRoute allowedRoles={['admin', 'staff', 'trainer', 'member']}>
         <FitnessPlanPage />
@@ -25,7 +46,7 @@ export const fitnessRoutes: RouteObject[] = [
     )
   },
   {
-    path: '/fitness/progress',
+    path: 'fitness/progress',
     element: (
       <PrivateRoute allowedRoles={['admin', 'staff', 'trainer', 'member']}>
         <FitnessProgressPage />
@@ -33,7 +54,7 @@ export const fitnessRoutes: RouteObject[] = [
     )
   },
   {
-    path: '/fitness/diet',
+    path: 'fitness/diet',
     element: (
       <PrivateRoute allowedRoles={['admin', 'staff', 'trainer', 'member']}>
         <DietPlanPage />
@@ -41,7 +62,7 @@ export const fitnessRoutes: RouteObject[] = [
     )
   },
   {
-    path: '/fitness/workout-plans',
+    path: 'fitness/workout-plans',
     element: (
       <PrivateRoute allowedRoles={['admin', 'staff', 'trainer', 'member']}>
         <WorkoutPlansPage />
@@ -49,7 +70,7 @@ export const fitnessRoutes: RouteObject[] = [
     )
   },
   {
-    path: '/classes',
+    path: 'classes',
     element: (
       <PrivateRoute>
         <ClassPage />
@@ -57,7 +78,7 @@ export const fitnessRoutes: RouteObject[] = [
     )
   },
   {
-    path: '/membership',
+    path: 'membership',
     element: (
       <PrivateRoute>
         <MembershipPage />
@@ -65,7 +86,7 @@ export const fitnessRoutes: RouteObject[] = [
     )
   },
   {
-    path: '/memberships',
+    path: 'memberships',
     element: (
       <PrivateRoute>
         <MembershipPage />
@@ -73,7 +94,7 @@ export const fitnessRoutes: RouteObject[] = [
     )
   },
   {
-    path: '/attendance',
+    path: 'attendance',
     element: (
       <PrivateRoute>
         <AttendancePage />
@@ -81,7 +102,7 @@ export const fitnessRoutes: RouteObject[] = [
     )
   },
   {
-    path: '/admin/workout-plans',
+    path: 'admin/workout-plans',
     element: (
       <PrivateRoute allowedRoles={['admin', 'staff']}>
         <TrainerWorkoutPlansPage />
@@ -89,26 +110,10 @@ export const fitnessRoutes: RouteObject[] = [
     )
   },
   {
-    path: '/admin/diet-plans',
+    path: 'admin/diet-plans',
     element: (
       <PrivateRoute allowedRoles={['admin', 'staff']}>
         <TrainerDietPlansPage />
-      </PrivateRoute>
-    )
-  },
-  {
-    path: '/fitness/workout-plans',
-    element: (
-      <PrivateRoute allowedRoles={['admin', 'staff', 'trainer', 'member']}>
-        <WorkoutPlansPage />
-      </PrivateRoute>
-    )
-  },
-  {
-    path: '/fitness/diet',
-    element: (
-      <PrivateRoute allowedRoles={['admin', 'staff', 'trainer', 'member']}>
-        <DietPlanPage />
       </PrivateRoute>
     )
   }
