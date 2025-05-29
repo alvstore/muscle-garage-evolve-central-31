@@ -1,124 +1,100 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { getHikvisionErrorMessage } from '@/utils/hikvisionErrorCodes';
 
-interface HikvisionTokenResponse {
-  accessToken: string;
-  expiresIn: number;
-  tokenType: string;
-  scope?: string;
-  refreshToken?: string;
-}
-
-interface TokenCacheEntry {
-  token: string;
-  expiresAt: number;
-  branchId: string;
+interface TokenResponse {
+  success: boolean;
+  token?: string;
+  expiresAt?: string;
+  areaDomain?: string;
+  availableSites?: any[];
+  error?: string;
 }
 
 class HikvisionTokenManager {
-  private static instance: HikvisionTokenManager;
-  private tokenCache = new Map<string, TokenCacheEntry>();
+  private tokenCache = new Map<string, { token: string; expiresAt: Date; areaDomain?: string }>();
 
-  static getInstance(): HikvisionTokenManager {
-    if (!HikvisionTokenManager.instance) {
-      HikvisionTokenManager.instance = new HikvisionTokenManager();
-    }
-    return HikvisionTokenManager.instance;
-  }
-
-  async getToken(branchId: string): Promise<string> {
+  async getValidToken(branchId: string): Promise<string> {
     // Check cache first
     const cached = this.tokenCache.get(branchId);
-    if (cached && cached.expiresAt > Date.now() + 300000) { // 5 min buffer
+    if (cached && cached.expiresAt > new Date()) {
+      console.log('[TokenManager] Using cached token for branch:', branchId);
       return cached.token;
     }
 
+    // Get token from edge function
+    const tokenResponse = await this.refreshToken(branchId);
+    return tokenResponse.token!;
+  }
+
+  async refreshToken(branchId: string, forceRefresh = false): Promise<TokenResponse> {
+    console.log('[TokenManager] Refreshing token for branch:', branchId);
+
     try {
-      // Get settings from database
-      const { data: settings, error } = await supabase
-        .from('hikvision_api_settings')
-        .select('*')
-        .eq('branch_id', branchId)
-        .eq('is_active', true)
-        .single();
-
-      if (error || !settings) {
-        throw new Error(`Hikvision settings not found for branch: ${branchId}`);
-      }
-
-      // Request new token
-      const tokenResponse = await this.requestToken(settings);
-      
-      // Cache the token
-      this.tokenCache.set(branchId, {
-        token: tokenResponse.accessToken,
-        expiresAt: Date.now() + (tokenResponse.expiresIn * 1000) - 300000, // 5 min buffer
-        branchId
+      const { data, error } = await supabase.functions.invoke('hikvision-auth', {
+        body: { branchId, forceRefresh }
       });
 
-      // Store in database for persistence
-      await this.storeTokenInDB(branchId, tokenResponse);
+      if (error) {
+        console.error('[TokenManager] Edge function error:', error);
+        throw new Error(`Failed to get token: ${error.message}`);
+      }
 
-      return tokenResponse.accessToken;
+      if (!data.success) {
+        console.error('[TokenManager] Token request failed:', data.error);
+        throw new Error(data.error || 'Failed to authenticate with Hikvision');
+      }
+
+      // Update cache
+      this.tokenCache.set(branchId, {
+        token: data.token,
+        expiresAt: new Date(data.expiresAt),
+        areaDomain: data.areaDomain
+      });
+
+      console.log('[TokenManager] Successfully refreshed token for branch:', branchId);
+      return data;
+
     } catch (error) {
-      console.error('Error getting Hikvision token:', error);
+      console.error('[TokenManager] Error refreshing token:', error);
       throw error;
     }
   }
 
-  private async requestToken(settings: any): Promise<HikvisionTokenResponse> {
-    const { data, error } = await supabase.functions.invoke('hikvision-auth', {
-      body: {
-        apiUrl: settings.api_url,
-        appKey: settings.app_key,
-        appSecret: settings.app_secret
-      }
-    });
-
-    if (error) {
-      throw new Error(`Token request failed: ${error.message}`);
-    }
-
-    if (!data.success) {
-      const errorMsg = data.errorCode ? 
-        getHikvisionErrorMessage(data.errorCode) : 
-        data.error || 'Unknown error';
-      throw new Error(`Hikvision API error: ${errorMsg}`);
-    }
-
-    return data.token;
-  }
-
-  private async storeTokenInDB(branchId: string, tokenData: HikvisionTokenResponse): Promise<void> {
-    const expiresAt = new Date(Date.now() + (tokenData.expiresIn * 1000));
+  async clearToken(branchId: string): Promise<void> {
+    this.tokenCache.delete(branchId);
     
-    await supabase
-      .from('hikvision_tokens')
-      .upsert({
-        branch_id: branchId,
-        access_token: tokenData.accessToken,
-        expires_in: tokenData.expiresIn,
-        expire_time: expiresAt.toISOString(),
-        token_type: tokenData.tokenType,
-        scope: tokenData.scope,
-        refresh_token: tokenData.refreshToken,
-        updated_at: new Date().toISOString()
-      });
-  }
-
-  clearCache(branchId?: string): void {
-    if (branchId) {
-      this.tokenCache.delete(branchId);
-    } else {
-      this.tokenCache.clear();
+    // Also clear from database
+    try {
+      await supabase
+        .from('hikvision_tokens')
+        .delete()
+        .eq('branch_id', branchId);
+    } catch (error) {
+      console.error('[TokenManager] Error clearing token from database:', error);
     }
   }
 
-  async refreshToken(branchId: string): Promise<string> {
-    this.clearCache(branchId);
-    return this.getToken(branchId);
+  async getAreaDomain(branchId: string): Promise<string | undefined> {
+    const cached = this.tokenCache.get(branchId);
+    if (cached) {
+      return cached.areaDomain;
+    }
+
+    // Try to get from database
+    try {
+      const { data } = await supabase
+        .from('hikvision_tokens')
+        .select('area_domain')
+        .eq('branch_id', branchId)
+        .gte('expire_time', new Date().toISOString())
+        .single();
+
+      return data?.area_domain;
+    } catch (error) {
+      console.error('[TokenManager] Error getting area domain:', error);
+      return undefined;
+    }
   }
 }
 
-export const hikvisionTokenManager = HikvisionTokenManager.getInstance();
+export const hikvisionTokenManager = new HikvisionTokenManager();

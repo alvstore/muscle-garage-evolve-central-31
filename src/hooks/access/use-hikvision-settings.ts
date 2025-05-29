@@ -1,7 +1,7 @@
-
 // Hook for managing Hikvision settings
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { hikvisionService } from '@/services/integrations/hikvisionService';
 import { toast } from 'sonner';
 
 interface HikvisionSettings {
@@ -87,7 +87,9 @@ export const useHikvisionSettings = (branchId: string): UseHikvisionSettingsRetu
         .eq('branch_id', branchId)
         .maybeSingle();
 
-      if (error) throw error;
+      if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
+        throw error;
+      }
 
       if (data) {
         setSettings({
@@ -102,6 +104,11 @@ export const useHikvisionSettings = (branchId: string): UseHikvisionSettingsRetu
         });
         setLastSync(data.last_sync);
         setIsConnected(data.is_active);
+        
+        // Load devices if settings exist
+        if (data.is_active) {
+          await getDevices(branchId);
+        }
       }
     } catch (err) {
       console.error('Error fetching Hikvision settings:', err);
@@ -147,6 +154,7 @@ export const useHikvisionSettings = (branchId: string): UseHikvisionSettingsRetu
       }
 
       await fetchSettings();
+      setIsConnected(newSettings.isActive || false);
     } catch (err) {
       console.error('Error saving Hikvision settings:', err);
       setError(err instanceof Error ? err.message : 'Unknown error');
@@ -160,16 +168,31 @@ export const useHikvisionSettings = (branchId: string): UseHikvisionSettingsRetu
     try {
       setError(null);
       
-      // Simulate connection test
-      console.log('Testing Hikvision connection with params:', params);
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
+      // Test by requesting a token
+      const { data, error } = await supabase.functions.invoke('hikvision-auth', {
+        body: { branchId, forceRefresh: true }
+      });
+
+      if (error) {
+        setIsConnected(false);
+        const message = error.message || 'Connection test failed';
+        setError(message);
+        return { success: false, message };
+      }
+
+      if (!data.success) {
+        setIsConnected(false);
+        const message = data.error || 'Authentication failed';
+        setError(message);
+        return { success: false, message };
+      }
+
       setIsConnected(true);
-      return { success: true, message: 'Connection successful' };
+      return { success: true, message: 'Successfully connected to Hikvision API' };
     } catch (err) {
       console.error('Error testing connection:', err);
       setIsConnected(false);
-      const message = err instanceof Error ? err.message : 'Connection failed';
+      const message = err instanceof Error ? err.message : 'Connection test failed';
       setError(message);
       return { success: false, message };
     }
@@ -180,9 +203,16 @@ export const useHikvisionSettings = (branchId: string): UseHikvisionSettingsRetu
       setIsSyncing(true);
       setError(null);
       
-      // Simulate device sync
-      console.log('Syncing Hikvision devices...');
-      await new Promise(resolve => setTimeout(resolve, 3000));
+      // Fetch and process events
+      const fetchResult = await hikvisionService.fetchEvents(branchId);
+      if (!fetchResult.success) {
+        throw new Error(fetchResult.error);
+      }
+
+      const processResult = await hikvisionService.processEvents(branchId);
+      if (!processResult.success) {
+        throw new Error(processResult.error);
+      }
       
       const now = new Date().toISOString();
       setLastSync(now);
@@ -217,18 +247,17 @@ export const useHikvisionSettings = (branchId: string): UseHikvisionSettingsRetu
         deviceId: device.device_id,
         name: device.name,
         deviceType: device.device_type,
-        isActive: device.is_active,
-        isCloudManaged: device.is_cloud_managed,
-        useIsupFallback: device.use_isup_fallback,
+        isActive: device.status === 'active',
+        isCloudManaged: true,
+        useIsupFallback: false,
         branchId: device.branch_id,
-        doors: device.doors || [],
+        doors: [],
         ipAddress: device.ip_address,
         port: device.port,
         username: device.username,
         password: device.password,
-        siteId: device.site_id,
         serialNumber: device.serial_number,
-        location: device.location
+        location: device.location || ''
       }));
       
       setDevices(formattedDevices);
@@ -245,46 +274,14 @@ export const useHikvisionSettings = (branchId: string): UseHikvisionSettingsRetu
     try {
       setIsSaving(true);
       
-      const deviceData = {
-        name: device.name,
-        device_id: device.deviceId,
-        device_type: device.deviceType,
-        is_active: device.isActive,
-        is_cloud_managed: device.isCloudManaged,
-        use_isup_fallback: device.useIsupFallback,
-        branch_id: branchId,
-        doors: device.doors || [],
-        ip_address: device.ipAddress,
-        port: device.port,
-        username: device.username,
-        password: device.password,
-        site_id: device.siteId,
-        serial_number: device.serialNumber,
-        location: device.location,
-        updated_at: new Date().toISOString()
-      };
-
-      if (device.id) {
-        // Update existing device
-        const { error } = await supabase
-          .from('hikvision_devices')
-          .update(deviceData)
-          .eq('id', device.id);
-
-        if (error) throw error;
-      } else {
-        // Create new device
-        const { data, error } = await supabase
-          .from('hikvision_devices')
-          .insert([{ ...deviceData, created_at: new Date().toISOString() }])
-          .select()
-          .single();
-
-        if (error) throw error;
+      const result = await hikvisionService.addDevice(device, branchId);
+      if (!result.success) {
+        throw new Error(result.error);
       }
 
       // Refresh devices list
       await getDevices(branchId);
+      toast.success('Device added successfully');
     } catch (err) {
       console.error('Error saving device:', err);
       setError(err instanceof Error ? err.message : 'Failed to save device');
@@ -306,6 +303,7 @@ export const useHikvisionSettings = (branchId: string): UseHikvisionSettingsRetu
 
       // Refresh devices list
       await getDevices(branchId);
+      toast.success('Device deleted successfully');
     } catch (err) {
       console.error('Error deleting device:', err);
       setError(err instanceof Error ? err.message : 'Failed to delete device');
@@ -316,14 +314,39 @@ export const useHikvisionSettings = (branchId: string): UseHikvisionSettingsRetu
   // Test device connection
   const testDevice = async (deviceId: string): Promise<{ success: boolean; message?: string }> => {
     try {
-      // Simulate device test
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Get device details
+      const { data: device } = await supabase
+        .from('hikvision_devices')
+        .select('*')
+        .eq('id', deviceId)
+        .single();
+
+      if (!device) {
+        return { success: false, message: 'Device not found' };
+      }
+
+      // Test device connection through proxy
+      const { data, error } = await supabase.functions.invoke('hikvision-proxy', {
+        body: {
+          branchId,
+          endpoint: '/api/hpcgw/v1/device/list',
+          method: 'POST',
+          data: {
+            deviceIds: [device.device_id]
+          }
+        }
+      });
+
+      if (error || !data.success) {
+        return { success: false, message: data?.error || 'Device connection test failed' };
+      }
+
       return { success: true, message: 'Device connection successful' };
     } catch (err) {
       console.error('Error testing device:', err);
       return { 
         success: false, 
-        message: err instanceof Error ? err.message : 'Device connection failed' 
+        message: err instanceof Error ? err.message : 'Device connection test failed' 
       };
     }
   };
@@ -333,17 +356,21 @@ export const useHikvisionSettings = (branchId: string): UseHikvisionSettingsRetu
     try {
       if (!settings?.isActive) return;
       
-      // Simulate fetching sites from API
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Mock data - in a real app, this would come from the Hikvision API
-      const mockSites = [
-        { id: 'site1', name: 'Main Gym' },
-        { id: 'site2', name: 'Swimming Pool' },
-        { id: 'site3', name: 'Wellness Center' }
-      ];
-      
-      setAvailableSites(mockSites);
+      const { data, error } = await supabase.functions.invoke('hikvision-proxy', {
+        body: {
+          branchId,
+          endpoint: '/api/hpcgw/v1/site/search',
+          method: 'POST',
+          data: {}
+        }
+      });
+
+      if (error || !data.success) {
+        console.error('Failed to fetch sites:', data?.error || error?.message);
+        return;
+      }
+
+      setAvailableSites(data.data.sites || []);
     } catch (err) {
       console.error('Error fetching sites:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch sites');
