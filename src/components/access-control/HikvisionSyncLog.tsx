@@ -47,8 +47,23 @@ export const HikvisionSyncLog: React.FC<HikvisionSyncLogProps> = ({
   const fetchLogs = async () => {
     try {
       setRefreshing(true);
-      const data = await hikvisionService.getSyncLogs(branchId, limit);
-      setLogs(data);
+      const data = await hikvisionService.getSyncLogs(branchId);
+      
+      // Transform the data to match SyncLogEntry interface
+      const transformedLogs: SyncLogEntry[] = data.map(log => ({
+        id: log.id,
+        event_type: 'sync' as const,
+        message: log.message,
+        details: log.details,
+        created_at: log.timestamp,
+        status: log.status as 'success' | 'error' | 'pending' | 'warning',
+        entity_type: 'member' as const,
+        entity_id: log.id,
+        entity_name: log.action,
+        branch_id: branchId
+      }));
+      
+      setLogs(transformedLogs);
       setError(null);
     } catch (err) {
       console.error('Error fetching Hikvision sync logs:', err);

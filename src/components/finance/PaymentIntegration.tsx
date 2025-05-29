@@ -70,7 +70,7 @@ const PaymentIntegration = ({ invoice, onPaymentComplete }: PaymentIntegrationPr
       description: `Payment for Invoice #${invoice.id}`,
       order_id: `order_${Date.now()}`, // This would come from the backend
       prefill: {
-        name: invoice.memberId || "Member",
+        name: invoice.member_id || "Member",
         email: "member@example.com",
         contact: "+91 9999999999"
       },
@@ -188,8 +188,8 @@ const PaymentIntegration = ({ invoice, onPaymentComplete }: PaymentIntegrationPr
                 <div className="space-y-2 rounded-md bg-muted p-3">
                   <h4 className="font-medium">Invoice Summary</h4>
                   <p>Amount: ₹{invoice.amount.toFixed(2)}</p>
-                  <p>Member: {invoice.memberId || "Not specified"}</p>
-                  <p>Due Date: {new Date(invoice.dueDate).toLocaleDateString()}</p>
+                  <p>Member: {invoice.member_id || "Not specified"}</p>
+                  <p>Due Date: {new Date(invoice.due_date).toLocaleDateString()}</p>
                 </div>
                 
                 <div className="space-y-2">

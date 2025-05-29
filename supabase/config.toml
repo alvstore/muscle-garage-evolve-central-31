@@ -1,0 +1,18 @@
+
+project_id = "rnqgpucxlvubwqpkgstc"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[functions.hikvision-auth]
+verify_jwt = false
+
+[functions.hikvision-proxy]
+verify_jwt = false
+
+[functions.hikvision-events]
+verify_jwt = false

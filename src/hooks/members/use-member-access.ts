@@ -4,19 +4,17 @@ import { hikvisionService } from '@/services/integrations/hikvisionService';
 import { useHikvisionSettings } from '@/hooks/access/use-hikvision-settings';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import type { HikvisionPerson, HikvisionAccessPrivilege } from '@/types/settings/hikvision-types';
+import type { HikvisionPerson } from '@/types/settings/hikvision-types';
 
 export const useMemberAccess = () => {
   const [isProcessing, setIsProcessing] = useState(false);
-  const { settings } = useHikvisionSettings();
 
   const getMemberCredential = async (memberId: string) => {
     try {
       const { data } = await supabase
-        .from('member_access_credentials')
+        .from('hikvision_persons')
         .select('*')
         .eq('member_id', memberId)
-        .eq('credential_type', 'hikvision_person_id')
         .single();
       
       return data;
@@ -26,30 +24,9 @@ export const useMemberAccess = () => {
     }
   };
 
-  const saveMemberCredential = async (memberId: string, personId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('member_access_credentials')
-        .upsert({
-          member_id: memberId,
-          credential_type: 'hikvision_person_id',
-          credential_value: personId,
-          is_active: true,
-          issued_at: new Date().toISOString()
-        })
-        .single();
-
-      if (error) throw error;
-      return data;
-    } catch (error) {
-      console.error('Error saving member credential:', error);
-      throw error;
-    }
-  };
-
-  const registerMember = async (member: any, picture?: string): Promise<boolean> => {
-    if (!settings || !settings.isActive) {
-      toast.error('Hikvision integration is not configured');
+  const registerMember = async (member: any, branchId: string, picture?: string): Promise<boolean> => {
+    if (!branchId) {
+      toast.error('Branch ID is required for member registration');
       return false;
     }
 
@@ -58,56 +35,109 @@ export const useMemberAccess = () => {
       // Check if member already has a Hikvision personId
       const credential = await getMemberCredential(member.id);
       
-      let personId = credential?.credential_value;
-      
-      if (!personId) {
-        // Create new person in Hikvision
-        // Create person object without the picture as it's not part of HikvisionPerson
-        const person: HikvisionPerson = {
-          personId: member.id,
-          memberId: member.id,
-          name: `${member.first_name} ${member.last_name}`.trim(),
-          cardNo: '',
-          phone: member.phone,
-          email: member.email,
-          gender: member.gender?.toLowerCase(),
-          status: 'active',
-          branchId: settings.branchId || ''
-        };
-
-        // Register the member in Hikvision
-        const result: any = await hikvisionService.registerMember(person, settings.branchId || '');
-        if (!result.success) {
-          throw new Error(result.message);
-        }
-        personId = result.personId;
-        await saveMemberCredential(member.id, personId);
-        
-        toast.success('Member registered with access control system');
-      } else {
+      if (credential?.person_id) {
         // Update existing person
+        console.log('Updating existing Hikvision person:', credential.person_id);
+        
         const person: HikvisionPerson = {
-          personId: member.id,
+          personId: credential.person_id,
           memberId: member.id,
           name: `${member.first_name} ${member.last_name}`.trim(),
-          cardNo: '',
+          cardNo: member.member_id || '',
           phone: member.phone,
           email: member.email,
           gender: member.gender?.toLowerCase(),
           status: 'active',
-          branchId: settings.branchId || ''
+          faceData: picture ? [picture] : credential.face_data || [],
+          branchId: branchId
         };
 
-        // Update the member in Hikvision
-        const result = await hikvisionService.registerMember(person, settings.branchId || '');
-        if (!result.success) {
-          throw new Error(result.message);
+        // Update person in Hikvision via proxy
+        const { data: updateResponse, error: updateError } = await supabase.functions.invoke('hikvision-proxy', {
+          body: {
+            branchId,
+            endpoint: '/api/hpcgw/v1/person/update',
+            method: 'POST',
+            data: {
+              personId: person.personId,
+              name: person.name,
+              gender: person.gender,
+              cardNo: person.cardNo,
+              phone: person.phone,
+              email: person.email,
+              pictures: person.faceData || []
+            }
+          }
+        });
+
+        if (updateError || !updateResponse?.success) {
+          throw new Error(updateResponse?.error || 'Failed to update person in Hikvision');
         }
+
+        // Update database record
+        await supabase
+          .from('hikvision_persons')
+          .update({
+            name: person.name,
+            gender: person.gender,
+            card_no: person.cardNo,
+            phone: person.phone,
+            email: person.email,
+            face_data: person.faceData,
+            sync_status: 'success',
+            last_sync: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          })
+          .eq('person_id', person.personId);
+
         toast.success('Member information updated in access control system');
+        return true;
       }
 
-      // In the current implementation, the service handles device syncing internally
-      // Just need to register/update the member and the service will handle the rest
+      // Create new person in Hikvision
+      const person: HikvisionPerson = {
+        personId: '', // Will be generated by Hikvision
+        memberId: member.id,
+        name: `${member.first_name} ${member.last_name}`.trim(),
+        cardNo: member.member_id || '',
+        phone: member.phone,
+        email: member.email,
+        gender: member.gender?.toLowerCase(),
+        status: 'active',
+        faceData: picture ? [picture] : [],
+        branchId: branchId
+      };
+
+      // Register the member in Hikvision
+      const result = await hikvisionService.registerMember(person, branchId);
+      if (!result.success) {
+        throw new Error(result.error);
+      }
+
+      // Configure default access (if devices exist)
+      const { data: devices } = await supabase
+        .from('hikvision_devices')
+        .select('device_id')
+        .eq('branch_id', branchId)
+        .eq('status', 'active')
+        .limit(1);
+
+      if (devices && devices.length > 0) {
+        const deviceSerialNo = devices[0].device_id;
+        const validStartTime = new Date().toISOString();
+        const validEndTime = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(); // 1 year from now
+
+        await hikvisionService.configureAccess(
+          result.data.personId,
+          deviceSerialNo,
+          [1], // Default door
+          validStartTime,
+          validEndTime,
+          branchId
+        );
+      }
+      
+      toast.success('Member registered with access control system');
       return true;
     } catch (error) {
       console.error('Error registering member with Hikvision:', error);
@@ -118,20 +148,46 @@ export const useMemberAccess = () => {
     }
   };
 
-  const unregisterMember = async (memberId: string): Promise<boolean> => {
-    if (!settings || !settings.isActive) return false;
-
+  const unregisterMember = async (memberId: string, branchId: string): Promise<boolean> => {
     setIsProcessing(true);
     try {
       const credential = await getMemberCredential(memberId);
       if (!credential) return true; // Already not registered
 
-      const personId = credential.credential_value;
-      
-      // Remove from Hikvision
-      // In the current implementation, we don't have a direct delete method
-      // You would need to implement this in the HikvisionService if needed
-      console.warn('Delete person not implemented in HikvisionService');
+      // Update person status to inactive via proxy
+      const { data: deleteResponse, error: deleteError } = await supabase.functions.invoke('hikvision-proxy', {
+        body: {
+          branchId,
+          endpoint: '/api/hpcgw/v1/person/delete',
+          method: 'POST',
+          data: { personId: credential.person_id }
+        }
+      });
+
+      if (deleteError || !deleteResponse?.success) {
+        console.warn('Failed to delete person from Hikvision:', deleteResponse?.error);
+      }
+
+      // Update local database
+      await supabase
+        .from('hikvision_persons')
+        .update({ 
+          status: 'inactive',
+          sync_status: 'success',
+          updated_at: new Date().toISOString()
+        })
+        .eq('member_id', memberId);
+
+      // Remove access privileges
+      await supabase
+        .from('hikvision_access_privileges')
+        .update({ 
+          status: 'inactive',
+          updated_at: new Date().toISOString()
+        })
+        .eq('person_id', credential.person_id);
+
+      toast.success('Member access revoked successfully');
       return true;
     } catch (error) {
       console.error('Error unregistering member from Hikvision:', error);
@@ -143,14 +199,13 @@ export const useMemberAccess = () => {
   };
 
   const grantAccess = async (
-    memberId: string, 
+    memberId: string,
+    branchId: string,
     deviceSerialNo: string, 
     doorList: number[],
     validStartTime: string,
     validEndTime: string
   ): Promise<boolean> => {
-    if (!settings || !settings.isActive) return false;
-    
     setIsProcessing(true);
     try {
       const credential = await getMemberCredential(memberId);
@@ -159,11 +214,20 @@ export const useMemberAccess = () => {
         return false;
       }
 
-      const personId = credential.credential_value;
-      
-      // Configure access is handled during registration/update in the current implementation
-      // You would need to implement this in the HikvisionService if needed
-      console.warn('Configure access not implemented in HikvisionService');
+      const result = await hikvisionService.configureAccess(
+        credential.person_id,
+        deviceSerialNo,
+        doorList,
+        validStartTime,
+        validEndTime,
+        branchId
+      );
+
+      if (!result.success) {
+        throw new Error(result.error);
+      }
+
+      toast.success('Access permissions granted successfully');
       return true;
     } catch (error) {
       console.error('Error granting access permissions:', error);
@@ -174,23 +238,86 @@ export const useMemberAccess = () => {
     }
   };
 
-  const revokeAccess = async (memberId: string, deviceSerialNo: string): Promise<boolean> => {
-    if (!settings || !settings.isActive) return false;
-    
+  const revokeAccess = async (memberId: string, branchId: string, deviceSerialNo: string): Promise<boolean> => {
     setIsProcessing(true);
     try {
       const credential = await getMemberCredential(memberId);
       if (!credential) return true; // No credentials to revoke
+
+      // Delete access privileges via proxy
+      const { data: deleteResponse, error: deleteError } = await supabase.functions.invoke('hikvision-proxy', {
+        body: {
+          branchId,
+          endpoint: '/api/hpcgw/v1/acs/privilege/delete',
+          method: 'POST',
+          data: {
+            personId: credential.person_id,
+            deviceSerialNo: deviceSerialNo
+          }
+        }
+      });
+
+      if (deleteError || !deleteResponse?.success) {
+        console.warn('Failed to delete privileges from Hikvision:', deleteResponse?.error);
+      }
       
-      const personId = credential.credential_value;
-      
-      // Remove access is not directly supported in the current implementation
-      // You would need to implement this in the HikvisionService if needed
-      console.warn('Remove access not implemented in HikvisionService');
+      // Update local database
+      await supabase
+        .from('hikvision_access_privileges')
+        .update({ 
+          status: 'inactive',
+          updated_at: new Date().toISOString()
+        })
+        .eq('person_id', credential.person_id)
+        .ilike('door_id', `${deviceSerialNo}%`);
+
+      toast.success('Access permissions revoked successfully');
       return true;
     } catch (error) {
       console.error('Error revoking access permissions:', error);
       toast.error('Failed to revoke access permissions');
+      return false;
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const processAttendanceEvents = async (branchId: string): Promise<boolean> => {
+    try {
+      setIsProcessing(true);
+      
+      const result = await hikvisionService.processEvents(branchId);
+      
+      if (result.success) {
+        toast.success(`Processed ${result.data?.processedCount || 0} attendance events`);
+        return true;
+      } else {
+        throw new Error(result.error);
+      }
+    } catch (error) {
+      console.error('Error processing attendance events:', error);
+      toast.error('Failed to process attendance events');
+      return false;
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const fetchLatestEvents = async (branchId: string): Promise<boolean> => {
+    try {
+      setIsProcessing(true);
+      
+      const result = await hikvisionService.fetchEvents(branchId);
+      
+      if (result.success) {
+        toast.success(`Fetched ${result.data?.fetched || 0} new events`);
+        return true;
+      } else {
+        throw new Error(result.error);
+      }
+    } catch (error) {
+      console.error('Error fetching events:', error);
+      toast.error('Failed to fetch latest events');
       return false;
     } finally {
       setIsProcessing(false);
@@ -202,6 +329,8 @@ export const useMemberAccess = () => {
     unregisterMember,
     grantAccess,
     revokeAccess,
+    processAttendanceEvents,
+    fetchLatestEvents,
     isProcessing
   };
 };

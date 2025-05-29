@@ -34,9 +34,10 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
     items: invoice?.items || [{
       id: uuidv4(),
       name: 'Service',
+      description: 'Default service item',
       quantity: 1,
       price: 100,
-      total: 100 // Add the total property
+      total: 100
     }],
     created_at: invoice?.created_at || new Date().toISOString()
   });
@@ -51,9 +52,10 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
     const newItem: InvoiceItem = {
       id: uuidv4(),
       name: 'New Item',
+      description: 'Item description',
       quantity: 1,
       price: 0,
-      total: 0 // Add the total property
+      total: 0
     };
     setInvoiceData(prev => ({
       ...prev,
@@ -110,13 +112,13 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <InvoiceFormHeader isEditing={!!invoice} />
+      <InvoiceFormHeader isEdit={!!invoice} />
       
       <Card>
         <CardContent className="space-y-4">
           <InvoiceMemberFields
-            memberId={invoiceData.member_id || ''}
-            memberName={invoiceData.member_name || ''}
+            member_id={invoiceData.member_id || ''}
+            member_name={invoiceData.member_name || ''}
             onChange={handleInputChange}
             onSelectMember={onSelectMember}
           />
@@ -134,9 +136,9 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
           
           <InvoiceItemList
             items={invoiceData.items || []}
-            onAddItem={handleAddItem}
-            onUpdateItem={handleUpdateItem}
-            onRemoveItem={handleRemoveItem}
+            onAdd={handleAddItem}
+            onUpdate={handleUpdateItem}
+            onRemove={handleRemoveItem}
           />
         </CardContent>
       </Card>
