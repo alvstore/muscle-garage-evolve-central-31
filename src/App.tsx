@@ -6,9 +6,6 @@ import { ThemeProvider } from './providers/ThemeProvider';
 import { Toaster, toast } from "@/components/ui/sonner";
 import { ensureStorageBucketsExist } from './services/utils/storageService';
 import { supabase } from './integrations/supabase/client';
-import { AuthProvider } from './hooks/auth/use-auth';
-import { BranchProvider } from './hooks/settings/use-branches';
-import { PermissionsProvider } from './hooks/permissions/use-permissions-manager';
 
 // Create a client
 const queryClient = new QueryClient({
