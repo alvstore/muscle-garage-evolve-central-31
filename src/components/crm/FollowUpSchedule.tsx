@@ -1,200 +1,274 @@
+
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Calendar, Clock, User, Phone, Mail, MessageCircle } from 'lucide-react';
-import { Lead, FollowUpScheduled } from '@/types/crm';
-import { Skeleton } from '@/components/ui/skeleton';
-import { followUpService } from '@/services/followUpService';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useBranch } from '@/hooks/settings/use-branches';
-import { format, parseISO, isAfter, isBefore, startOfDay, endOfDay, addDays } from 'date-fns';
-import { toast } from '@/utils/toast-manager';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Calendar, Clock, Phone, Mail, MessageCircle, Video, Trash2 } from 'lucide-react';
+import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+import { Lead, FollowUp, FollowUpType } from '@/types/crm';
 
-// Convert the database model to the component model
-const convertToScheduledFollowUp = (item: any): FollowUpScheduled => {
-  return {
-    id: item.id,
-    lead_id: item.lead_id || "",
-    type: item.type as FollowUpType,
-    subject: item.subject || "",
-    content: item.content || "",
-    status: item.status,
-    scheduled_at: item.scheduled_for || item.scheduled_at || new Date().toISOString(),
-    leads: {
-      id: item.lead_id || "",
-      name: item.leads?.name || "Unknown Lead",
-      status: "new",
-      source: "website",
-      created_at: new Date().toISOString(),
-      funnel_stage: "cold"
-    } as Lead,
-    created_by: item.created_by || "",
-    created_at: item.created_at || new Date().toISOString(),
-    template_id: item.template_id
-  };
-};
-
-interface FollowUpScheduleProps {
-  leadId?: string;
-}
-
-const FollowUpSchedule: React.FC<FollowUpScheduleProps> = ({ leadId }) => {
-  const { currentBranch } = useBranch();
-  const queryClient = useQueryClient();
-  const [filter, setFilter] = useState<'all' | 'today' | 'upcoming'>('all');
-  
-  // Fetch scheduled follow-ups from Supabase
-  const { data: scheduledFollowUpsData, isLoading, isError, refetch } = useQuery({
-    queryKey: ['scheduledFollowUps', currentBranch?.id],
-    queryFn: () => followUpService.getScheduledFollowUps(currentBranch?.id),
-    enabled: !!currentBranch?.id,
-    staleTime: 1000 * 60 * 5, // 5 minutes
+const FollowUpSchedule = () => {
+  const [followUps, setFollowUps] = useState<FollowUp[]>([]);
+  const [leads, setLeads] = useState<Lead[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [showForm, setShowForm] = useState(false);
+  const [newFollowUp, setNewFollowUp] = useState({
+    lead_id: '',
+    type: 'email' as FollowUpType,
+    content: '',
+    scheduled_at: '',
   });
-  
-  // Delete follow-up mutation
-  const deleteFollowUpMutation = useMutation({
-    mutationFn: (id: string) => followUpService.deleteScheduledFollowUp(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['scheduledFollowUps'] });
+
+  // Mock lead for development
+  const mockLead: Lead = {
+    id: 'mock-lead-1',
+    name: 'John Doe',
+    email: 'john@example.com',
+    status: 'new',
+    source: 'website',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    funnel_stage: 'cold',
+  };
+
+  useEffect(() => {
+    fetchFollowUps();
+    fetchLeads();
+  }, []);
+
+  const fetchFollowUps = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('follow_up_history')
+        .select('*')
+        .order('scheduled_at', { ascending: true });
+
+      if (error) throw error;
+      setFollowUps(data || []);
+    } catch (error) {
+      console.error('Error fetching follow-ups:', error);
+      toast.error('Failed to fetch follow-ups');
+    }
+  };
+
+  const fetchLeads = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('leads')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      
+      // Add mock lead for development
+      const leadsWithMock = data ? [mockLead, ...data] : [mockLead];
+      setLeads(leadsWithMock);
+    } catch (error) {
+      console.error('Error fetching leads:', error);
+      setLeads([mockLead]); // Fallback to mock data
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleScheduleFollowUp = async () => {
+    try {
+      if (!newFollowUp.lead_id || !newFollowUp.content || !newFollowUp.scheduled_at) {
+        toast.error('Please fill in all required fields');
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('follow_up_history')
+        .insert([{
+          ...newFollowUp,
+          status: 'pending',
+        }])
+        .select();
+
+      if (error) throw error;
+
+      if (data) {
+        setFollowUps([...followUps, data[0]]);
+        setNewFollowUp({
+          lead_id: '',
+          type: 'email' as FollowUpType,
+          content: '',
+          scheduled_at: '',
+        });
+        setShowForm(false);
+        toast.success('Follow-up scheduled successfully');
+      }
+    } catch (error) {
+      console.error('Error scheduling follow-up:', error);
+      toast.error('Failed to schedule follow-up');
+    }
+  };
+
+  const handleDeleteFollowUp = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('follow_up_history')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setFollowUps(followUps.filter(f => f.id !== id));
       toast.success('Follow-up deleted successfully');
-    },
-    onError: (error: any) => {
-      toast.error(`Failed to delete follow-up: ${error.message}`);
-    }
-  });
-  
-  // Convert to component model
-  const scheduledFollowUps = scheduledFollowUpsData
-    ? scheduledFollowUpsData.map(convertToScheduledFollowUp)
-    : [];
-
-  // Format date to readable format
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString();
-  };
-
-  // Format time to readable format
-  const formatTime = (dateString: string) => {
-    return new Date(dateString).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  };
-
-  // Get badge for follow-up type
-  const getTypeBadge = (type: FollowUpType) => {
-    switch (type) {
-      case "email":
-        return <Badge variant="outline" className="bg-blue-50 text-blue-600 border-blue-200">Email</Badge>;
-      case "sms":
-        return <Badge variant="outline" className="bg-green-50 text-green-600 border-green-200">SMS</Badge>;
-      case "whatsapp":
-        return <Badge variant="outline" className="bg-emerald-50 text-emerald-600 border-emerald-200">WhatsApp</Badge>;
-      case "call":
-        return <Badge variant="outline" className="bg-amber-50 text-amber-600 border-amber-200">Call</Badge>;
-      case "meeting":
-        return <Badge variant="outline" className="bg-purple-50 text-purple-600 border-purple-200">Meeting</Badge>;
-      default:
-        return <Badge variant="outline">{type}</Badge>;
+    } catch (error) {
+      console.error('Error deleting follow-up:', error);
+      toast.error('Failed to delete follow-up');
     }
   };
 
-  // Get icon for follow-up type
   const getTypeIcon = (type: FollowUpType) => {
     switch (type) {
-      case 'email':
-        return <Mail className="h-4 w-4" />;
-      case 'sms':
-        return <MessageCircle className="h-4 w-4" />;
-      case 'call':
-        return <Phone className="h-4 w-4" />;
-      case 'whatsapp':
-        return <MessageCircle className="h-4 w-4" />;
-      default:
-        return <MessageCircle className="h-4 w-4" />;
+      case 'email': return <Mail className="h-4 w-4" />;
+      case 'call': return <Phone className="h-4 w-4" />;
+      case 'sms': return <MessageCircle className="h-4 w-4" />;
+      case 'whatsapp': return <MessageCircle className="h-4 w-4" />;
+      case 'meeting': return <Video className="h-4 w-4" />;
+      default: return <Mail className="h-4 w-4" />;
     }
   };
 
-  // Handle delete follow-up
-  const handleDelete = (id: string) => {
-    if (confirm('Are you sure you want to delete this follow-up?')) {
-      deleteFollowUpMutation.mutate(id);
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'pending': return 'text-yellow-600 bg-yellow-100';
+      case 'sent': return 'text-blue-600 bg-blue-100';
+      case 'responded': return 'text-green-600 bg-green-100';
+      case 'failed': return 'text-red-600 bg-red-100';
+      default: return 'text-gray-600 bg-gray-100';
     }
   };
+
+  if (isLoading) {
+    return <div>Loading follow-ups...</div>;
+  }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <Card>
-        <CardHeader>
-          <CardTitle>Scheduled Follow-ups</CardTitle>
-          <CardDescription>
-            Manage your upcoming follow-up activities
-          </CardDescription>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle className="flex items-center gap-2">
+            <Calendar className="h-5 w-5" />
+            Follow-up Schedule
+          </CardTitle>
+          <Button onClick={() => setShowForm(!showForm)}>
+            Schedule Follow-up
+          </Button>
         </CardHeader>
         <CardContent>
-          {isLoading ? (
-            <div className="space-y-4">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="flex items-start space-x-4">
-                  <Skeleton className="h-12 w-12 rounded-full" />
-                  <div className="space-y-2 flex-1">
-                    <Skeleton className="h-4 w-3/4" />
-                    <Skeleton className="h-4 w-1/2" />
-                  </div>
+          {showForm && (
+            <div className="mb-6 p-4 border rounded-lg space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="lead">Lead</Label>
+                  <Select
+                    value={newFollowUp.lead_id}
+                    onValueChange={(value) => setNewFollowUp({ ...newFollowUp, lead_id: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a lead" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {leads.map((lead) => (
+                        <SelectItem key={lead.id} value={lead.id}>
+                          {lead.name} - {lead.email}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
-              ))}
+                <div>
+                  <Label htmlFor="type">Type</Label>
+                  <Select
+                    value={newFollowUp.type}
+                    onValueChange={(value: FollowUpType) => setNewFollowUp({ ...newFollowUp, type: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="email">Email</SelectItem>
+                      <SelectItem value="call">Phone Call</SelectItem>
+                      <SelectItem value="sms">SMS</SelectItem>
+                      <SelectItem value="whatsapp">WhatsApp</SelectItem>
+                      <SelectItem value="meeting">Meeting</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div>
+                <Label htmlFor="scheduled_at">Scheduled Date & Time</Label>
+                <Input
+                  id="scheduled_at"
+                  type="datetime-local"
+                  value={newFollowUp.scheduled_at}
+                  onChange={(e) => setNewFollowUp({ ...newFollowUp, scheduled_at: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label htmlFor="content">Content</Label>
+                <Textarea
+                  id="content"
+                  placeholder="Enter follow-up content..."
+                  value={newFollowUp.content}
+                  onChange={(e) => setNewFollowUp({ ...newFollowUp, content: e.target.value })}
+                  rows={3}
+                />
+              </div>
+              <div className="flex gap-2">
+                <Button onClick={handleScheduleFollowUp}>Schedule</Button>
+                <Button variant="outline" onClick={() => setShowForm(false)}>Cancel</Button>
+              </div>
             </div>
-          ) : scheduledFollowUps.length === 0 ? (
-            <div className="text-center py-6">
-              <MessageCircle className="h-12 w-12 mx-auto text-gray-400" />
-              <h3 className="mt-2 text-lg font-medium">No scheduled follow-ups</h3>
-              <p className="text-sm text-gray-500 mt-1">Create a follow-up task to get started</p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {scheduledFollowUps.map((followUp) => (
-                <div key={followUp.id} className="border rounded-lg p-4 hover:bg-gray-50 transition-colors">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <div className="font-medium">{followUp.subject}</div>
-                      <div className="text-sm text-muted-foreground">For: {followUp.lead_id}</div>
-                    </div>
-                    <div className="flex space-x-1">
-                      {getTypeBadge(followUp.type)}
-                      {followUp.status === "completed" && (
-                        <Badge variant="secondary">Completed</Badge>
-                      )}
-                    </div>
-                  </div>
-                  <div className="mt-2">
-                    <div className="text-sm text-muted-foreground line-clamp-2">{followUp.content}</div>
-                  </div>
-                  <div className="mt-3 flex justify-between items-center">
-                    <div className="flex items-center text-sm text-muted-foreground">
-                      <Calendar className="h-4 w-4 mr-1" />
-                      <span>{formatDate(followUp.scheduled_at)}</span>
-                      <Clock className="h-4 w-4 ml-3 mr-1" />
-                      <span>{formatTime(followUp.scheduled_at)}</span>
-                    </div>
-                    <div className="flex space-x-2">
-                      {followUp.type === "call" && (
-                        <Button size="sm" variant="outline">
-                          <Phone className="h-4 w-4 mr-1" />
-                          Call
-                        </Button>
-                      )}
-                      <Button 
-                        size="sm" 
-                        variant="ghost" 
-                        className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                        onClick={() => handleDelete(followUp.id)}
+          )}
+
+          <div className="space-y-4">
+            {followUps.length === 0 ? (
+              <p className="text-center text-gray-500 py-8">No follow-ups scheduled</p>
+            ) : (
+              followUps.map((followUp) => {
+                const lead = leads.find(l => l.id === followUp.lead_id);
+                return (
+                  <div key={followUp.id} className="border rounded-lg p-4">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-start gap-3">
+                        {getTypeIcon(followUp.type)}
+                        <div>
+                          <h4 className="font-medium">{lead?.name || 'Unknown Lead'}</h4>
+                          <p className="text-sm text-gray-600">{lead?.email}</p>
+                          <p className="text-sm mt-2">{followUp.content}</p>
+                          <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
+                            <span className="flex items-center gap-1">
+                              <Clock className="h-3 w-3" />
+                              {new Date(followUp.scheduled_at).toLocaleString()}
+                            </span>
+                            <span className={`px-2 py-1 rounded-full text-xs ${getStatusColor(followUp.status)}`}>
+                              {followUp.status}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDeleteFollowUp(followUp.id)}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          )}
+                );
+              })
+            )}
+          </div>
         </CardContent>
       </Card>
     </div>

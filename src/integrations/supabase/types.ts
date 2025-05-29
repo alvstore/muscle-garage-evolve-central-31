@@ -2854,6 +2854,7 @@ export type Database = {
           id: string
           member_id: string | null
           membership_id: string | null
+          notes: string | null
           payment_status: string
           start_date: string
           status: string
@@ -2869,6 +2870,7 @@ export type Database = {
           id?: string
           member_id?: string | null
           membership_id?: string | null
+          notes?: string | null
           payment_status?: string
           start_date: string
           status?: string
@@ -2884,6 +2886,7 @@ export type Database = {
           id?: string
           member_id?: string | null
           membership_id?: string | null
+          notes?: string | null
           payment_status?: string
           start_date?: string
           status?: string

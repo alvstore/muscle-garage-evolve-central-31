@@ -1,213 +1,298 @@
 
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { AlertTriangle, CheckCircle, Clock, RefreshCw } from "lucide-react";
-import { RazorpayWebhook, RazorpayEventType } from '@/types/webhooks';
-import { razorpayWebhookService } from '@/services/webhooks/razorpayWebhookService';
-import { format } from 'date-fns';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+import { Eye, RefreshCw, Search, Filter } from 'lucide-react';
 
-const WebhookLogs: React.FC = () => {
-  const [logs, setLogs] = useState<RazorpayWebhook[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [eventFilter, setEventFilter] = useState<string>('all');
-  const [processingId, setProcessingId] = useState<string | null>(null);
+interface WebhookLog {
+  id: string;
+  event_type: string;
+  payload: any;
+  status: 'success' | 'pending' | 'failed';
+  processed_at?: string;
+  error_message?: string;
+  created_at: string;
+  source?: string;
+  signature?: string;
+}
+
+interface RazorpayPayment {
+  id: string;
+  amount: number;
+  currency: string;
+  status: string;
+  order_id?: string;
+  method?: string;
+  email?: string;
+  contact?: string;
+}
+
+interface RazorpaySubscription {
+  id: string;
+  plan_id: string;
+  customer_id: string;
+  status: string;
+  current_start?: number;
+  current_end?: number;
+}
+
+const WebhookLogs = () => {
+  const [logs, setLogs] = useState<WebhookLog[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [selectedLog, setSelectedLog] = useState<WebhookLog | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'success' | 'pending' | 'failed'>('all');
 
   useEffect(() => {
-    fetchLogs();
-  }, [statusFilter, eventFilter]);
+    fetchWebhookLogs();
+  }, []);
 
-  const fetchLogs = async () => {
-    setLoading(true);
+  const fetchWebhookLogs = async () => {
     try {
-      let status: 'success' | 'failed' | 'pending' | undefined;
-      if (statusFilter !== 'all') {
-        status = statusFilter as 'success' | 'failed' | 'pending';
-      }
+      setIsLoading(true);
+      const { data, error } = await supabase
+        .from('webhook_logs')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(100);
+
+      if (error) throw error;
       
-      let eventType: RazorpayEventType | undefined;
-      if (eventFilter !== 'all') {
-        eventType = eventFilter as RazorpayEventType;
-      }
-      
-      const data = await razorpayWebhookService.getWebhookLogs(50, 0, status, eventType);
-      setLogs(data);
+      setLogs(data || []);
     } catch (error) {
-      console.error("Failed to fetch webhook logs:", error);
+      console.error('Error fetching webhook logs:', error);
+      toast.error('Failed to fetch webhook logs');
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
-  const handleRetry = async (id: string) => {
-    setProcessingId(id);
+  const handleRetryWebhook = async (logId: string) => {
     try {
-      const success = await razorpayWebhookService.retryWebhook(id);
-      if (success) {
-        fetchLogs();
-      }
-    } finally {
-      setProcessingId(null);
+      const { error } = await supabase
+        .from('webhook_logs')
+        .update({ 
+          status: 'pending',
+          error_message: null,
+          processed_at: null 
+        })
+        .eq('id', logId);
+
+      if (error) throw error;
+      
+      toast.success('Webhook marked for retry');
+      fetchWebhookLogs();
+    } catch (error) {
+      console.error('Error retrying webhook:', error);
+      toast.error('Failed to retry webhook');
     }
   };
 
-  const getStatusBadge = (status: string) => {
+  const getStatusColor = (status: string) => {
     switch (status) {
-      case 'success':
-        return <Badge className="bg-green-500 hover:bg-green-600"><CheckCircle className="w-3 h-3 mr-1" /> Success</Badge>;
-      case 'failed':
-        return <Badge variant="destructive"><AlertTriangle className="w-3 h-3 mr-1" /> Failed</Badge>;
-      case 'pending':
-        return <Badge variant="outline" className="border-yellow-500 text-yellow-500"><Clock className="w-3 h-3 mr-1" /> Pending</Badge>;
-      default:
-        return <Badge variant="outline">Unknown</Badge>;
+      case 'success': return 'bg-green-100 text-green-800';
+      case 'pending': return 'bg-yellow-100 text-yellow-800';
+      case 'failed': return 'bg-red-100 text-red-800';
+      default: return 'bg-gray-100 text-gray-800';
     }
   };
 
-  const formatEventType = (type: string) => {
-    return type.replace('.', ' ').split(' ').map(word => 
-      word.charAt(0).toUpperCase() + word.slice(1)
-    ).join(' ');
+  const formatPayload = (payload: any) => {
+    if (!payload) return 'No payload';
+    
+    try {
+      return JSON.stringify(payload, null, 2);
+    } catch (error) {
+      return 'Invalid JSON payload';
+    }
   };
+
+  const getEventDescription = (eventType: string, payload: any) => {
+    switch (eventType) {
+      case 'payment.captured':
+        const payment = payload?.payment || payload;
+        return `Payment of ₹${(payment?.amount || 0) / 100} captured`;
+      case 'payment.failed':
+        const failedPayment = payload?.payment || payload;
+        return `Payment of ₹${(failedPayment?.amount || 0) / 100} failed`;
+      case 'subscription.charged':
+        return `Subscription charged successfully`;
+      case 'subscription.cancelled':
+        return `Subscription cancelled`;
+      default:
+        return eventType.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+    }
+  };
+
+  const filteredLogs = logs.filter(log => {
+    const matchesSearch = searchTerm === '' || 
+      log.event_type.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      log.id.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesStatus = statusFilter === 'all' || log.status === statusFilter;
+    
+    return matchesSearch && matchesStatus;
+  });
+
+  if (isLoading) {
+    return <div>Loading webhook logs...</div>;
+  }
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle>Razorpay Webhook Logs</CardTitle>
-            <CardDescription>Monitor and manage payment webhook events</CardDescription>
-          </div>
-          <Button 
-            variant="outline" 
-            onClick={fetchLogs} 
-            disabled={loading}
-          >
-            <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-            Refresh
-          </Button>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <div className="flex items-center space-x-4 mb-4">
-          <div className="grid grid-cols-2 gap-4 w-full">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Status Filter</label>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Filter by status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Statuses</SelectItem>
-                  <SelectItem value="success">Success</SelectItem>
-                  <SelectItem value="failed">Failed</SelectItem>
-                  <SelectItem value="pending">Pending</SelectItem>
-                </SelectContent>
-              </Select>
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between">
+            <span>Webhook Logs</span>
+            <Button onClick={fetchWebhookLogs} size="sm">
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Refresh
+            </Button>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex gap-4 mb-6">
+            <div className="flex-1">
+              <Label htmlFor="search">Search</Label>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input
+                  id="search"
+                  placeholder="Search by event type or ID..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
             </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Event Type Filter</label>
-              <Select value={eventFilter} onValueChange={setEventFilter}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Filter by event type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Events</SelectItem>
-                  <SelectItem value="payment.captured">Payment Captured</SelectItem>
-                  <SelectItem value="payment.failed">Payment Failed</SelectItem>
-                  <SelectItem value="order.paid">Order Paid</SelectItem>
-                  <SelectItem value="subscription.activated">Subscription Activated</SelectItem>
-                  <SelectItem value="subscription.charged">Subscription Charged</SelectItem>
-                  <SelectItem value="subscription.cancelled">Subscription Cancelled</SelectItem>
-                  <SelectItem value="refund.processed">Refund Processed</SelectItem>
-                </SelectContent>
-              </Select>
+            <div>
+              <Label htmlFor="status">Status Filter</Label>
+              <select
+                id="status"
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value as any)}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
+              >
+                <option value="all">All Status</option>
+                <option value="success">Success</option>
+                <option value="pending">Pending</option>
+                <option value="failed">Failed</option>
+              </select>
             </div>
           </div>
-        </div>
-        
-        <div className="border rounded-md">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Event Type</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Timestamp</TableHead>
-                <TableHead>Details</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {loading ? (
-                <TableRow>
-                  <TableCell colSpan={5} className="h-24 text-center">
-                    <div className="flex items-center justify-center">
-                      <RefreshCw className="h-5 w-5 animate-spin mr-2" />
-                      Loading webhook logs...
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ) : logs.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
-                    No webhook logs found
-                  </TableCell>
-                </TableRow>
-              ) : (
-                logs.map((log) => (
-                  <TableRow key={log.id}>
-                    <TableCell className="font-medium">
-                      {formatEventType(log.eventType)}
-                    </TableCell>
-                    <TableCell>{getStatusBadge(log.status)}</TableCell>
-                    <TableCell>
-                      {format(new Date(log.createdAt), 'dd MMM yyyy, HH:mm')}
-                    </TableCell>
-                    <TableCell className="max-w-[200px] truncate">
-                      {log.status === 'failed' ? (
-                        <span className="text-red-500">{log.error}</span>
-                      ) : (
-                        <span className="text-muted-foreground">
-                          {log.payload?.payment ? `Payment ID: ${log.payload.payment.entity.id}` : 
-                           log.payload?.subscription ? `Subscription ID: ${log.payload.subscription.entity.id}` : 
-                           'Webhook received'}
-                        </span>
+
+          <div className="space-y-4">
+            {filteredLogs.length === 0 ? (
+              <p className="text-center text-gray-500 py-8">No webhook logs found</p>
+            ) : (
+              filteredLogs.map((log) => (
+                <div key={log.id} className="border rounded-lg p-4">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-2">
+                        <h4 className="font-medium">{log.event_type}</h4>
+                        <Badge className={getStatusColor(log.status)}>
+                          {log.status}
+                        </Badge>
+                        {log.source && (
+                          <Badge variant="outline">{log.source}</Badge>
+                        )}
+                      </div>
+                      <p className="text-sm text-gray-600 mb-2">
+                        {getEventDescription(log.event_type, log.payload)}
+                      </p>
+                      <div className="flex items-center gap-4 text-xs text-gray-500">
+                        <span>ID: {log.id.substring(0, 8)}...</span>
+                        <span>Created: {new Date(log.created_at).toLocaleString()}</span>
+                        {log.processed_at && (
+                          <span>Processed: {new Date(log.processed_at).toLocaleString()}</span>
+                        )}
+                      </div>
+                      {log.error_message && (
+                        <p className="text-sm text-red-600 mt-2">
+                          Error: {log.error_message}
+                        </p>
                       )}
-                    </TableCell>
-                    <TableCell className="text-right">
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setSelectedLog(log)}
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
                       {log.status === 'failed' && (
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          onClick={() => handleRetry(log.id)}
-                          disabled={processingId === log.id}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleRetryWebhook(log.id)}
                         >
-                          {processingId === log.id ? (
-                            <>
-                              <RefreshCw className="w-3 h-3 mr-1 animate-spin" />
-                              Retrying...
-                            </>
-                          ) : (
-                            <>
-                              <RefreshCw className="w-3 h-3 mr-1" />
-                              Retry
-                            </>
-                          )}
+                          <RefreshCw className="h-4 w-4" />
                         </Button>
                       )}
-                    </TableCell>
-                  </TableRow>
-                ))
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {selectedLog && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between">
+              <span>Webhook Details</span>
+              <Button variant="outline" onClick={() => setSelectedLog(null)}>
+                Close
+              </Button>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div>
+                <Label>Event Type</Label>
+                <p className="text-sm">{selectedLog.event_type}</p>
+              </div>
+              <div>
+                <Label>Status</Label>
+                <Badge className={getStatusColor(selectedLog.status)}>
+                  {selectedLog.status}
+                </Badge>
+              </div>
+              <div>
+                <Label>Payload</Label>
+                <pre className="bg-gray-100 p-3 rounded-md text-xs overflow-auto max-h-96">
+                  {formatPayload(selectedLog.payload)}
+                </pre>
+              </div>
+              {selectedLog.error_message && (
+                <div>
+                  <Label>Error Message</Label>
+                  <p className="text-sm text-red-600">{selectedLog.error_message}</p>
+                </div>
               )}
-            </TableBody>
-          </Table>
-        </div>
-      </CardContent>
-    </Card>
+              <div>
+                <Label>Timestamps</Label>
+                <div className="text-sm space-y-1">
+                  <p>Created: {new Date(selectedLog.created_at).toLocaleString()}</p>
+                  {selectedLog.processed_at && (
+                    <p>Processed: {new Date(selectedLog.processed_at).toLocaleString()}</p>
+                  )}
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+    </div>
   );
 };
 

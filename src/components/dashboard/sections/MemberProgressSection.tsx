@@ -1,243 +1,251 @@
 
-import React from 'react';
-import { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { 
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Label } from '@/components/ui/label';
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { FileBarChart, Users, Loader2 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/services/api/supabaseClient';
-import { useBranch } from '@/hooks/settings/use-branches';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Member } from '@/types';
-import { useMemberProgress } from '@/hooks/members/use-member-progress';
-import { useMemberMeasurements } from '@/hooks/members/use-member-measurements';
+import { TrendingUp, TrendingDown, Users, Target } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { Member } from '@/types/members/membership';
 
-const MemberProgressSection = () => {
-  const navigate = useNavigate();
-  const { currentBranch } = useBranch();
-  const [members, setMembers] = useState<Member[]>([]);
-  const [loadingMembers, setLoadingMembers] = useState(true);
-  const [selectedMemberId, setSelectedMemberId] = useState('');
-  
-  const { progress, isLoading: progressLoading } = useMemberProgress(selectedMemberId);
-  const { measurements, isLoading: measurementsLoading } = useMemberMeasurements(selectedMemberId);
-  
-  const isLoading = loadingMembers || progressLoading || measurementsLoading;
-  
-  const selectedMember = members.find(m => m.id === selectedMemberId);
-  
-  useEffect(() => {
-    const fetchMembers = async () => {
-      setLoadingMembers(true);
-      try {
-        let query = supabase
-          .from('profiles')
-          .select('id, full_name, email, role, branch_id')
-          .eq('role', 'member');
-          
-        if (currentBranch?.id) {
-          query = query.eq('branch_id', currentBranch.id);
-        }
-        
-        const { data, error } = await query;
-        
-        if (error) throw error;
-        
-        if (data) {
-          const membersData = data.map(profile => ({
-            id: profile.id,
-            name: profile.full_name || '',  // Use full_name from profile
-            email: profile.email,
-            role: 'member' as const,
-            membershipStatus: 'active' as const,
-            status: 'active' as const,  // Set default status as active
-            membershipId: null,
-            membershipStartDate: null,
-            membershipEndDate: null,
-          }));
-          
-          setMembers(membersData);
-          
-          // Auto-select first member if there are any
-          if (membersData.length > 0 && !selectedMemberId) {
-            setSelectedMemberId(membersData[0].id);
-          }
-        }
-      } catch (error) {
-        console.error('Error fetching members:', error);
-      } finally {
-        setLoadingMembers(false);
-      }
-    };
-    
-    fetchMembers();
-  }, [currentBranch]);
-  
-  const getInitials = (name: string) => {
-    if (!name) return "";
-    return name
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase();
+interface MemberProgressStats {
+  totalActiveMembers: number;
+  newMembersThisMonth: number;
+  membershipRenewalRate: number;
+  averageAttendanceRate: number;
+  topPerformingMembers: Member[];
+  membershipGoals: {
+    target: number;
+    achieved: number;
+    percentage: number;
   };
-  
-  const latestMeasurement = measurements && measurements.length > 0 
-    ? measurements[0] 
-    : null;
-  
-  const weightLossPercentage = progress ? 75 : 0;
-  const bodyFatReductionPercentage = progress ? 62 : 0;
-  const bmiImprovementPercentage = progress ? 55 : 0;
-  
-  const workoutCompletionPercentage = progress?.workout_completion_percent || 0;
-  const classAttendancePercentage = 70;
-  
+}
+
+const MemberProgressSection: React.FC = () => {
+  const [stats, setStats] = useState<MemberProgressStats | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    fetchMemberProgressStats();
+  }, []);
+
+  const fetchMemberProgressStats = async () => {
+    try {
+      setIsLoading(true);
+
+      // Fetch total active members
+      const { data: activeMembers, error: activeMembersError } = await supabase
+        .from('members')
+        .select('*')
+        .eq('status', 'active');
+
+      if (activeMembersError) throw activeMembersError;
+
+      // Fetch new members this month
+      const startOfMonth = new Date();
+      startOfMonth.setDate(1);
+      startOfMonth.setHours(0, 0, 0, 0);
+
+      const { data: newMembers, error: newMembersError } = await supabase
+        .from('members')
+        .select('*')
+        .gte('created_at', startOfMonth.toISOString())
+        .eq('status', 'active');
+
+      if (newMembersError) throw newMembersError;
+
+      // Format members with required fields
+      const formattedActiveMembers: Member[] = (activeMembers || []).map(member => ({
+        id: member.id,
+        name: member.name,
+        email: member.email,
+        role: 'member',
+        membership_status: 'active',
+        status: 'active',
+        membership_id: member.membership_id,
+        membership_start_date: member.membership_start_date,
+        membership_end_date: member.membership_end_date,
+        created_at: member.created_at,
+        branch_id: member.branch_id,
+        // Add other required fields with defaults
+        phone: member.phone,
+        gender: member.gender,
+        address: member.address,
+        city: member.city,
+        state: member.state,
+        country: member.country,
+        zip_code: member.zip_code,
+        date_of_birth: member.date_of_birth,
+        avatar: member.avatar,
+        goal: member.goal,
+        occupation: member.occupation,
+        blood_group: member.blood_group,
+        id_type: member.id_type,
+        id_number: member.id_number,
+        trainer_id: member.trainer_id
+      }));
+
+      // Mock some stats for demo purposes
+      const memberProgressStats: MemberProgressStats = {
+        totalActiveMembers: formattedActiveMembers.length,
+        newMembersThisMonth: newMembers?.length || 0,
+        membershipRenewalRate: 85, // Mock value
+        averageAttendanceRate: 72, // Mock value
+        topPerformingMembers: formattedActiveMembers.slice(0, 5), // Top 5 members
+        membershipGoals: {
+          target: 500,
+          achieved: formattedActiveMembers.length,
+          percentage: Math.round((formattedActiveMembers.length / 500) * 100)
+        }
+      };
+
+      setStats(memberProgressStats);
+    } catch (error) {
+      console.error('Error fetching member progress stats:', error);
+      // Set default stats on error
+      setStats({
+        totalActiveMembers: 0,
+        newMembersThisMonth: 0,
+        membershipRenewalRate: 0,
+        averageAttendanceRate: 0,
+        topPerformingMembers: [],
+        membershipGoals: {
+          target: 500,
+          achieved: 0,
+          percentage: 0
+        }
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="animate-pulse">
+          <div className="h-8 bg-gray-200 rounded w-1/4 mb-4"></div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="h-32 bg-gray-200 rounded"></div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!stats) {
+    return <div>Error loading member progress stats</div>;
+  }
+
   return (
-    <Card className="col-span-4">
-      <CardHeader className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <CardTitle>Member Progress</CardTitle>
-          <CardDescription>
-            Track and analyze fitness progress of your members
-          </CardDescription>
-        </div>
-        <div className="flex gap-2 items-center">
-          <Label htmlFor="member-select" className="sr-only">Select Member</Label>
-          {loadingMembers ? (
-            <Skeleton className="h-10 w-[180px]" />
-          ) : (
-            <Select value={selectedMemberId} onValueChange={setSelectedMemberId}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Select member" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectGroup>
-                  {members.map(member => (
-                    <SelectItem key={member.id} value={member.id}>
-                      {member.name}
-                    </SelectItem>
-                  ))}
-                </SelectGroup>
-              </SelectContent>
-            </Select>
-          )}
-          <Button variant="outline" size="sm" onClick={() => navigate('/fitness/progress')}>
-            <FileBarChart className="h-4 w-4 mr-1" />
-            Detailed View
-          </Button>
-        </div>
-      </CardHeader>
-      <CardContent>
-        {isLoading ? (
+    <div className="space-y-6">
+      <h2 className="text-2xl font-bold">Member Progress Overview</h2>
+
+      {/* Key Metrics */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Active Members</p>
+                <p className="text-2xl font-bold">{stats.totalActiveMembers}</p>
+              </div>
+              <Users className="h-8 w-8 text-blue-600" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">New This Month</p>
+                <p className="text-2xl font-bold">{stats.newMembersThisMonth}</p>
+              </div>
+              <TrendingUp className="h-8 w-8 text-green-600" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Renewal Rate</p>
+                <p className="text-2xl font-bold">{stats.membershipRenewalRate}%</p>
+              </div>
+              <TrendingUp className="h-8 w-8 text-green-600" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Avg Attendance</p>
+                <p className="text-2xl font-bold">{stats.averageAttendanceRate}%</p>
+              </div>
+              <Target className="h-8 w-8 text-orange-600" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Membership Goal Progress */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Membership Goal Progress</CardTitle>
+        </CardHeader>
+        <CardContent>
           <div className="space-y-4">
-            <Skeleton className="h-12 w-full" />
-            <Skeleton className="h-36 w-full" />
-            <Skeleton className="h-36 w-full" />
-          </div>
-        ) : selectedMember ? (
-          <>
-            <div className="flex items-center space-x-4 mb-6">
-              <Avatar className="h-12 w-12">
-                <AvatarImage src="" alt={selectedMember.name} />
-                <AvatarFallback>{getInitials(selectedMember.name)}</AvatarFallback>
-              </Avatar>
-              <div>
-                <h3 className="text-lg font-medium">{selectedMember.name}</h3>
-                <p className="text-sm text-muted-foreground">ID: {selectedMember.id}</p>
-              </div>
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-gray-600">
+                {stats.membershipGoals.achieved} of {stats.membershipGoals.target} members
+              </span>
+              <Badge variant="outline">
+                {stats.membershipGoals.percentage}% Complete
+              </Badge>
             </div>
-            
-            <div className="space-y-6">
-              <div>
-                <h4 className="text-sm font-medium mb-2">Body Metrics</h4>
-                <div className="space-y-3">
-                  <div>
-                    <div className="flex justify-between text-sm mb-1">
-                      <span>Weight Loss</span>
-                      <span>{weightLossPercentage}%</span>
-                    </div>
-                    <Progress value={weightLossPercentage} className="h-2" />
-                  </div>
-                  <div>
-                    <div className="flex justify-between text-sm mb-1">
-                      <span>Body Fat Reduction</span>
-                      <span>{bodyFatReductionPercentage}%</span>
-                    </div>
-                    <Progress value={bodyFatReductionPercentage} className="h-2" />
-                  </div>
-                  <div>
-                    <div className="flex justify-between text-sm mb-1">
-                      <span>BMI Improvement</span>
-                      <span>{bmiImprovementPercentage}%</span>
-                    </div>
-                    <Progress value={bmiImprovementPercentage} className="h-2" />
-                  </div>
-                </div>
-              </div>
-              
-              <div>
-                <h4 className="text-sm font-medium mb-2">Workout Adherence</h4>
-                <div className="space-y-3">
-                  <div>
-                    <div className="flex justify-between text-sm mb-1">
-                      <span>Workout Completion</span>
-                      <span>{workoutCompletionPercentage}%</span>
-                    </div>
-                    <Progress value={workoutCompletionPercentage} className="h-2" />
-                  </div>
-                  <div>
-                    <div className="flex justify-between text-sm mb-1">
-                      <span>Class Attendance</span>
-                      <span>{classAttendancePercentage}%</span>
-                    </div>
-                    <Progress value={classAttendancePercentage} className="h-2" />
-                  </div>
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="p-4 border rounded-lg text-center">
-                  <p className="text-sm text-muted-foreground mb-1">Current Weight</p>
-                  <p className="text-2xl font-bold">{latestMeasurement?.weight || progress?.weight || 'N/A'} kg</p>
-                </div>
-                <div className="p-4 border rounded-lg text-center">
-                  <p className="text-sm text-muted-foreground mb-1">Body Fat</p>
-                  <p className="text-2xl font-bold">{latestMeasurement?.bodyFat || progress?.fat_percent || 'N/A'}%</p>
-                </div>
-                <div className="p-4 border rounded-lg text-center">
-                  <p className="text-sm text-muted-foreground mb-1">BMI</p>
-                  <p className="text-2xl font-bold">{latestMeasurement?.bmi || progress?.bmi || 'N/A'}</p>
-                </div>
-                <div className="p-4 border rounded-lg text-center">
-                  <p className="text-sm text-muted-foreground mb-1">Muscle Gain</p>
-                  <p className="text-2xl font-bold">{progress?.muscle_mass || 'N/A'} kg</p>
-                </div>
-              </div>
-            </div>
-          </>
-        ) : (
-          <div className="text-center py-12">
-            <Users className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
-            <h3 className="text-lg font-medium mb-2">No Members Found</h3>
-            <p className="text-muted-foreground mb-4">
-              You don't have any members assigned to you yet
-            </p>
+            <Progress value={stats.membershipGoals.percentage} className="h-3" />
           </div>
-        )}
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+
+      {/* Top Performing Members */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Recent Active Members</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {stats.topPerformingMembers.length === 0 ? (
+            <p className="text-center text-gray-500 py-4">No members found</p>
+          ) : (
+            <div className="space-y-3">
+              {stats.topPerformingMembers.map((member) => (
+                <div key={member.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                      <span className="text-sm font-medium text-blue-600">
+                        {member.name.charAt(0).toUpperCase()}
+                      </span>
+                    </div>
+                    <div>
+                      <p className="font-medium">{member.name}</p>
+                      <p className="text-sm text-gray-600">{member.email}</p>
+                    </div>
+                  </div>
+                  <Badge variant="outline">
+                    {member.membership_status || 'Active'}
+                  </Badge>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 

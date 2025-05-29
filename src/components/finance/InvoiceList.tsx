@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -49,7 +50,7 @@ const InvoiceList = ({ readonly = false, allowPayment = true, allowDownload = tr
       
       const formattedInvoices: Invoice[] = data.map(invoice => ({
         ...invoice,
-        memberName: invoice.members?.name || 'Unknown'
+        member_name: invoice.members?.name || 'Unknown'
       }));
       
       setInvoices(formattedInvoices);
@@ -133,11 +134,11 @@ const InvoiceList = ({ readonly = false, allowPayment = true, allowDownload = tr
         const { error } = await supabase
           .from('invoices')
           .update({
-            member_id: invoice.member_id || invoice.memberId,
+            member_id: invoice.member_id,
             amount: invoice.amount,
             description: invoice.description,
             status: invoice.status,
-            due_date: invoice.due_date || invoice.dueDate,
+            due_date: invoice.due_date,
             items: invoice.items,
             notes: invoice.notes,
             updated_at: new Date().toISOString()
@@ -237,7 +238,7 @@ const InvoiceList = ({ readonly = false, allowPayment = true, allowDownload = tr
       {isFormOpen && !readonly && (
         <InvoiceForm
           invoice={editingInvoice}
-          onComplete={handleSaveInvoice} // Fixed: handleSaveInvoice now accepts an Invoice parameter
+          onComplete={handleSaveInvoice}
           onCancel={handleCancelForm}
         />
       )}

@@ -52,7 +52,7 @@ const NewInvoiceForm = ({ invoice, onSave, onCancel }: NewInvoiceFormProps) => {
         name: "",
         description: "",
         quantity: 1,
-        unitPrice: 0,
+        price: 0,
         amount: 0,
         discount: 0
       },
@@ -73,9 +73,9 @@ const NewInvoiceForm = ({ invoice, onSave, onCancel }: NewInvoiceFormProps) => {
     fetchMembers();
     
     if (invoice) {
-      const items = invoice.items.map(item => ({
+      const items = invoice.items.map((item: InvoiceItem) => ({
         ...item,
-        amount: item.quantity * item.unitPrice,
+        amount: item.quantity * (item.price || 0),
         discount: 0,
         id: item.id || uuidv4()
       }));
@@ -83,7 +83,7 @@ const NewInvoiceForm = ({ invoice, onSave, onCancel }: NewInvoiceFormProps) => {
       setFormData({
         ...invoice,
         items,
-        subtotal: items.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0),
+        subtotal: items.reduce((sum: number, item: any) => sum + (item.quantity * (item.price || 0)), 0),
         discount: 0,
         tax: 0,
         total: invoice.amount,
@@ -145,9 +145,9 @@ const NewInvoiceForm = ({ invoice, onSave, onCancel }: NewInvoiceFormProps) => {
       if (item.id === id) {
         const updatedItem = { ...item, [field]: value };
         
-        // Recalculate amount if quantity or unitPrice changes
-        if (field === 'quantity' || field === 'unitPrice') {
-          updatedItem.amount = Number(updatedItem.quantity) * Number(updatedItem.unitPrice);
+        // Recalculate amount if quantity or price changes
+        if (field === 'quantity' || field === 'price') {
+          updatedItem.amount = Number(updatedItem.quantity) * Number(updatedItem.price || 0);
         }
         
         return updatedItem;
@@ -179,7 +179,7 @@ const NewInvoiceForm = ({ invoice, onSave, onCancel }: NewInvoiceFormProps) => {
       name: "",
       description: "",
       quantity: 1,
-      unitPrice: 0,
+      price: 0,
       amount: 0,
       discount: 0
     };
@@ -370,8 +370,8 @@ const NewInvoiceForm = ({ invoice, onSave, onCancel }: NewInvoiceFormProps) => {
                   <div className="col-span-1">
                     <Input 
                       type="number"
-                      value={item.unitPrice}
-                      onChange={(e) => handleItemChange(item.id, "unitPrice", Number(e.target.value))}
+                      value={item.price}
+                      onChange={(e) => handleItemChange(item.id, "price", Number(e.target.value))}
                     />
                   </div>
                   
@@ -417,7 +417,7 @@ const NewInvoiceForm = ({ invoice, onSave, onCancel }: NewInvoiceFormProps) => {
                 <Label>Salesperson:</Label>
                 <Input 
                   className="max-w-[200px]" 
-                  value={user?.name || ""} 
+                  value={user?.email || ""} 
                   disabled
                 />
               </div>
