@@ -10,13 +10,22 @@ interface HikvisionServiceResponse {
   errorCode?: string;
 }
 
+interface SyncLog {
+  id: string;
+  timestamp: string;
+  action: string;
+  status: 'success' | 'failed' | 'pending';
+  message: string;
+  details?: any;
+}
+
 class HikvisionService {
   async registerMember(person: HikvisionPerson, branchId: string): Promise<HikvisionServiceResponse> {
     try {
       console.log('[HikvisionService] Registering member:', person.name);
 
-      // 1. Add person to Hikvision
-      const addPersonResponse = await supabase.functions.invoke('hikvision-proxy', {
+      // 1. Add person to Hikvision via proxy
+      const { data: addResponse, error: addError } = await supabase.functions.invoke('hikvision-proxy', {
         body: {
           branchId,
           endpoint: '/api/hpcgw/v1/person/add',
@@ -33,13 +42,13 @@ class HikvisionService {
         }
       });
 
-      if (addPersonResponse.error || !addPersonResponse.data.success) {
-        const errorMsg = addPersonResponse.data?.error || 'Failed to add person to Hikvision';
+      if (addError || !addResponse?.success) {
+        const errorMsg = addResponse?.error || addError?.message || 'Failed to add person to Hikvision';
         console.error('[HikvisionService] Add person failed:', errorMsg);
         return { success: false, error: errorMsg };
       }
 
-      const personId = addPersonResponse.data.data.personId;
+      const personId = addResponse.data.personId;
       console.log('[HikvisionService] Person added with ID:', personId);
 
       // 2. Store person in database
@@ -72,7 +81,6 @@ class HikvisionService {
       const syncResponse = await this.synchronizePerson(personId, branchId);
       if (!syncResponse.success) {
         console.warn('[HikvisionService] Sync warning:', syncResponse.error);
-        // Don't fail the whole operation for sync issues
       }
 
       return { 
@@ -92,22 +100,20 @@ class HikvisionService {
 
   async synchronizePerson(personId: string, branchId: string): Promise<HikvisionServiceResponse> {
     try {
-      const syncResponse = await supabase.functions.invoke('hikvision-proxy', {
+      const { data: syncResponse, error: syncError } = await supabase.functions.invoke('hikvision-proxy', {
         body: {
           branchId,
           endpoint: '/api/hpcgw/v1/person/synchronize',
           method: 'POST',
-          data: {
-            personId: personId
-          }
+          data: { personId }
         }
       });
 
-      if (syncResponse.error || !syncResponse.data.success) {
-        return { success: false, error: syncResponse.data?.error || 'Synchronization failed' };
+      if (syncError || !syncResponse?.success) {
+        return { success: false, error: syncResponse?.error || 'Synchronization failed' };
       }
 
-      return { success: true, data: syncResponse.data.data };
+      return { success: true, data: syncResponse.data };
 
     } catch (error) {
       console.error('[HikvisionService] Sync error:', error);
@@ -117,7 +123,7 @@ class HikvisionService {
 
   async configureAccess(personId: string, deviceSerialNo: string, doorList: number[], validStartTime: string, validEndTime: string, branchId: string): Promise<HikvisionServiceResponse> {
     try {
-      const accessResponse = await supabase.functions.invoke('hikvision-proxy', {
+      const { data: accessResponse, error: accessError } = await supabase.functions.invoke('hikvision-proxy', {
         body: {
           branchId,
           endpoint: '/api/hpcgw/v1/acs/privilege/config',
@@ -132,8 +138,8 @@ class HikvisionService {
         }
       });
 
-      if (accessResponse.error || !accessResponse.data.success) {
-        return { success: false, error: accessResponse.data?.error || 'Access configuration failed' };
+      if (accessError || !accessResponse?.success) {
+        return { success: false, error: accessResponse?.error || 'Access configuration failed' };
       }
 
       // Store access privilege in database
@@ -158,7 +164,7 @@ class HikvisionService {
         }
       }
 
-      return { success: true, data: accessResponse.data.data };
+      return { success: true, data: accessResponse.data };
 
     } catch (error) {
       console.error('[HikvisionService] Access config error:', error);
@@ -168,8 +174,7 @@ class HikvisionService {
 
   async addDevice(device: Partial<HikvisionDevice>, branchId: string): Promise<HikvisionServiceResponse> {
     try {
-      // Add device to Hikvision platform
-      const addDeviceResponse = await supabase.functions.invoke('hikvision-proxy', {
+      const { data: addResponse, error: addError } = await supabase.functions.invoke('hikvision-proxy', {
         body: {
           branchId,
           endpoint: '/api/hpcgw/v2/device/add',
@@ -186,8 +191,8 @@ class HikvisionService {
         }
       });
 
-      if (addDeviceResponse.error || !addDeviceResponse.data.success) {
-        return { success: false, error: addDeviceResponse.data?.error || 'Failed to add device' };
+      if (addError || !addResponse?.success) {
+        return { success: false, error: addResponse?.error || 'Failed to add device' };
       }
 
       // Store device in database
@@ -211,7 +216,7 @@ class HikvisionService {
         return { success: false, error: 'Failed to store device data' };
       }
 
-      return { success: true, data: addDeviceResponse.data.data };
+      return { success: true, data: addResponse.data };
 
     } catch (error) {
       console.error('[HikvisionService] Add device error:', error);
@@ -258,6 +263,152 @@ class HikvisionService {
     } catch (error) {
       console.error('[HikvisionService] Process events error:', error);
       return { success: false, error: error instanceof Error ? error.message : 'Failed to process events' };
+    }
+  }
+
+  async getSyncLogs(branchId: string): Promise<SyncLog[]> {
+    try {
+      // Get sync logs from various tables
+      const { data: personLogs } = await supabase
+        .from('hikvision_persons')
+        .select('person_id, name, sync_status, last_sync')
+        .eq('branch_id', branchId)
+        .order('last_sync', { ascending: false })
+        .limit(50);
+
+      const { data: deviceLogs } = await supabase
+        .from('hikvision_devices')
+        .select('device_id, name, status, last_sync')
+        .eq('branch_id', branchId)
+        .order('last_sync', { ascending: false })
+        .limit(50);
+
+      const { data: eventLogs } = await supabase
+        .from('hikvision_events')
+        .select('event_id, event_type, processed, created_at')
+        .order('created_at', { ascending: false })
+        .limit(50);
+
+      const logs: SyncLog[] = [];
+
+      // Process person logs
+      personLogs?.forEach(log => {
+        logs.push({
+          id: `person-${log.person_id}`,
+          timestamp: log.last_sync || new Date().toISOString(),
+          action: `Person Sync: ${log.name}`,
+          status: log.sync_status === 'success' ? 'success' : log.sync_status === 'failed' ? 'failed' : 'pending',
+          message: `Synchronized person ${log.name} to devices`
+        });
+      });
+
+      // Process device logs
+      deviceLogs?.forEach(log => {
+        logs.push({
+          id: `device-${log.device_id}`,
+          timestamp: log.last_sync || new Date().toISOString(),
+          action: `Device Sync: ${log.name}`,
+          status: log.status === 'active' ? 'success' : 'failed',
+          message: `Device ${log.name} status: ${log.status}`
+        });
+      });
+
+      // Process event logs
+      eventLogs?.forEach(log => {
+        logs.push({
+          id: `event-${log.event_id}`,
+          timestamp: log.created_at,
+          action: `Event: ${log.event_type}`,
+          status: log.processed ? 'success' : 'pending',
+          message: `${log.event_type} event ${log.processed ? 'processed' : 'pending'}`
+        });
+      });
+
+      // Sort by timestamp
+      return logs.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+
+    } catch (error) {
+      console.error('[HikvisionService] Get sync logs error:', error);
+      return [];
+    }
+  }
+
+  async testConnection(branchId: string): Promise<HikvisionServiceResponse> {
+    try {
+      const { data, error } = await supabase.functions.invoke('hikvision-auth', {
+        body: { branchId, forceRefresh: true }
+      });
+
+      if (error || !data?.success) {
+        return { 
+          success: false, 
+          error: data?.error || error?.message || 'Connection test failed' 
+        };
+      }
+
+      return { 
+        success: true, 
+        message: 'Successfully connected to Hikvision API' 
+      };
+
+    } catch (error) {
+      console.error('[HikvisionService] Test connection error:', error);
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Connection test failed' 
+      };
+    }
+  }
+
+  async syncDevices(branchId: string): Promise<HikvisionServiceResponse> {
+    try {
+      const { data, error } = await supabase.functions.invoke('hikvision-proxy', {
+        body: {
+          branchId,
+          endpoint: '/api/hpcgw/v1/device/list',
+          method: 'POST',
+          data: {}
+        }
+      });
+
+      if (error || !data?.success) {
+        return { 
+          success: false, 
+          error: data?.error || error?.message || 'Device sync failed' 
+        };
+      }
+
+      // Process and store devices
+      const devices = data.data?.devices || [];
+      for (const device of devices) {
+        await supabase
+          .from('hikvision_devices')
+          .upsert({
+            device_id: device.deviceId,
+            name: device.name,
+            device_type: device.deviceType,
+            ip_address: device.ipAddress,
+            port: device.port,
+            status: device.status || 'active',
+            branch_id: branchId,
+            last_sync: new Date().toISOString()
+          }, {
+            onConflict: 'device_id'
+          });
+      }
+
+      return { 
+        success: true, 
+        data: { deviceCount: devices.length },
+        message: `Synchronized ${devices.length} devices` 
+      };
+
+    } catch (error) {
+      console.error('[HikvisionService] Sync devices error:', error);
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Device sync failed' 
+      };
     }
   }
 }

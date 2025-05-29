@@ -11,19 +11,46 @@ interface TokenResponse {
 }
 
 class HikvisionTokenManager {
-  private tokenCache = new Map<string, { token: string; expiresAt: Date; areaDomain?: string }>();
+  private requestQueue = new Map<string, Promise<string>>();
 
   async getValidToken(branchId: string): Promise<string> {
-    // Check cache first
-    const cached = this.tokenCache.get(branchId);
-    if (cached && cached.expiresAt > new Date()) {
-      console.log('[TokenManager] Using cached token for branch:', branchId);
-      return cached.token;
-    }
+    try {
+      // Check if there's already a token request in progress
+      const existingRequest = this.requestQueue.get(branchId);
+      if (existingRequest) {
+        console.log('[TokenManager] Using existing request for branch:', branchId);
+        return await existingRequest;
+      }
 
-    // Get token from edge function
-    const tokenResponse = await this.refreshToken(branchId);
-    return tokenResponse.token!;
+      // Check for existing valid token in database
+      const { data: tokenData } = await supabase
+        .from('hikvision_tokens')
+        .select('access_token, expire_time, area_domain')
+        .eq('branch_id', branchId)
+        .gte('expire_time', new Date().toISOString())
+        .single();
+
+      if (tokenData) {
+        console.log('[TokenManager] Using existing valid token for branch:', branchId);
+        return tokenData.access_token;
+      }
+
+      // Create new token request
+      const tokenRequest = this.refreshToken(branchId, true);
+      this.requestQueue.set(branchId, tokenRequest);
+
+      try {
+        const response = await tokenRequest;
+        return response.token!;
+      } finally {
+        this.requestQueue.delete(branchId);
+      }
+
+    } catch (error) {
+      console.error('[TokenManager] Error getting token:', error);
+      this.requestQueue.delete(branchId);
+      throw error;
+    }
   }
 
   async refreshToken(branchId: string, forceRefresh = false): Promise<TokenResponse> {
@@ -44,13 +71,6 @@ class HikvisionTokenManager {
         throw new Error(data.error || 'Failed to authenticate with Hikvision');
       }
 
-      // Update cache
-      this.tokenCache.set(branchId, {
-        token: data.token,
-        expiresAt: new Date(data.expiresAt),
-        areaDomain: data.areaDomain
-      });
-
       console.log('[TokenManager] Successfully refreshed token for branch:', branchId);
       return data;
 
@@ -61,26 +81,19 @@ class HikvisionTokenManager {
   }
 
   async clearToken(branchId: string): Promise<void> {
-    this.tokenCache.delete(branchId);
-    
-    // Also clear from database
     try {
       await supabase
         .from('hikvision_tokens')
         .delete()
         .eq('branch_id', branchId);
+      
+      console.log('[TokenManager] Cleared token for branch:', branchId);
     } catch (error) {
-      console.error('[TokenManager] Error clearing token from database:', error);
+      console.error('[TokenManager] Error clearing token:', error);
     }
   }
 
   async getAreaDomain(branchId: string): Promise<string | undefined> {
-    const cached = this.tokenCache.get(branchId);
-    if (cached) {
-      return cached.areaDomain;
-    }
-
-    // Try to get from database
     try {
       const { data } = await supabase
         .from('hikvision_tokens')
@@ -93,6 +106,56 @@ class HikvisionTokenManager {
     } catch (error) {
       console.error('[TokenManager] Error getting area domain:', error);
       return undefined;
+    }
+  }
+
+  async getTokenStatus(branchId: string): Promise<{
+    hasToken: boolean;
+    isValid: boolean;
+    expiresAt?: string;
+    expiresIn?: number;
+  }> {
+    try {
+      const { data } = await supabase
+        .from('hikvision_tokens')
+        .select('expire_time')
+        .eq('branch_id', branchId)
+        .single();
+
+      if (!data) {
+        return { hasToken: false, isValid: false };
+      }
+
+      const expireTime = new Date(data.expire_time);
+      const now = new Date();
+      const expiresInMs = expireTime.getTime() - now.getTime();
+
+      return {
+        hasToken: true,
+        isValid: expiresInMs > 0,
+        expiresAt: data.expire_time,
+        expiresIn: Math.floor(expiresInMs / 1000)
+      };
+    } catch (error) {
+      console.error('[TokenManager] Error getting token status:', error);
+      return { hasToken: false, isValid: false };
+    }
+  }
+
+  async cleanupExpiredTokens(): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('hikvision_tokens')
+        .delete()
+        .lt('expire_time', new Date().toISOString());
+
+      if (error) {
+        console.error('[TokenManager] Error cleaning up tokens:', error);
+      } else {
+        console.log('[TokenManager] Cleaned up expired tokens');
+      }
+    } catch (error) {
+      console.error('[TokenManager] Error in cleanup:', error);
     }
   }
 }

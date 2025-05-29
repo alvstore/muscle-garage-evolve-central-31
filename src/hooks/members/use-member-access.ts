@@ -8,7 +8,6 @@ import type { HikvisionPerson } from '@/types/settings/hikvision-types';
 
 export const useMemberAccess = () => {
   const [isProcessing, setIsProcessing] = useState(false);
-  const { settings } = useHikvisionSettings(''); // Will be passed dynamically
 
   const getMemberCredential = async (memberId: string) => {
     try {
@@ -39,6 +38,58 @@ export const useMemberAccess = () => {
       if (credential?.person_id) {
         // Update existing person
         console.log('Updating existing Hikvision person:', credential.person_id);
+        
+        const person: HikvisionPerson = {
+          personId: credential.person_id,
+          memberId: member.id,
+          name: `${member.first_name} ${member.last_name}`.trim(),
+          cardNo: member.member_id || '',
+          phone: member.phone,
+          email: member.email,
+          gender: member.gender?.toLowerCase(),
+          status: 'active',
+          faceData: picture ? [picture] : credential.face_data || [],
+          branchId: branchId
+        };
+
+        // Update person in Hikvision via proxy
+        const { data: updateResponse, error: updateError } = await supabase.functions.invoke('hikvision-proxy', {
+          body: {
+            branchId,
+            endpoint: '/api/hpcgw/v1/person/update',
+            method: 'POST',
+            data: {
+              personId: person.personId,
+              name: person.name,
+              gender: person.gender,
+              cardNo: person.cardNo,
+              phone: person.phone,
+              email: person.email,
+              pictures: person.faceData || []
+            }
+          }
+        });
+
+        if (updateError || !updateResponse?.success) {
+          throw new Error(updateResponse?.error || 'Failed to update person in Hikvision');
+        }
+
+        // Update database record
+        await supabase
+          .from('hikvision_persons')
+          .update({
+            name: person.name,
+            gender: person.gender,
+            card_no: person.cardNo,
+            phone: person.phone,
+            email: person.email,
+            face_data: person.faceData,
+            sync_status: 'success',
+            last_sync: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          })
+          .eq('person_id', person.personId);
+
         toast.success('Member information updated in access control system');
         return true;
       }
@@ -103,17 +154,29 @@ export const useMemberAccess = () => {
       const credential = await getMemberCredential(memberId);
       if (!credential) return true; // Already not registered
 
-      // Update person status to inactive
-      const { error } = await supabase
+      // Update person status to inactive via proxy
+      const { data: deleteResponse, error: deleteError } = await supabase.functions.invoke('hikvision-proxy', {
+        body: {
+          branchId,
+          endpoint: '/api/hpcgw/v1/person/delete',
+          method: 'POST',
+          data: { personId: credential.person_id }
+        }
+      });
+
+      if (deleteError || !deleteResponse?.success) {
+        console.warn('Failed to delete person from Hikvision:', deleteResponse?.error);
+      }
+
+      // Update local database
+      await supabase
         .from('hikvision_persons')
         .update({ 
           status: 'inactive',
-          sync_status: 'pending',
+          sync_status: 'success',
           updated_at: new Date().toISOString()
         })
         .eq('member_id', memberId);
-
-      if (error) throw error;
 
       // Remove access privileges
       await supabase
@@ -180,9 +243,26 @@ export const useMemberAccess = () => {
     try {
       const credential = await getMemberCredential(memberId);
       if (!credential) return true; // No credentials to revoke
+
+      // Delete access privileges via proxy
+      const { data: deleteResponse, error: deleteError } = await supabase.functions.invoke('hikvision-proxy', {
+        body: {
+          branchId,
+          endpoint: '/api/hpcgw/v1/acs/privilege/delete',
+          method: 'POST',
+          data: {
+            personId: credential.person_id,
+            deviceSerialNo: deviceSerialNo
+          }
+        }
+      });
+
+      if (deleteError || !deleteResponse?.success) {
+        console.warn('Failed to delete privileges from Hikvision:', deleteResponse?.error);
+      }
       
-      // Update access privileges to inactive
-      const { error } = await supabase
+      // Update local database
+      await supabase
         .from('hikvision_access_privileges')
         .update({ 
           status: 'inactive',
@@ -190,8 +270,6 @@ export const useMemberAccess = () => {
         })
         .eq('person_id', credential.person_id)
         .ilike('door_id', `${deviceSerialNo}%`);
-
-      if (error) throw error;
 
       toast.success('Access permissions revoked successfully');
       return true;
@@ -204,11 +282,55 @@ export const useMemberAccess = () => {
     }
   };
 
+  const processAttendanceEvents = async (branchId: string): Promise<boolean> => {
+    try {
+      setIsProcessing(true);
+      
+      const result = await hikvisionService.processEvents(branchId);
+      
+      if (result.success) {
+        toast.success(`Processed ${result.data?.processedCount || 0} attendance events`);
+        return true;
+      } else {
+        throw new Error(result.error);
+      }
+    } catch (error) {
+      console.error('Error processing attendance events:', error);
+      toast.error('Failed to process attendance events');
+      return false;
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const fetchLatestEvents = async (branchId: string): Promise<boolean> => {
+    try {
+      setIsProcessing(true);
+      
+      const result = await hikvisionService.fetchEvents(branchId);
+      
+      if (result.success) {
+        toast.success(`Fetched ${result.data?.fetched || 0} new events`);
+        return true;
+      } else {
+        throw new Error(result.error);
+      }
+    } catch (error) {
+      console.error('Error fetching events:', error);
+      toast.error('Failed to fetch latest events');
+      return false;
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   return {
     registerMember,
     unregisterMember,
     grantAccess,
     revokeAccess,
+    processAttendanceEvents,
+    fetchLatestEvents,
     isProcessing
   };
 };
