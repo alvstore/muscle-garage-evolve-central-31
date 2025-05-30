@@ -1,9 +1,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { leadService } from '@/services/leadService';
+import { leadService } from '@/services/crm/leadService';
 import { useBranch } from '@/hooks/settings/use-branches';
-import { Lead } from '@/types/crm';
+import { Lead } from '@/types/crm/crm';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { PlusCircle, Edit, Trash2 } from 'lucide-react';

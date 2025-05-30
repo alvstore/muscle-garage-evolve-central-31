@@ -1,5 +1,5 @@
 
-import { InvoiceTotalProps } from "@/types/invoice";
+import { InvoiceTotalProps } from "@/types/payment/invoice";
 
 export const InvoiceTotal = ({ amount }: InvoiceTotalProps) => (
   <div className="flex justify-end mt-4">

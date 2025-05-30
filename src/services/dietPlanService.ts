@@ -1,5 +1,5 @@
 import api from './api';
-import { DietPlan, DietAssignment } from '@/types/diet';
+import { DietPlan, DietAssignment } from '@/types/fitness/diet';
 import { toast } from 'sonner';
 import { Member } from '@/types';
 

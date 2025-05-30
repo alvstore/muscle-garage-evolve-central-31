@@ -57,7 +57,7 @@ import {
 // Hooks and Services
 import { useAuth } from '@/hooks/auth/use-auth';
 import { usePermissions } from '@/hooks/auth/use-permissions';
-import { taskService, Task as TaskType } from '@/services/taskService';
+import { taskService, Task as TaskType } from '@/services/communication/taskService';
 import { staffService, StaffMember } from '@/services/communication/taskService';
 
 // Types and Interfaces

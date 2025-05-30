@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { useAuth } from "@/hooks/auth/use-auth";
 import { useBranch } from "@/hooks/settings/use-branches";
 import { toast } from "sonner";
-import { DietPlan, adaptToDietPlanClient, adaptToDietPlanDb } from '@/types/diet';
+import { DietPlan, adaptToDietPlanClient, adaptToDietPlanDb } from '@/types/fitness/diet';
 
 // Mock diet plans
 const mockDietPlans: DietPlan[] = [

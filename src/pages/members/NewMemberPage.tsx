@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { PaymentMethod, PaymentStatus, PAYMENT_METHODS } from "@/types/payment";
+import { PaymentMethod, PaymentStatus, PAYMENT_METHODS } from "@/types/payment/payment";
 import { PaymentMethodSelector } from "@/components/payment/PaymentMethodSelector";
 import { useNavigate } from "react-router-dom";
 import { Container } from "@/components/ui/container";

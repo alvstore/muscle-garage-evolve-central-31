@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { DietPlan, MealPlan } from '@/types/diet';
+import { DietPlan, MealPlan } from '@/types/fitness/diet';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';

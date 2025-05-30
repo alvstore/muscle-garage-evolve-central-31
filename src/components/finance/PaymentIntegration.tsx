@@ -8,7 +8,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { Invoice } from "@/types/finance";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { razorpayService } from "@/services/integrations/razorpayService";
+import { razorpayService } from "@/services/classes/integrations/razorpayService";
 
 interface PaymentIntegrationProps {
   invoice: Invoice;

@@ -1,5 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
-import { followUpService } from '../followUpService';
+import { followUpService } from './followUpService';
 import { format, isToday, isTomorrow, parseISO } from 'date-fns';
 import { toast } from 'sonner';
 

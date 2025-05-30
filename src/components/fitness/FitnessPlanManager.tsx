@@ -14,8 +14,8 @@ import {
 } from "@/components/ui/select";
 import { CheckCircle } from "lucide-react";
 import { toast } from "sonner";
-import { WorkoutPlan } from '@/types/workout';
-import { DietPlan } from '@/types/diet';
+import { WorkoutPlan } from '@/types/fitness/workout';
+import { DietPlan } from '@/types/fitness/diet';
 import { Member } from '@/types/members/member';
 import workoutPlansService from '../../services/workoutPlansService';
 import dietPlansService from '../../services/dietPlansService';

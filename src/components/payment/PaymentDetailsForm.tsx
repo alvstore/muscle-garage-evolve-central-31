@@ -10,7 +10,7 @@ import {
 } from '@chakra-ui/react';
 import { PaymentMethodSelector } from './PaymentMethodSelector';
 import { PaymentStatusSelector } from './PaymentStatusSelector';
-import { PaymentMethod, PaymentStatus } from '@/types/payment';
+import { PaymentMethod, PaymentStatus } from '@/types/payment/payment';
 
 export interface PaymentDetailsFormData {
   method: PaymentMethod;

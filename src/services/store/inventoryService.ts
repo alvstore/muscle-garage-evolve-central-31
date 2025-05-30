@@ -1,7 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { InventoryItem } from '@/types/inventory';
+import { InventoryItem } from '@/types/store/inventory';
 
 export const inventoryService = {
   async getInventoryItems(branchId: string | undefined): Promise<InventoryItem[]> {

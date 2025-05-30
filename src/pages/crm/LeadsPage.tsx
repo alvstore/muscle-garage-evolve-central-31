@@ -5,7 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import LeadsList from '@/components/crm/LeadsList';
 import LeadForm from '@/components/crm/LeadForm';
 import LeadImport from '@/components/crm/LeadImport';
-import { Lead } from '@/types/crm';
+import { Lead } from '@/types/crm/crm';
 
 const LeadsPage = () => {
   const [activeTab, setActiveTab] = useState('list');

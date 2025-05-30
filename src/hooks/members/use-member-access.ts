@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { hikvisionService } from '@/services/integrations/hikvisionService';
+import { hikvisionService } from '@/services/classes/integrations/hikvisionService';
 import { useHikvisionSettings } from '@/hooks/access/use-hikvision-settings';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';

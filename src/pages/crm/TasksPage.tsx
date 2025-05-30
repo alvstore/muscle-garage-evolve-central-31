@@ -20,7 +20,7 @@ import {
   MoreHorizontal
 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
-import { Task, taskService } from '@/services/taskService';
+import { Task, taskService } from '@/services/communication/taskService';
 import { useParams } from 'react-router-dom';
 
 const TasksPage: React.FC = () => {

@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Lead } from '@/types/crm';
+import { Lead } from '@/types/crm/crm';
 
 interface LeadDialogProps {
   open: boolean;

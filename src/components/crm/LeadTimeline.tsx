@@ -2,7 +2,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuery } from '@tanstack/react-query';
-import { followUpService } from '@/services/followUpService';
+import { followUpService } from '@/services/communication/followUpService';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format, parseISO } from 'date-fns';
 import { 
@@ -17,7 +17,7 @@ import {
   Clock
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { FollowUpType } from '@/types/crm';
+import { FollowUpType } from '@/types/crm/crm';
 
 interface LeadTimelineProps {
   leadId: string;

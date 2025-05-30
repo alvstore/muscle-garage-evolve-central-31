@@ -1,6 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { Lead } from '@/types/crm';
+import { Lead } from '@/types/crm/crm';
 
 export const leadService = {
   getLeads: async (branchId?: string): Promise<Lead[]> => {

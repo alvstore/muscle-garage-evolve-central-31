@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { WorkoutPlanList } from '@/components/fitness/WorkoutPlanList';
 import { WorkoutPlanForm } from '@/components/fitness/WorkoutPlanForm';
-import { WorkoutPlan } from '@/types/workout';
+import { WorkoutPlan } from '@/types/fitness/workout';
 import { Plus, Search } from 'lucide-react';
 import { toast } from 'sonner';
 

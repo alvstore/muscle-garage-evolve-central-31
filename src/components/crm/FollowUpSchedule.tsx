@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Calendar, Clock, Phone, Mail, MessageCircle, Video, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-import { Lead, FollowUp, FollowUpType } from '@/types/crm';
+import { Lead, FollowUp, FollowUpType } from '@/types/crm/crm';
 
 const FollowUpSchedule = () => {
   const [followUps, setFollowUps] = useState<FollowUp[]>([]);

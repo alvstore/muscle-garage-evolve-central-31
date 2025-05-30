@@ -41,7 +41,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { CalendarIcon, Save, X, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { Lead, LeadSource, LeadStatus, FunnelStage } from "@/types/crm";
+import { Lead, LeadSource, LeadStatus, FunnelStage } from "@/types/crm/crm";
 
 // Define the validation schema
 const leadFormSchema = z.object({

@@ -35,7 +35,7 @@ import {
   TableHeader, 
   TableRow 
 } from "@/components/ui/table";
-import { DietPlan } from "@/types/diet";
+import { DietPlan } from "@/types/fitness/diet";
 import { AlertCircle, MoreVertical, Edit, Trash, Copy, Eye } from "lucide-react";
 import { formatDistance } from 'date-fns';
 

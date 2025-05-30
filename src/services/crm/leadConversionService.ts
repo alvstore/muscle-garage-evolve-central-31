@@ -1,8 +1,8 @@
 import { supabase } from '@/integrations/supabase/client';
-import { Lead } from '@/types/crm';
+import { Lead } from '@/types/crm/crm';
 import { Member } from '@/types/members/member';
 import { toast } from 'sonner';
-import { taskService } from './taskService';
+import { taskService } from '../communication/taskService';
 import { format } from 'date-fns';
 
 /**

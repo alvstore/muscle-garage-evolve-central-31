@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import type { LeadSource, LeadStatus, FunnelStage } from '@/types/crm';
+import type { LeadSource, LeadStatus, FunnelStage } from '@/types/crm/crm';
 import { MapPin, Phone, Mail, Clock, Instagram, Facebook, Twitter } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { getCurrentUserBranch } from '@/services/api/supabaseClient';

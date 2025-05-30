@@ -1,5 +1,5 @@
 
-import api from '../api';
+import api from '../../api';
 import { toast } from 'sonner';
 
 export type MessageChannel = 'whatsapp' | 'sms' | 'email' | 'push';

@@ -5,7 +5,7 @@ import {
   TaxProfile,
   InvoiceTemplate,
   ResetFrequency
-} from '@/types/invoiceSettings';
+} from '@/types/payment/invoiceSettings';
 import { format } from 'date-fns';
 
 /**

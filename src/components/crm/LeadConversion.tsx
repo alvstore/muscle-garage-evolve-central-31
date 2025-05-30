@@ -1,5 +1,5 @@
 import React from 'react';
-import { Lead } from '@/types/crm';
+import { Lead } from '@/types/crm/crm';
 
 export interface LeadConversionProps {
   lead: Lead;

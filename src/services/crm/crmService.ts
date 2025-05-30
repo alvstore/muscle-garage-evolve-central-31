@@ -1,7 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Lead } from '@/types/crm';
+import { Lead } from '@/types/crm/crm';
 import notificationService from './communication/notificationService';
 
 export const crmService = {

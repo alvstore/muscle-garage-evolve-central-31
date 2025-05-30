@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { useBranch } from './use-branches';
-import { taskService, Task } from '@/services/taskService';
+import { taskService, Task } from '@/services/communication/taskService';
 
 export const useTasks = () => {
   const [tasks, setTasks] = useState<Task[]>([]);

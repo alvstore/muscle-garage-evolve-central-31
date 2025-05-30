@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { hikvisionService } from '@/services/integrations/hikvisionService';
+import { hikvisionService } from '@/services/classes/integrations/hikvisionService';
 import { hikvisionTokenManager } from '@/services/hikvision/tokenManager';
 import { toast } from 'sonner';
 

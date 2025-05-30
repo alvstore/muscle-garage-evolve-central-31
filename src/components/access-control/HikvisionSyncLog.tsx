@@ -7,7 +7,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Clock, RefreshCw, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
-import { hikvisionService } from '@/services/integrations/hikvisionService';
+import { hikvisionService } from '@/services/classes/integrations/hikvisionService';
 
 export interface SyncLogEntry {
   id: string;

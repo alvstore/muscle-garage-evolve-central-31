@@ -1,7 +1,7 @@
 
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { InvoiceMemberSelectProps } from "@/types/invoice";
+import { InvoiceMemberSelectProps } from "@/types/payment/invoice";
 
 // Mock data - should be moved to a data file or API call
 const mockMembers = [

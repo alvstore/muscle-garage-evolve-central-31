@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 // Update the import path for any CRM-related types
-import { FollowUpTemplate } from '@/types/crm';
+import { FollowUpTemplate } from '@/types/crm/crm';
 
 interface FollowUpTemplateFormProps {
   template?: FollowUpTemplate;

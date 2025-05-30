@@ -1,13 +1,165 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { DashboardSummary } from '@/hooks/dashboard/use-dashboard';
+import type { DashboardSummary } from '@/hooks/dashboard/useDashboard';
 
-export const fetchDashboardSummary = async (branchId?: string): Promise<DashboardSummary> => {
+// Dashboard Service Types
+export interface PendingPayment {
+  id: string;
+  member_id: string;
+  member_name: string;
+  amount: number;
+  due_date: string;
+  status: string;
+  issued_date: string;
+  members: {
+    name: string;
+    email: string;
+    phone: string;
+  };
+}
+
+// Extended class schedule with trainer information
+export interface ClassSchedule {
+  id: string;
+  name: string;
+  type: string;
+  start_time: string;
+  end_time: string;
+  capacity: number;
+  enrolled: number;
+  trainer_id: string;
+  trainer_name: string;
+  trainer_avatar_url: string;
+  room_name?: string;
+  branch_id?: string;
+}
+
+/**
+ * Parameters for fetching data with branch filtering and pagination
+ */
+interface FetchParams {
+  /** The branch ID to filter by */
+  branchId?: string;
+  /** Maximum number of items to return */
+  limit?: number;
+  [key: string]: any; // Allow additional properties for flexibility
+}
+
+/**
+ * Extended class schedule with trainer information
+ */
+export interface ClassWithTrainer extends Omit<ClassSchedule, 'id'> {
+  id: string;
+  trainer_id: string;
+  trainer_name: string;
+  trainer_avatar_url: string;
+}
+
+/**
+ * Membership renewal information with member and membership details
+ */
+export interface MembershipRenewal {
+  id: string;
+  member_id: string;
+  start_date: string;
+  end_date: string;
+  status: string;
+  total_amount: number;
+  amount_paid: number;
+  members: {
+    name: string;
+    email: string;
+    phone: string;
+  };
+  memberships: {
+    name: string;
+    price: number;
+  };
+}
+
+
+
+/**
+ * Fetches pending payments with optional branch filtering
+ * @param params Fetch parameters including branchId and limit
+ * @returns Object containing count, total amount, and items array
+ */
+export const fetchPendingPayments = async (
+  params: FetchParams = {}
+): Promise<{ count: number; total: number; items: PendingPayment[] }> => {
+  const { branchId, limit = 10 } = params;
+
+  try {
+    const query = supabase
+      .from('pending_payments')
+      .select(`
+        id,
+        member_id,
+        amount,
+        due_date,
+        status,
+        issued_date,
+        members (name, email, phone)
+      `, { count: 'exact' })
+      .order('due_date', { ascending: true })
+      .limit(limit);
+
+    if (branchId) {
+      query.eq('branch_id', branchId);
+    }
+
+    const { data, error, count } = await query;
+
+    if (error) {
+      console.error('Error fetching pending payments:', error);
+      return { count: 0, total: 0, items: [] };
+    }
+
+    const items: PendingPayment[] = (data || []).map((payment) => ({
+      id: payment.id,
+      member_id: payment.member_id,
+      member_name: payment.members?.name || 'Unknown Member',
+      amount: payment.amount || 0,
+      due_date: payment.due_date,
+      status: payment.status || 'pending',
+      issued_date: payment.issued_date,
+      members: {
+        name: payment.members?.name || 'Unknown Member',
+        email: payment.members?.email || '',
+        phone: payment.members?.phone || ''
+      }
+    }));
+
+    const total = items.reduce((sum, payment) => sum + (payment.amount || 0), 0);
+
+    return { 
+      count: count || items.length, 
+      total, 
+      items 
+    };
+  } catch (error) {
+    console.error('Error in fetchPendingPayments:', error);
+    return { count: 0, total: 0, items: [] };
+  }
+}
+
+interface DashboardSummaryParams {
+  branchId?: string;
+  userId?: string;
+  role?: string;
+}
+
+export const fetchDashboardSummary = async ({
+  branchId,
+  userId,
+  role = 'staff'
+}: DashboardSummaryParams = {}): Promise<DashboardSummary> => {
   try {
     // Validate branch ID
     if (!branchId) {
       console.warn('No branch ID provided for dashboard summary');
     }
+
     // Initialize default values
     let summary: DashboardSummary = {
       totalMembers: 0,
@@ -20,7 +172,8 @@ export const fetchDashboardSummary = async (branchId?: string): Promise<Dashboar
       },
       pendingPayments: { 
         count: 0, 
-        total: 0 
+        total: 0,
+        items: []
       },
       upcomingRenewals: 0,
       todayCheckIns: 0,
@@ -61,7 +214,8 @@ export const fetchDashboardSummary = async (branchId?: string): Promise<Dashboar
           },
           pendingPayments: {
             count: analyticsData.pending_payments_count || 0,
-            total: analyticsData.pending_payments_total || 0
+            total: analyticsData.pending_payments_total || 0,
+            items: []
           },
           upcomingRenewals: analyticsData.upcoming_renewals || 0,
           todayCheckIns: analyticsData.weekly_check_ins / 7 || 0, // Estimate from weekly
@@ -342,37 +496,18 @@ export const fetchDashboardSummary = async (branchId?: string): Promise<Dashboar
   }
 };
 
-export const fetchPendingPayments = async (branchId?: string) => {
-  try {
-    const query = supabase
-      .from('invoices')
-      .select(`
-        id,
-        member_id,
-        amount,
-        due_date,
-        status,
-        issued_date,
-        members(name, email, phone)
-      `)
-      .eq('status', 'pending');
-    
-    if (branchId) {
-      query.eq('branch_id', branchId);
-    }
-    
-    const { data, error } = await query;
-    
-    if (error) throw error;
-    
-    return data || [];
-  } catch (error) {
-    console.error('Error fetching pending payments:', error);
-    return [];
-  }
-};
 
-export const fetchMembershipRenewals = async (branchId?: string) => {
+
+/**
+ * Fetches upcoming membership renewals within the next 7 days
+ * @param params Fetch parameters including optional branchId and limit
+ * @returns Array of membership renewals with member and membership details
+ */
+export const fetchMembershipRenewals = async (
+  params: FetchParams = {}
+): Promise<MembershipRenewal[]> => {
+  const { branchId, limit } = params;
+  
   try {
     const today = new Date();
     const nextWeek = new Date();
@@ -388,12 +523,14 @@ export const fetchMembershipRenewals = async (branchId?: string) => {
         status,
         total_amount,
         amount_paid,
-        members(name, email, phone),
-        memberships(name, price)
-      `)
+        members (name, email, phone),
+        memberships (name, price)
+      `, { count: 'exact' })
       .eq('status', 'active')
       .lt('end_date', nextWeek.toISOString())
-      .gt('end_date', today.toISOString());
+      .gt('end_date', today.toISOString())
+      .order('end_date', { ascending: true })
+      .limit(limit || 10); // Use limit from params if provided, otherwise default to 10
     
     if (branchId) {
       query.eq('branch_id', branchId);
@@ -401,51 +538,92 @@ export const fetchMembershipRenewals = async (branchId?: string) => {
     
     const { data, error } = await query;
     
-    if (error) throw error;
+    if (error) {
+      console.error('Error fetching membership renewals:', error);
+      return [];
+    }
     
-    return data || [];
+    // Transform data to match the MembershipRenewal interface
+    return (data || []).map(renewal => ({
+      id: renewal.id,
+      member_id: renewal.member_id,
+      start_date: renewal.start_date,
+      end_date: renewal.end_date,
+      status: renewal.status,
+      total_amount: renewal.total_amount || 0,
+      amount_paid: renewal.amount_paid || 0,
+      members: {
+        name: renewal.members?.name || 'Unknown Member',
+        email: renewal.members?.email || '',
+        phone: renewal.members?.phone || ''
+      },
+      memberships: {
+        name: renewal.memberships?.name || 'Unknown Membership',
+        price: renewal.memberships?.price || 0
+      }
+    }));
   } catch (error) {
-    console.error('Error fetching upcoming renewals:', error);
+    console.error('Error in fetchMembershipRenewals:', error);
     return [];
   }
 };
 
-export const fetchUpcomingClasses = async (branchId?: string) => {
+/**
+ * Fetches upcoming classes scheduled for today
+ * @param params Fetch parameters including optional branchId and limit
+ * @returns Array of upcoming class schedules with trainer information
+ */
+export const fetchUpcomingClasses = async (
+  params: FetchParams = {}
+): Promise<ClassSchedule[]> => {
+  const { branchId, limit } = params;
+  
   try {
     const now = new Date();
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    tomorrow.setHours(23, 59, 59);
-    
-    const query = supabase
-      .from('class_schedules_with_trainers')
+    const endOfDay = new Date(now);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    // Build the base query
+    let query = supabase
+      .from('class_schedules')
       .select(`
-        id,
-        name,
-        type,
-        start_time,
-        end_time,
-        capacity,
-        enrolled,
-        trainer_id,
-        trainer_name,
-        trainer_avatar_url
+        *,
+        trainer:trainers (id, name, avatar_url)
       `)
       .gte('start_time', now.toISOString())
-      .lte('start_time', tomorrow.toISOString())
-      .order('start_time');
+      .lte('start_time', endOfDay.toISOString())
+      .order('start_time', { ascending: true });
     
+    // Add branch filter if provided
     if (branchId) {
-      query.eq('branch_id', branchId);
+      query = query.eq('branch_id', branchId);
     }
     
+    if (limit) {
+      query = query.limit(limit);
+    }
+
     const { data, error } = await query;
     
     if (error) throw error;
     
-    return data || [];
+    // Transform the data to match the ClassSchedule interface
+    return (data || []).map((classData: any) => ({
+      id: classData.id,
+      name: classData.name,
+      type: classData.type,
+      start_time: classData.start_time,
+      end_time: classData.end_time,
+      capacity: classData.capacity,
+      enrolled: classData.enrolled,
+      trainer_id: classData.trainer_id,
+      trainer_name: classData.trainer?.name || 'Unknown Trainer',
+      trainer_avatar_url: classData.trainer?.avatar_url || '',
+      room_name: classData.room_name,
+      branch_id: classData.branch_id
+    }));
   } catch (error) {
     console.error('Error fetching upcoming classes:', error);
-    throw error;
+    return [];
   }
-};
+}

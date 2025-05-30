@@ -10,9 +10,9 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { format } from "date-fns";
 import { CalendarIcon, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Lead } from '@/types/crm';
+import { Lead } from '@/types/crm/crm';
 import { useMutation } from '@tanstack/react-query';
-import { leadConversionService } from '@/services/leadConversionService';
+import { leadConversionService } from '@/services/crm/leadConversionService';
 import { toast } from 'sonner';
 
 export interface LeadFollowUpFormProps {

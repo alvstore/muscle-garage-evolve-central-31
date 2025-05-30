@@ -38,8 +38,8 @@ import {
   Loader2,
   RefreshCw
 } from 'lucide-react';
-import { FollowUpHistory, FollowUpType } from '@/types/crm';
-import { followUpService } from '@/services/followUpService';
+import { FollowUpHistory, FollowUpType } from '@/types/crm/crm';
+import { followUpService } from '@/services/communication/followUpService';
 import { useQuery } from '@tanstack/react-query';
 import { useBranch } from '@/hooks/settings/use-branches';
 

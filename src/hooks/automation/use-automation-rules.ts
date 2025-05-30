@@ -1,7 +1,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { integrationsService } from '@/services/integrationsService';
-import { AutomationRule } from '@/types/crm';
+import { AutomationRule } from '@/types/crm/crm';
 import { useBranch } from '@/hooks/settings/use-branches';
 import { toast } from 'sonner';
 import { useState } from 'react';

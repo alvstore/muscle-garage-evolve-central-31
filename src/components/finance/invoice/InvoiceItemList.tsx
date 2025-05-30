@@ -2,7 +2,7 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PlusIcon, Trash2Icon } from "lucide-react";
-import { InvoiceItemListProps, InvoiceItemProps } from "@/types/invoice";
+import { InvoiceItemListProps, InvoiceItemProps } from "@/types/payment/invoice";
 import { InvoiceItem } from "@/types/finance";
 
 const InvoiceItemRow = ({ item, onUpdate, onRemove, canDelete }: InvoiceItemProps) => (

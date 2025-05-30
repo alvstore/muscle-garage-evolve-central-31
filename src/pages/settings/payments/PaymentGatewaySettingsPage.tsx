@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { razorpayService } from '@/services/integrations/razorpayService';
+import { razorpayService } from '@/services/classes/integrations/razorpayService';
 import { Container } from "@/components/ui/container";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";

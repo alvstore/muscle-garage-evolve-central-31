@@ -1,5 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
-import { Lead } from '@/types/crm';
+import { Lead } from '@/types/crm/crm';
 import { toast } from 'sonner';
 
 /**

@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Search, Plus, Users, Target, TrendingUp, Calendar } from 'lucide-react';
-import { Lead } from '@/types/crm';
+import { Lead } from '@/types/crm/crm';
 import LeadsList from './LeadsList';
 import LeadForm from './LeadForm';
 import FunnelBoard from './FunnelBoard';

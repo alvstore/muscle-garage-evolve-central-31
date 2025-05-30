@@ -18,7 +18,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/components/ui/use-toast';
-import { Deal, dealService } from '@/services/dealService';
+import { Deal, dealService } from '@/services/communication/dealService';
 import { useParams } from 'react-router-dom';
 import { formatCurrency } from '@/utils/stringUtils';
 

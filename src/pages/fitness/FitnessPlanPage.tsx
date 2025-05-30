@@ -8,7 +8,7 @@ import DietPlanForm from '@/components/fitness/DietPlanForm';
 import { useAuth } from '@/hooks/auth/use-auth';
 import { usePermissions } from '@/hooks/auth/use-permissions';
 import { Member } from '@/types';
-import { WorkoutPlan } from '@/types/workout';
+import { WorkoutPlan } from '@/types/fitness/workout';
 
 const FitnessPlanPage = () => {
   const { user } = useAuth();

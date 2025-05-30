@@ -1,5 +1,5 @@
 
-import { FollowUpHistory, FollowUpScheduled } from '@/types/crm';
+import { FollowUpHistory, FollowUpScheduled } from '@/types/crm/crm';
 import { supabase } from '@/integrations/supabase/client';
 
 class FollowUpService {

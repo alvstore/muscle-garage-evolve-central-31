@@ -1,6 +1,6 @@
 
 import { DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { InvoiceFormHeaderProps } from "@/types/invoice";
+import { InvoiceFormHeaderProps } from "@/types/payment/invoice";
 
 export const InvoiceFormHeader = ({ isEdit }: InvoiceFormHeaderProps) => (
   <DialogHeader>

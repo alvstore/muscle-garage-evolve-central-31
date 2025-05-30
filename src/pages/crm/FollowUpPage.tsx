@@ -5,7 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import FollowUpSchedule from '@/components/crm/FollowUpSchedule';
 import FollowUpHistoryComponent from '@/components/crm/FollowUpHistory';
 import FollowUpTemplateForm from '@/components/crm/FollowUpTemplateForm';
-import { FollowUpTemplate } from '@/types/crm';
+import { FollowUpTemplate } from '@/types/crm/crm';
 
 const FollowUpPage = () => {
   const [activeTab, setActiveTab] = useState('schedule');

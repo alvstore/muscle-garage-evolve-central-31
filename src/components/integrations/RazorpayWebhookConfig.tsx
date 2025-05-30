@@ -9,7 +9,7 @@ import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, CheckCircle, AlertTriangle, Copy, Info } from 'lucide-react';
 import { toast } from 'sonner';
-import { razorpayService } from '@/services/integrations/razorpayService';
+import { razorpayService } from '@/services/classes/integrations/razorpayService';
 import { RazorpayEventType } from '@/types/webhooks';
 
 interface RazorpayWebhookEvent {

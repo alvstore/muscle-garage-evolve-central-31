@@ -31,7 +31,7 @@ import {
   SelectItem 
 } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
-import { fetchExpenses, fetchExpenseCategories, createExpense, updateExpense, deleteExpense, Expense, ExpenseCategory } from '@/services/expenseService';
+import { fetchExpenses, fetchExpenseCategories, createExpense, updateExpense, deleteExpense, Expense, ExpenseCategory } from '@/services/finance/expenseService';
 import { useBranch } from '@/hooks/settings/use-branches';
 import { ColumnDef } from '@tanstack/react-table';
 import { toast } from 'sonner';

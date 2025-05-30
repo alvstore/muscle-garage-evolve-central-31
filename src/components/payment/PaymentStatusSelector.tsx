@@ -6,7 +6,7 @@ import {
   FormHelperText,
   FormErrorMessage 
 } from '@chakra-ui/react';
-import { PaymentStatus, PAYMENT_STATUSES } from '@/types/payment';
+import { PaymentStatus, PAYMENT_STATUSES } from '@/types/payment/payment';
 
 interface PaymentStatusSelectorProps {
   value: PaymentStatus;

@@ -1,6 +1,6 @@
 
 import { Invoice, InvoiceItem, TaxDetail, GSTTreatment } from '@/types/finance';
-import { HSNCode, TaxProfile } from '@/types/invoiceSettings';
+import { HSNCode, TaxProfile } from '@/types/payment/invoiceSettings';
 import invoiceSettingsService from './invoiceSettingsService';
 import { supabase } from '@/integrations/supabase/client';
 
