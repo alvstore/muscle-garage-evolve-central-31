@@ -62,12 +62,18 @@ export interface HikvisionPerson {
 export interface HikvisionEvent {
   id: string;
   event_id: string;
+  eventId: string; // Alias for camelCase compatibility
   event_type: string;
+  eventType: string; // Alias for camelCase compatibility
   event_time: string;
+  eventTime: string; // Alias for camelCase compatibility
   person_id?: string;
+  personId?: string; // Alias for camelCase compatibility
+  personName?: string; // Additional property for display
   device_id?: string;
   door_id?: string;
   door_name?: string;
+  doorName?: string; // Alias for camelCase compatibility
   face_id?: string;
   card_no?: string;
   picture_url?: string;
