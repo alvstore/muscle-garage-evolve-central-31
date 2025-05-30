@@ -1,3 +1,0 @@
-# Prevent direct pushes to this directory
-* -text -diff
-# This makes files appear as binary in git, making them harder to modify accidentally
