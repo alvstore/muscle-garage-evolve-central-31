@@ -13,14 +13,14 @@ const AdminRoutes: RouteObject = {
   path: '/',
   element: <AdminLayout />,
   children: [
-    ...(adminDashboardRoutes || []),
-    ...(profileRoutes || []),
-    ...(financeRoutes || []),
-    ...(settingsRoutes || []),
-    ...(websiteRoutes || []),
-    ...(adminMembershipRoutes || []),
+    ...adminDashboardRoutes,
+    ...profileRoutes,
+    ...financeRoutes,
+    ...settingsRoutes,
+    ...websiteRoutes,
+    ...adminMembershipRoutes,
     {
-      path: 'system-backup',
+      path: '/system-backup',
       element: <SystemBackupPage />
     },
   ],

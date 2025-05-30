@@ -7,7 +7,7 @@ import ReportsDashboard from '@/pages/reports/ReportsDashboard';
 
 export const analyticsRoutes: RouteObject[] = [
   {
-    path: 'analytics',
+    path: '/analytics',
     element: (
       <PrivateRoute allowedRoles={['admin', 'staff']}>
         <AnalyticsDashboardPage />
@@ -15,7 +15,7 @@ export const analyticsRoutes: RouteObject[] = [
     )
   },
   {
-    path: 'reports',
+    path: '/reports',
     element: (
       <PrivateRoute allowedRoles={['admin', 'staff']}>
         <ReportsDashboard />

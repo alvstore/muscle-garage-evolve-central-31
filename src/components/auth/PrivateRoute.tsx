@@ -1,27 +1,25 @@
 import React, { ReactNode } from 'react';
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
-import { useAuth, UserRole } from '@/hooks/auth/use-auth';
+import { useAuth } from '@/hooks/auth/use-auth';
 import { Loader2 } from 'lucide-react';
 import { usePermissions } from '@/hooks/permissions/use-permissions-manager';
-
-// Define valid roles for type safety
-type AllowedRole = Exclude<UserRole, 'guest'>;
+import { UserRole } from '@/types/auth/user';
 
 interface PrivateRouteProps {
-  allowedRoles?: AllowedRole[];
+  allowedRoles?: UserRole[];
   requiresAuth?: boolean;
   requiredPermission?: string;
   permission?: string; // Alias for requiredPermission for backward compatibility
   children?: ReactNode;
 }
 
-const PrivateRoute: React.FC<PrivateRouteProps> = ({ 
-  allowedRoles = [], 
+const PrivateRoute = ({ 
+  allowedRoles, 
   requiresAuth = true, 
   requiredPermission,
   permission,
   children
-}) => {
+}: PrivateRouteProps) => {
   // Use permission as an alias for requiredPermission if not explicitly provided
   const effectivePermission = requiredPermission || permission;
   const { isAuthenticated, user, role, isLoading: isAuthLoading } = useAuth();
@@ -40,34 +38,34 @@ const PrivateRoute: React.FC<PrivateRouteProps> = ({
     );
   }
 
-  // If authentication is required but user is not authenticated or is a guest
-  if (requiresAuth && (!isAuthenticated || role === 'guest')) {
+  // If authentication is required but user is not authenticated
+  if (requiresAuth && !isAuthenticated) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  // Determine effective role, ensuring it's a valid AllowedRole
-  const effectiveRole = (role && role !== 'guest' ? role : 'member') as AllowedRole;
+  // Determine effective role, prioritizing the one from the profile
+  const effectiveRole = role || (user?.role as UserRole);
 
   // If a permission is required, check if user has the required permission
   if (effectivePermission) {
     if (!hasPermission(effectivePermission)) {
-      return <Navigate to="/unauthorized" state={{ from: location }} replace />;
+      return <Navigate to="/unauthorized" replace />;
+    }
+  } 
+  // Fallback to role-based check if no permission is required but roles are specified
+  else if (allowedRoles && allowedRoles.length > 0 && effectiveRole) {
+    if (!allowedRoles.includes(effectiveRole as UserRole)) {
+      return <Navigate to="/unauthorized" replace />;
     }
   }
 
-  // If specific roles are required, check if user has any of the allowed roles
-  if (allowedRoles.length > 0) {
-    const hasRequiredRole = allowedRoles.some(
-      (allowedRole) => effectiveRole.toLowerCase() === allowedRole.toLowerCase()
-    );
-    
-    if (!hasRequiredRole) {
-      return <Navigate to="/unauthorized" state={{ from: location }} replace />;
-    }
+  // Check if user has required permission if specified
+  if (requiredPermission && !hasPermission(requiredPermission)) {
+    return <Navigate to="/unauthorized" state={{ from: location }} replace />;
   }
 
-  // If we have children, render them, otherwise render the Outlet
-  return <>{children || <Outlet />}</>;
+  // If children are provided, render them, otherwise use Outlet
+  return children ? <>{children}</> : <Outlet />;
 };
 
 export default PrivateRoute;

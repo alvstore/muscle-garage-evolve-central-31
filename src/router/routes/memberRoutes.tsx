@@ -12,71 +12,86 @@ import EditMemberPage from '@/pages/members/EditMemberPage';
 
 export const memberRoutes: RouteObject[] = [
   {
-    path: 'members',
-    children: [
-      // List all members
-      {
-        index: true,
-        element: (
-          <PrivateRoute allowedRoles={['admin', 'staff', 'trainer']}>
-            <MembersListPage />
-          </PrivateRoute>
-        )
-      },
-      // Create new member
-      {
-        path: 'new',
-        element: (
-          <PrivateRoute allowedRoles={['admin', 'staff']}>
-            <NewMemberPage />
-          </PrivateRoute>
-        )
-      },
-      // Current user's profile
-      {
-        path: 'profile',
-        element: (
-          <PrivateRoute allowedRoles={['admin', 'staff', 'trainer', 'member']}>
-            <MemberProfilePage />
-          </PrivateRoute>
-        )
-      },
-      // Member progress
-      {
-        path: 'progress/:id',
-        element: (
-          <PrivateRoute allowedRoles={['admin', 'staff', 'trainer', 'member']}>
-            <MemberProgressPage />
-          </PrivateRoute>
-        )
-      },
-      // Edit member
-      {
-        path: ':id/edit',
-        element: (
-          <PrivateRoute allowedRoles={['admin', 'staff']}>
-            <EditMemberPage />
-          </PrivateRoute>
-        )
-      },
-      // View member by ID
-      {
-        path: ':id',
-        element: (
-          <PrivateRoute allowedRoles={['admin', 'staff', 'trainer']}>
-            <MemberProfilePage />
-          </PrivateRoute>
-        )
-      },
-      // View member by branch and ID
-      {
-        path: ':branchId/:id',
-        element: (
-          <PrivateRoute allowedRoles={['admin', 'staff', 'trainer']}>
-            <MemberProfilePage />
-          </PrivateRoute>
-        )
-      }
-    ]
+    path: '/members',
+    element: (
+      <PrivateRoute allowedRoles={['admin', 'staff', 'trainer']}>
+        <MembersListPage />
+      </PrivateRoute>
+    )
+  },
+  {
+    path: '/members/new',
+    element: (
+      <PrivateRoute allowedRoles={['admin', 'staff']}>
+        <NewMemberPage />
+      </PrivateRoute>
+    )
+  },
+  {
+    path: '/members/profile',
+    element: (
+      <PrivateRoute allowedRoles={['admin', 'staff', 'trainer', 'member']}>
+        <MemberProfilePage />
+      </PrivateRoute>
+    )
+  },
+  {
+    path: '/members/:id',
+    element: (
+      <PrivateRoute allowedRoles={['admin', 'staff', 'trainer']}>
+        <MemberProfilePage />
+      </PrivateRoute>
+    )
+  },
+  // Route for admin prefix
+  {
+    path: '/admin/members/:id',
+    element: (
+      <PrivateRoute allowedRoles={['admin', 'staff', 'trainer']}>
+        <MemberProfilePage />
+      </PrivateRoute>
+    )
+  },
+  // Route for member progress
+  {
+    path: '/members/progress/:id',
+    element: (
+      <PrivateRoute allowedRoles={['admin', 'staff', 'trainer', 'member']}>
+        <MemberProgressPage />
+      </PrivateRoute>
+    )
+  },
+  // Extra routes for different URL patterns
+  {
+    path: '/members/:branchId/:id',
+    element: (
+      <PrivateRoute allowedRoles={['admin', 'staff', 'trainer']}>
+        <MemberProfilePage />
+      </PrivateRoute>
+    )
+  },
+  {
+    path: '/members/:id/profile',
+    element: (
+      <PrivateRoute allowedRoles={['admin', 'staff', 'trainer']}>
+        <MemberProfilePage />
+      </PrivateRoute>
+    )
+  },
+  {
+    path: '/members/:id/progress',
+    element: (
+      <PrivateRoute allowedRoles={['admin', 'staff', 'trainer', 'member']}>
+        <MemberProgressPage />
+      </PrivateRoute>
+    )
+  },
+  {
+    path: '/members/:id/edit',
+    element: (
+      <PrivateRoute allowedRoles={['admin', 'staff']}>
+        <EditMemberPage />
+      </PrivateRoute>
+    )
   }
 ];

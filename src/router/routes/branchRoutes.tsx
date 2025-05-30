@@ -10,7 +10,7 @@ import BranchSettingsPage from '@/pages/branches/BranchSettingsPage';
 
 export const branchRoutes: RouteObject[] = [
   {
-    path: 'branches',
+    path: '/branches',
     element: (
       <PrivateRoute allowedRoles={['admin', 'staff']}>
         <BranchesPage />
@@ -18,7 +18,7 @@ export const branchRoutes: RouteObject[] = [
     )
   },
   {
-    path: 'branches/:id',
+    path: '/branches/:id',
     element: (
       <PrivateRoute allowedRoles={['admin', 'staff']}>
         <BranchDetailsPage />
@@ -26,7 +26,7 @@ export const branchRoutes: RouteObject[] = [
     )
   },
   {
-    path: 'branches/:id/staff',
+    path: '/branches/:id/staff',
     element: (
       <PrivateRoute allowedRoles={['admin', 'staff']}>
         <BranchStaffPage />
@@ -34,7 +34,7 @@ export const branchRoutes: RouteObject[] = [
     )
   },
   {
-    path: 'branches/:id/members',
+    path: '/branches/:id/members',
     element: (
       <PrivateRoute allowedRoles={['admin', 'staff']}>
         <BranchMembersPage />
@@ -42,7 +42,7 @@ export const branchRoutes: RouteObject[] = [
     )
   },
   {
-    path: 'branches/:id/settings',
+    path: '/branches/:id/settings',
     element: (
       <PrivateRoute allowedRoles={['admin', 'staff']}>
         <BranchSettingsPage />

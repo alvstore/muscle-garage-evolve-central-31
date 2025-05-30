@@ -19,7 +19,7 @@ const LoadingComponent = () => <div className="p-4">Loading...</div>;
 
 export const classRoutes: AppRoute[] = [
   {
-    path: 'classes',
+    path: '/classes',
     element: (
       <PrivateRoute allowedRoles={['admin', 'staff', 'trainer']}>
         <Suspense fallback={<LoadingComponent />}>
@@ -35,7 +35,7 @@ export const classRoutes: AppRoute[] = [
     }
   },
   {
-    path: 'list',
+    path: '/classes/list',
     element: (
       <PrivateRoute allowedRoles={['admin', 'staff', 'trainer']}>
         <Suspense fallback={<LoadingComponent />}>
@@ -51,7 +51,7 @@ export const classRoutes: AppRoute[] = [
     }
   },
   {
-    path: 'bookings',
+    path: '/classes/bookings',
     element: (
       <PrivateRoute allowedRoles={['admin', 'staff', 'trainer']}>
         <Suspense fallback={<LoadingComponent />}>
@@ -67,7 +67,7 @@ export const classRoutes: AppRoute[] = [
     }
   },
   {
-    path: 'schedule',
+    path: '/classes/schedule',
     element: (
       <PrivateRoute allowedRoles={['admin', 'staff', 'trainer', 'member']}>
         <Suspense fallback={<LoadingComponent />}>
@@ -83,7 +83,7 @@ export const classRoutes: AppRoute[] = [
     }
   },
   {
-    path: ':id',
+    path: '/classes/:id',
     element: (
       <PrivateRoute allowedRoles={['admin', 'staff', 'trainer']}>
         <Suspense fallback={<LoadingComponent />}>
@@ -100,7 +100,7 @@ export const classRoutes: AppRoute[] = [
     }
   },
   {
-    path: 'attendance/:id',
+    path: '/classes/attendance/:id',
     element: (
       <PrivateRoute allowedRoles={['admin', 'staff', 'trainer']}>
         <Suspense fallback={<LoadingComponent />}>
@@ -117,7 +117,7 @@ export const classRoutes: AppRoute[] = [
     }
   },
   {
-    path: 'types',
+    path: '/classes/types',
     element: (
       <PrivateRoute allowedRoles={['admin', 'staff']}>
         <Suspense fallback={<LoadingComponent />}>
@@ -133,7 +133,7 @@ export const classRoutes: AppRoute[] = [
     }
   },
   {
-    path: 'create',
+    path: '/classes/create',
     element: (
       <PrivateRoute allowedRoles={['admin', 'staff']}>
         <Suspense fallback={<LoadingComponent />}>
@@ -150,7 +150,7 @@ export const classRoutes: AppRoute[] = [
     }
   },
   {
-    path: 'edit/:id',
+    path: '/classes/edit/:id',
     element: (
       <PrivateRoute allowedRoles={['admin', 'staff']}>
         <Suspense fallback={<LoadingComponent />}>

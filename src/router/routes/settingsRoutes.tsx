@@ -36,11 +36,11 @@ import {
 export const settingsRoutes: AppRoute[] = [
   // Redirect old payment integration URL to new payment gateways URL
   {
-    path: 'integrations/payment',
-    element: <Navigate to="payments/gateways" replace />
+    path: '/settings/integrations/payment',
+    element: <Navigate to="/settings/payments/gateways" replace />
   },
   {
-    path: '',
+    path: '/settings',
     element: <UnifiedSettingsPage />,
     meta: {
       title: 'System Settings',
@@ -50,7 +50,7 @@ export const settingsRoutes: AppRoute[] = [
     }
   },
   {
-    path: 'invoice',
+    path: '/settings/invoice',
     element: <InvoiceSettingsPage />,
     meta: {
       title: 'Invoice Settings',
@@ -60,7 +60,7 @@ export const settingsRoutes: AppRoute[] = [
     }
   },
   {
-    path: 'global',
+    path: '/settings/global',
     element: <GlobalSettingsPage />,
     meta: {
       title: 'Global Settings',
@@ -71,7 +71,7 @@ export const settingsRoutes: AppRoute[] = [
     }
   },
   {
-    path: 'branches',
+    path: '/settings/branches',
     element: <BranchManagementPage />,
     meta: {
       title: 'Branch Management',
@@ -81,7 +81,7 @@ export const settingsRoutes: AppRoute[] = [
     }
   },
   {
-    path: 'integrations',
+    path: '/settings/integrations',
     element: <IntegrationsPage />,
     meta: {
       title: 'Integrations',
@@ -91,7 +91,7 @@ export const settingsRoutes: AppRoute[] = [
     }
   },
   {
-    path: 'integrations/access-control',
+    path: '/settings/integrations/access-control',
     element: <AccessControlPage />,
     meta: {
       title: 'Access Control Management',
@@ -101,7 +101,7 @@ export const settingsRoutes: AppRoute[] = [
     }
   },
   {
-    path: 'ai-services',
+    path: '/settings/ai-services',
     element: <AIServicesPage />,
     meta: {
       title: 'AI Services Configuration',
@@ -111,7 +111,7 @@ export const settingsRoutes: AppRoute[] = [
     }
   },
   {
-    path: 'payments/gateways',
+    path: '/settings/payments/gateways',
     element: <PaymentGatewaySettingsPage />,
     meta: {
       title: 'Payment Gateway Settings',
@@ -121,7 +121,7 @@ export const settingsRoutes: AppRoute[] = [
     }
   },
   {
-    path: 'integrations/push',
+    path: '/settings/integrations/push',
     element: <PushNotificationSettingsPage />,
     meta: {
       title: 'Push Notification Settings',
@@ -131,7 +131,7 @@ export const settingsRoutes: AppRoute[] = [
     }
   },
   {
-    path: 'email',
+    path: '/settings/email',
     element: <EmailSettingsPage />,
     meta: {
       title: 'Email Integration',
@@ -141,7 +141,7 @@ export const settingsRoutes: AppRoute[] = [
     }
   },
   {
-    path: 'sms',
+    path: '/settings/sms',
     element: <SmsIntegrationPage />,
     meta: {
       title: 'SMS Settings',
@@ -151,7 +151,7 @@ export const settingsRoutes: AppRoute[] = [
     }
   },
   {
-    path: 'whatsapp',
+    path: '/settings/whatsapp',
     element: <MessagingSettingsPage />,
     meta: {
       title: 'WhatsApp Settings',
@@ -161,7 +161,7 @@ export const settingsRoutes: AppRoute[] = [
     }
   },
   {
-    path: 'templates',
+    path: '/settings/templates',
     element: <MessageTemplatesPage />,
     meta: {
       title: 'Message Templates',
@@ -171,7 +171,7 @@ export const settingsRoutes: AppRoute[] = [
     }
   },
   {
-    path: 'templates/email',
+    path: '/settings/templates/email',
     element: <EmailSettingsPage />,
     meta: {
       title: 'Email Templates',
@@ -181,7 +181,7 @@ export const settingsRoutes: AppRoute[] = [
     }
   },
   {
-    path: 'templates/sms',
+    path: '/settings/templates/sms',
     element: <SmsTemplatesPage />,
     meta: {
       title: 'SMS Templates',
@@ -191,7 +191,7 @@ export const settingsRoutes: AppRoute[] = [
     }
   },
   {
-    path: 'templates/whatsapp',
+    path: '/settings/templates/whatsapp',
     element: <WhatsAppTemplatesPage />,
     meta: {
       title: 'WhatsApp Templates',
@@ -201,7 +201,7 @@ export const settingsRoutes: AppRoute[] = [
     }
   },
   {
-    path: 'notifications',
+    path: '/settings/notifications',
     element: <UnifiedSettingsPage />,
     meta: {
       title: 'Notification Settings',
@@ -211,7 +211,7 @@ export const settingsRoutes: AppRoute[] = [
     }
   },
   {
-    path: 'roles',
+    path: '/settings/roles',
     element: <RolePermissionsPage />,
     meta: {
       title: 'Access Control',

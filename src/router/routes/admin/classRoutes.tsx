@@ -2,23 +2,23 @@
 import React from 'react';
 import { RouteObject } from 'react-router-dom';
 import PrivateRoute from '@/components/auth/PrivateRoute';
-import MembersListPage from '@/pages/members/MembersListPage';
-import MembershipPage from '@/pages/membership/MembershipPage';
+import ClassPage from '@/pages/classes/ClassPage';
+import ClassTypesPage from '@/pages/classes/ClassTypesPage';
 
-export const adminMembershipRoutes: RouteObject[] = [
+export const adminClassRoutes: RouteObject[] = [
   {
-    path: '/members',
+    path: '/classes',
     element: (
       <PrivateRoute allowedRoles={['admin', 'staff']}>
-        <MembersListPage />
+        <ClassPage />
       </PrivateRoute>
     )
   },
   {
-    path: '/memberships',
+    path: '/classes/types',
     element: (
       <PrivateRoute allowedRoles={['admin', 'staff']}>
-        <MembershipPage />
+        <ClassTypesPage />
       </PrivateRoute>
     )
   }

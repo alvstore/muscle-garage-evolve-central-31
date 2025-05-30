@@ -4,9 +4,9 @@ import { RouteObject } from 'react-router-dom';
 import PrivateRoute from '@/components/auth/PrivateRoute';
 import WebsiteManagementPage from '@/pages/website/WebsiteManagementPage';
 
-export const adminWebsiteRoutes: RouteObject[] = [
+export const websiteRoutes: RouteObject[] = [
   {
-    path: 'website',
+    path: '/website',
     element: (
       <PrivateRoute allowedRoles={['admin']}>
         <WebsiteManagementPage />
@@ -14,7 +14,7 @@ export const adminWebsiteRoutes: RouteObject[] = [
     )
   },
   {
-    path: 'website/:section',
+    path: '/website/:section',
     element: (
       <PrivateRoute allowedRoles={['admin']}>
         <WebsiteManagementPage />

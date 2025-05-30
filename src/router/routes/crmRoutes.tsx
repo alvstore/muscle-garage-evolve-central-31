@@ -23,7 +23,7 @@ import {
 
 export const crmRoutes: AppRoute[] = [
   {
-    path: 'crm/dashboard',
+    path: '/crm/dashboard',
     element: (
       <PrivateRoute allowedRoles={['admin', 'staff']}>
         <DashboardPage />
@@ -32,12 +32,12 @@ export const crmRoutes: AppRoute[] = [
     meta: {
       title: 'CRM Dashboard',
       breadcrumb: 'Dashboard',
-      permission: "manage_crm",
+      permission: 'access_crm',
       icon: <BarChart className="h-5 w-5" />
     }
   },
   {
-    path: 'crm/leads',
+    path: '/crm/leads',
     element: (
       <PrivateRoute allowedRoles={['admin', 'staff']}>
         <LeadsPage />
@@ -46,12 +46,12 @@ export const crmRoutes: AppRoute[] = [
     meta: {
       title: 'Lead Management',
       breadcrumb: 'Leads',
-      permission: "manage_crm",
+      permission: 'access_crm',
       icon: <UserPlus className="h-5 w-5" />
     }
   },
   {
-    path: 'crm/leads/:id',
+    path: '/crm/leads/:id',
     element: (
       <PrivateRoute allowedRoles={['admin', 'staff']}>
         <LeadDetailPage />
@@ -60,12 +60,12 @@ export const crmRoutes: AppRoute[] = [
     meta: {
       title: 'Lead Details',
       breadcrumb: 'Lead Details',
-      permission: "manage_crm",
+      permission: 'access_crm',
       icon: <UserPlus className="h-5 w-5" />
     }
   },
   {
-    path: 'crm/funnel',
+    path: '/crm/funnel',
     element: (
       <PrivateRoute allowedRoles={['admin', 'staff']}>
         <FunnelPage />
@@ -74,12 +74,12 @@ export const crmRoutes: AppRoute[] = [
     meta: {
       title: 'Sales Funnel',
       breadcrumb: 'Sales Funnel',
-      permission: "manage_crm",
+      permission: 'access_crm',
       icon: <BarChart className="h-5 w-5" />
     }
   },
   {
-    path: 'crm/follow-ups',
+    path: '/crm/follow-up',
     element: (
       <PrivateRoute allowedRoles={['admin', 'staff']}>
         <FollowUpPage />
@@ -88,12 +88,12 @@ export const crmRoutes: AppRoute[] = [
     meta: {
       title: 'Follow-Up Management',
       breadcrumb: 'Follow-Up',
-      permission: "manage_crm",
+      permission: 'access_crm',
       icon: <Clock className="h-5 w-5" />
     }
   },
   {
-    path: 'crm/contacts',
+    path: '/crm/contacts',
     element: (
       <PrivateRoute allowedRoles={['admin', 'staff']}>
         <ContactsPage />
@@ -102,12 +102,12 @@ export const crmRoutes: AppRoute[] = [
     meta: {
       title: 'Contacts',
       breadcrumb: 'Contacts',
-      permission: "manage_crm",
+      permission: 'access_crm',
       icon: <Users className="h-5 w-5" />
     }
   },
   {
-    path: 'crm/deals',
+    path: '/crm/deals',
     element: (
       <PrivateRoute allowedRoles={['admin', 'staff']}>
         <DealsPage />
@@ -116,12 +116,12 @@ export const crmRoutes: AppRoute[] = [
     meta: {
       title: 'Deals',
       breadcrumb: 'Deals',
-      permission: "manage_crm",
+      permission: 'access_crm',
       icon: <DollarSign className="h-5 w-5" />
     }
   },
   {
-    path: 'crm/tasks',
+    path: '/crm/tasks',
     element: (
       <PrivateRoute allowedRoles={['admin', 'staff']}>
         <TasksPage />
@@ -130,7 +130,7 @@ export const crmRoutes: AppRoute[] = [
     meta: {
       title: 'Task Manager',
       breadcrumb: 'Tasks',
-      permission: "manage_crm",
+      permission: 'access_crm',
       icon: <CheckSquare className="h-5 w-5" />
     }
   }

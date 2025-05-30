@@ -10,7 +10,7 @@ import StorePage from '@/pages/store/StorePage';
 
 export const marketingRoutes: RouteObject[] = [
   {
-    path: 'marketing/promo',
+    path: '/marketing/promo',
     element: (
       <PrivateRoute allowedRoles={['admin', 'staff']}>
         <PromoPage />
@@ -18,7 +18,7 @@ export const marketingRoutes: RouteObject[] = [
     )
   },
   {
-    path: 'marketing/referral',
+    path: '/marketing/referral',
     element: (
       <PrivateRoute allowedRoles={['admin', 'staff']}>
         <ReferralPage />
@@ -26,7 +26,7 @@ export const marketingRoutes: RouteObject[] = [
     )
   },
   {
-    path: 'store',
+    path: '/store',
     element: (
       <PrivateRoute allowedRoles={['admin', 'staff', 'member']}>
         <StorePage />

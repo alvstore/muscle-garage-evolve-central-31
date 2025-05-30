@@ -6,7 +6,7 @@ import ProfilePage from '@/pages/profile/index';
 
 export const profileRoutes: RouteObject[] = [
   {
-    path: 'profile',
+    path: '/profile',
     element: (
       <PrivateRoute>
         <ProfilePage />
