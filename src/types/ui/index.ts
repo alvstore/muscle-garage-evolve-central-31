@@ -1,2 +1,3 @@
-// UI related types
-export * from '../theme';
+// UI component types
+export * from './forms';
+export * from './tables';

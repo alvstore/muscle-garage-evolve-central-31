@@ -17,7 +17,7 @@ import { toast } from "sonner";
 import { useSupabaseQuery } from "@/hooks/data/use-supabase-query";
 import { supabase } from "@/services/api/supabaseClient";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { InventoryItem, InventoryCategory } from "@/types/inventory";
+import { InventoryItem, InventoryCategory } from "@/types/features/store/inventory";
 import InventoryForm from "./InventoryForm";
 import { useBranch } from "@/hooks/settings/use-branches";
 

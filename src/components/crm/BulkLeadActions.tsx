@@ -16,7 +16,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { toast } from 'sonner';
-import { User } from '@/types/auth/user';
+import { User } from '@/types/core/auth/user';
 import { supabase } from '@/services/api/supabaseClient';
 
 interface BulkLeadActionsProps {

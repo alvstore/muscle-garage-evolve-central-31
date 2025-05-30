@@ -1,4 +1,4 @@
-import { Trainer, TrainerDocument } from '@/types/team/trainer';
+import { Trainer, TrainerDocument } from '@/types/core/team/trainer';
 
 export function formatTrainerName(trainer: Trainer): string {
   if (trainer.profile?.full_name) {

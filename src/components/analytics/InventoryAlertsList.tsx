@@ -11,7 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { inventoryService } from '@/services/inventoryService';
 import { useBranch } from '@/hooks/settings/use-branches';
-import { InventoryItem } from '@/types/inventory';
+import { InventoryItem } from '@/types/features/store/inventory';
 import { Loader2 } from 'lucide-react';
 
 const InventoryAlertsList = () => {

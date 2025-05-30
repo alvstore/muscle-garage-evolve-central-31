@@ -21,7 +21,7 @@ import {
   TableHeader, 
   TableRow 
 } from '@/components/ui/table';
-import { Order, OrderStatus } from '@/types/store';
+import { Order, OrderStatus } from '@/types/features/store/store';
 import { 
   Package,
   Search,
