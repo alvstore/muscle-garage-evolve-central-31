@@ -45,11 +45,12 @@ export type BookingStatus = 'confirmed' | 'cancelled' | 'waitlist' | 'attended' 
 export interface ClassBooking {
   id: string;
   class_id: string;
-  classId: string; // Alias for camelCase compatibility
+  classId?: string; // Alias for camelCase compatibility
   member_id: string;
+  memberId?: string; // Alias for camelCase compatibility
   memberName?: string; // Additional property for display
   memberAvatar?: string; // Additional property for display
-  bookingDate: string; // Additional property for display
+  bookingDate?: string; // Additional property for display
   attendanceTime?: string; // Additional property for attendance tracking
   notes?: string; // Additional property for notes
   status: BookingStatus;
@@ -89,14 +90,32 @@ export interface ClassFormData {
   branch_id?: string;
 }
 
-// Additional type for compatibility
+// Define ClassDifficulty type
+export type ClassDifficulty = 'beginner' | 'intermediate' | 'advanced' | 'all-levels';
+
+// Additional type for compatibility with enhanced properties
 export interface GymClass {
   id: string;
   name: string;
   type: string;
   trainer: string;
+  trainerId?: string;
+  trainerName?: string;
+  trainerAvatar?: string;
   schedule: string;
   capacity: number;
   enrolled: number;
   status: string;
+  description?: string;
+  location?: string;
+  difficulty?: string;
+  level?: string;
+  recurring?: boolean;
+  recurringPattern?: string;
+  startTime?: string;
+  endTime?: string;
+  branchId?: string;
+  start_time?: string;
+  end_time?: string;
+  branch_id?: string;
 }

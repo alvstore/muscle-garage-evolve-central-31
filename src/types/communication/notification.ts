@@ -35,6 +35,9 @@ export interface NotificationTemplate {
   updated_at: string;
 }
 
+// Define MotivationalCategory type
+export type MotivationalCategory = 'fitness' | 'nutrition' | 'motivation' | 'general' | 'wellness';
+
 export interface MotivationalMessage {
   id: string;
   title: string;
@@ -46,6 +49,11 @@ export interface MotivationalMessage {
   branch_id?: string;
   created_at: string;
   updated_at: string;
+  // Additional properties for enhanced functionality
+  author?: string;
+  category?: MotivationalCategory;
+  active?: boolean;
+  tags?: string[];
 }
 
 export interface ReminderRule {
