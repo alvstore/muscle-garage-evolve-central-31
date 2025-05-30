@@ -10,7 +10,7 @@ import {
   Wallet, CreditCard, LineChart, Activity 
 } from "lucide-react";
 import TransactionList from "@/components/finance/TransactionList";
-import RevenueChart from "@/components/dashboard/RevenueChart";
+import RevenueChart from "@/features/dashboard/components/RevenueChart";
 import { 
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue 
 } from "@/components/ui/select";

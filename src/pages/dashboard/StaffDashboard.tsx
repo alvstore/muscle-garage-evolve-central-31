@@ -6,7 +6,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from "recharts";
 import { useDashboard } from "@/hooks/dashboard/use-dashboard";
-import StaffStatsOverview from "@/components/dashboard/staff/StaffStatsOverview";
+import StaffStatsOverview from "@/features/dashboard/components/staff/StaffStatsOverview";
 import { useRevenueStats, DateRange } from "@/hooks/dashboard/use-stats";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";

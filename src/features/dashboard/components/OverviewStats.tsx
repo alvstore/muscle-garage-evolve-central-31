@@ -1,6 +1,6 @@
 
 import React from 'react';
-import StatCard from '@/components/dashboard/StatCard';
+import { StatCard } from '@/features/dashboard/components';
 import { Users, CreditCard, Calendar, CheckSquare } from 'lucide-react';
 import { DashboardSummary } from '@/hooks/dashboard/use-dashboard';
 

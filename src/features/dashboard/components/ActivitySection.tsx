@@ -1,9 +1,7 @@
 
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import RecentActivity from '@/components/dashboard/RecentActivity';
-import PendingPayments from '@/components/dashboard/PendingPayments';
-import Announcements from '@/components/dashboard/Announcements';
+import { RecentActivity, PendingPayments, Announcements } from '@/features/dashboard/components';
 
 const ActivitySection = () => {
   return (

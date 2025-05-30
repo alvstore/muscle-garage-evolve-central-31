@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import FeedbackSummaryChart from '@/components/dashboard/FeedbackSummaryChart';
+import { FeedbackSummaryChart } from '@/features/dashboard/components';
 import { Feedback } from '@/types/notification';
 
 interface FeedbackSectionProps {
