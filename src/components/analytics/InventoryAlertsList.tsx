@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { inventoryService } from '@/services/inventoryService';
+import { inventoryService } from '@/services/store/inventoryService';
 import { useBranch } from '@/hooks/settings/use-branches';
 import { InventoryItem } from '@/types/inventory';
 import { Loader2 } from 'lucide-react';

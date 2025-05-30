@@ -40,7 +40,11 @@ const DashboardNavbar = ({
     let isMounted = true;
     
     const fetchNotifications = async () => {
-      if (!user?.id || !isMounted) return;
+      // Validate user ID before fetching
+      if (!user?.id || !isMounted || user.id === '0' || user.id === 'undefined') {
+        console.warn('Invalid user ID for fetching notifications:', user?.id);
+        return;
+      }
       
       setIsLoadingNotifications(true);
       try {
@@ -70,68 +74,80 @@ const DashboardNavbar = ({
 
     // Set up real-time subscription for notifications using Supabase
     const setupRealtimeSubscriptions = async () => {
-      if (!user?.id) return null;
+      // Validate user ID before setting up subscriptions
+      if (!user?.id || user.id === '0' || user.id === 'undefined') {
+        console.warn('Invalid user ID for real-time subscriptions:', user?.id);
+        return () => {};
+      }
       
       try {
         const { supabase } = await import('@/integrations/supabase/client');
+        const subscriptions: { unsubscribe: () => void }[] = [];
 
         // Subscribe to changes in the notifications table
-        const notificationsSubscription = supabase
+        const notificationsChannel = supabase
           .channel('navbar-notifications')
-          .on('postgres_changes', {
-            event: '*',
-            schema: 'public',
-            table: 'notifications',
-            filter: `user_id=eq.${user.id}`
-          }, (payload) => {
-            // Only refresh if component is still mounted
-            if (isMounted) {
-              fetchNotifications();
-            }
-          })
+          .on(
+            'postgres_changes',
+            {
+              event: '*',
+              schema: 'public',
+              table: 'notifications',
+              filter: `user_id=eq.${user.id}`
+            },
+            () => isMounted && fetchNotifications()
+          )
           .subscribe((status) => {
             if (status !== 'SUBSCRIBED' && isMounted) {
               console.warn('Notification subscription status:', status);
             }
           });
+        
+        subscriptions.push({ unsubscribe: () => notificationsChannel.unsubscribe() });
 
         // Subscribe to changes in follow-up history
-        const followUpSubscription = supabase
+        const followUpChannel = supabase
           .channel('navbar-follow-ups')
-          .on('postgres_changes', {
-            event: '*',
-            schema: 'public',
-            table: 'follow_up_history',
-            filter: `assigned_to=eq.${user.id}`
-          }, () => {
-            if (isMounted) {
-              fetchNotifications();
-            }
-          })
+          .on(
+            'postgres_changes',
+            {
+              event: '*',
+              schema: 'public',
+              table: 'follow_up_history',
+              filter: `assigned_to=eq.${user.id}`
+            },
+            () => isMounted && fetchNotifications()
+          )
           .subscribe();
-          
+        
+        subscriptions.push({ unsubscribe: () => followUpChannel.unsubscribe() });
+        
+        // Return cleanup function
         return () => {
-          notificationsSubscription.unsubscribe();
-          followUpSubscription.unsubscribe();
+          subscriptions.forEach(sub => sub.unsubscribe());
         };
       } catch (error) {
-        console.error('Error setting up notification subscriptions:', error);
-        return null;
+        console.error('Error setting up real-time subscriptions:', error);
+        return () => {};
       }
     };
     
-    const cleanupSubscriptions = setupRealtimeSubscriptions();
+    // Set up the subscriptions
+    const cleanupPromise = setupRealtimeSubscriptions();
     
-    // Cleanup function
+    // Clean up on unmount
     return () => {
       isMounted = false;
-      // Clean up subscriptions when component unmounts
-      if (cleanupSubscriptions) {
-        if (typeof cleanupSubscriptions === 'function') {
-          cleanupSubscriptions();
-        } else if (cleanupSubscriptions instanceof Promise) {
-          cleanupSubscriptions.then(fn => fn && fn());
-        }
+      
+      // Handle the cleanup promise
+      if (cleanupPromise) {
+        cleanupPromise.then(cleanupFn => {
+          if (typeof cleanupFn === 'function') {
+            cleanupFn();
+          }
+        }).catch(error => {
+          console.error('Error during cleanup:', error);
+        });
       }
     };
   }, [user?.id]);

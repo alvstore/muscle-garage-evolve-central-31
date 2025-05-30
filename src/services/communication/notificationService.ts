@@ -1,5 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
-import { followUpService } from '../followUpService';
+import { followUpService } from '../crm/followUpService';
 import { format, isToday, isTomorrow, parseISO } from 'date-fns';
 import { toast } from 'sonner';
 
@@ -22,6 +22,12 @@ export interface Notification {
 
 export const notificationService = {
   async getNotifications(userId: string, includeFallowUps: boolean = true): Promise<Notification[]> {
+    // Validate user ID
+    if (!userId || userId === '0' || userId === 'undefined') {
+      console.warn('Invalid user ID provided to getNotifications:', userId);
+      return [];
+    }
+
     // Get user profile to get role and branch_id
     const { data: userProfile, error: profileError } = await supabase
       .from('profiles')
@@ -29,7 +35,10 @@ export const notificationService = {
       .eq('id', userId)
       .single();
 
-    if (profileError) throw profileError;
+    if (profileError) {
+      console.error('Error fetching user profile for notifications:', profileError);
+      throw profileError;
+    }
     const userRole = userProfile?.role || 'member';
     const userBranchId = userProfile?.branch_id;
     try {

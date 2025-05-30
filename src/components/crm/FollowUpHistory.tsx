@@ -39,7 +39,7 @@ import {
   RefreshCw
 } from 'lucide-react';
 import { FollowUpHistory, FollowUpType } from '@/types/crm';
-import { followUpService } from '@/services/followUpService';
+import { followUpService } from '@/services/crm/followUpService';
 import { useQuery } from '@tanstack/react-query';
 import { useBranch } from '@/hooks/settings/use-branches';
 

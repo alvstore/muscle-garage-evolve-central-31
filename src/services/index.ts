@@ -7,27 +7,27 @@ export * from './branchDataService';
 export * from './communication/notificationService';
 
 // Membership & User Services
-export * from './members/classService';
-export * from './members/class-types-service';
+export * from './classes/classService';
+export * from './classes/class-types-service';
 export * from './members/memberService';
 export * from './members/membershipService';
 
 // Finance
 export * from './finance/financeService';
-export * from './invoice-service';
-export * from './expenseService';
+export * from './finance/invoice-service';
+export * from './finance/expenseService';
 
 // CRM & Leads
-export * from './crmService';
-export * from './leadService';
-export * from './leadConversionService';
-export * from './leadScoringService';
+export * from './crm/crmService';
+export * from './crm/leadService';
+export * from './crm/leadConversionService';
+export * from './crm/leadScoringService';
 
 // Settings & Integrations
 export * from './settings/integrationsService';
 
 // Other Services
 export * from './taskService';
-export * from './storeService';
-export * from './inventoryService';
+export * from './store/storeService';
+export * from './store/inventoryService';
 // Add more exports as needed

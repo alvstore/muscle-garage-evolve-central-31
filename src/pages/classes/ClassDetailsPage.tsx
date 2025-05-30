@@ -1,18 +1,18 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useToast } from '@/components/ui/use-toast';
+import { Button } from '@/components/ui/button';
+import { ArrowLeft, Loader2, ChevronRight, Users, User, Calendar, Clock, MapPin, Edit, Trash2, CheckCircle2 } from 'lucide-react';
 import { Container } from '@/components/ui/container';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink } from '@/components/ui/breadcrumb';
-import { ChevronRight, ArrowLeft, Users, User, Calendar, Clock, MapPin, Edit, Trash2, CheckCircle2 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
-import { useToast } from '@/components/ui/use-toast';
 import { format } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { useBranch } from '@/hooks/settings/use-branches';
+import { isUUID } from '@/lib/utils';
 
 interface ClassDetails {
   id: string;
@@ -47,11 +47,37 @@ const ClassDetailsPage: React.FC = () => {
   const [attendees, setAttendees] = useState<any[]>([]);
 
   useEffect(() => {
+    let isMounted = true;
+    
     const fetchClassDetails = async () => {
-      if (!id) return;
-      
       try {
-        setIsLoading(true);
+        if (!id) {
+          console.error('No class ID provided in URL');
+          toast({
+            title: 'Class Not Found',
+            description: 'No class ID was provided. Redirecting to class list...',
+            variant: 'destructive',
+          });
+          navigate('/classes');
+          return;
+        }
+
+        // Validate that the ID is a valid UUID
+        if (!isUUID(id)) {
+          console.error('Invalid class ID format:', id);
+          toast({
+            title: 'Invalid Class',
+            description: 'The class ID format is not valid. Redirecting to class list...',
+            variant: 'destructive',
+          });
+          // Add a small delay before navigation to show the toast
+          setTimeout(() => {
+            navigate('/classes');
+          }, 1500);
+          return;
+        }
+        
+        if (isMounted) setIsLoading(true);
         
         // Fetch class details
         const { data: classData, error: classError } = await supabase
@@ -61,47 +87,56 @@ const ClassDetailsPage: React.FC = () => {
           .single();
           
         if (classError) throw classError;
-        if (!classData) throw new Error('Class not found');
         
-        setClassDetails(classData);
-        
-        // Fetch trainer details
+        // Fetch trainer details if trainer_id exists
+        let trainerData = null;
         if (classData.trainer_id) {
-          const { data: trainerData, error: trainerError } = await supabase
+          const { data: trainer, error: trainerError } = await supabase
             .from('profiles')
-            .select('id, full_name, avatar_url')
+            .select('*')
             .eq('id', classData.trainer_id)
             .single();
             
-          if (!trainerError && trainerData) {
-            setTrainer(trainerData);
+          if (!trainerError) {
+            trainerData = trainer;
           }
         }
         
-        // Fetch attendees
-        const { data: attendeesData, error: attendeesError } = await supabase
+        // Fetch bookings for this class
+        const { data: bookings, error: bookingsError } = await supabase
           .from('class_bookings')
-          .select('*, profiles:members(id, name, email)')
+          .select('*')
           .eq('class_id', id);
           
-        if (!attendeesError && attendeesData) {
-          setAttendees(attendeesData);
-        }
+        if (bookingsError) throw bookingsError;
         
-      } catch (error: any) {
+        if (isMounted) {
+          setClassDetails({
+            ...classData,
+            trainer: trainerData,
+            bookings: bookings || [],
+          });
+        }
+      } catch (error) {
         console.error('Error fetching class details:', error);
-        toast({
-          title: 'Error',
-          description: error.message || 'Failed to load class details',
-          variant: 'destructive',
-        });
+        if (isMounted) {
+          toast({
+            title: 'Error',
+            description: 'Failed to load class details',
+            variant: 'destructive',
+          });
+        }
       } finally {
-        setIsLoading(false);
+        if (isMounted) setIsLoading(false);
       }
     };
     
     fetchClassDetails();
-  }, [id, toast]);
+    
+    return () => {
+      isMounted = false;
+    };
+  }, [id, navigate]);
   
   const handleEdit = () => {
     if (id) navigate(`/classes/edit/${id}`);
@@ -110,19 +145,24 @@ const ClassDetailsPage: React.FC = () => {
   if (isLoading) {
     return (
       <Container>
-        <div className="flex items-center justify-center h-64">
-          <p>Loading class details...</p>
+        <div className="flex items-center justify-center min-h-[400px]">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <span className="ml-2">Loading class details...</span>
         </div>
       </Container>
     );
   }
-  
+
   if (!classDetails) {
     return (
       <Container>
-        <div className="flex flex-col items-center justify-center h-64">
-          <p className="text-lg">Class not found</p>
-          <Button variant="outline" className="mt-4" onClick={() => navigate('/classes')}>
+        <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4">
+          <div className="flex items-center justify-center h-12 w-12 rounded-full bg-yellow-100">
+            <span className="text-yellow-600 text-2xl">!</span>
+          </div>
+          <h2 className="text-xl font-semibold">Class Not Found</h2>
+          <p className="text-muted-foreground">The requested class could not be found.</p>
+          <Button onClick={() => navigate('/classes')}>
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Classes
           </Button>

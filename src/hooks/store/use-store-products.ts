@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { useBranch } from '@/hooks/settings/use-branches';
-import { storeService, StoreProduct } from '@/services/storeService';
+import { storeService, StoreProduct } from '@/services/store/storeService';
 import { toast } from 'sonner';
 
 export const useStoreProducts = () => {

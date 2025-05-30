@@ -5,9 +5,9 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { leadService } from '@/services/leadService';
-import { leadScoringService } from '@/services/leadScoringService';
-import { leadConversionService } from '@/services/leadConversionService';
+import { leadService } from '@/services/crm/leadService';
+import { leadScoringService } from '@/services/crm/leadScoringService';
+import { leadConversionService } from '@/services/crm/leadConversionService';
 import { useBranch } from '@/hooks/settings/use-branches';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format, parseISO } from 'date-fns';

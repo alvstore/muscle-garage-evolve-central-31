@@ -8,7 +8,7 @@ import { format, parseISO } from "date-fns";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { CalendarIcon, Mail, MapPin, Phone, User, Loader2 } from "lucide-react";
-import trainersService from '@/services/trainersService';
+import trainersService from '@/services/team/trainersService';
 
 interface Trainer {
   id: string;

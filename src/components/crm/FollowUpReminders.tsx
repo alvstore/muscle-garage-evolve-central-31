@@ -5,7 +5,7 @@ import { Calendar, MessageCircle, Phone, RefreshCw, Trash2, Loader2, Mail } from
 import { Badge } from "@/components/ui/badge";
 import { FollowUpType, FollowUpScheduled } from '@/types/crm';
 import { Skeleton } from '@/components/ui/skeleton';
-import { followUpService } from '@/services/followUpService';
+import { followUpService } from '@/services/crm/followUpService';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useBranch } from '@/hooks/settings/use-branches';
 import { toast } from 'sonner';

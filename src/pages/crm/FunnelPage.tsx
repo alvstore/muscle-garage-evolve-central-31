@@ -4,7 +4,7 @@ import { Container } from '@/components/ui/container';
 import FunnelBoard from '@/components/crm/FunnelBoard';
 import { useBranch } from '@/hooks/settings/use-branches';
 import { useQuery } from '@tanstack/react-query';
-import { leadService } from '@/services/leadService';
+import { leadService } from '@/services/crm/leadService';
 import { Lead } from '@/types/crm';
 import { Skeleton } from '@/components/ui/skeleton';
 

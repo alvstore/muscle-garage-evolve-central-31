@@ -2,7 +2,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Lead } from '@/types/crm';
 import { Member } from '@/types/members/member';
 import { toast } from 'sonner';
-import { taskService } from './taskService';
+import { taskService } from '../taskService';
 import { format } from 'date-fns';
 
 /**

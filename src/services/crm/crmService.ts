@@ -2,7 +2,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Lead } from '@/types/crm';
-import notificationService from './communication/notificationService';
+import notificationService from '../communication/notificationService';
 
 export const crmService = {
   async getLeads(branchId: string | undefined): Promise<Lead[]> {

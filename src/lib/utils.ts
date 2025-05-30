@@ -45,6 +45,21 @@ export const formatCurrency = (amount: number): string => {
  * @param name Full name
  * @returns Initials (up to 2 characters)
  */
+/**
+ * Validates if a string is a valid UUID
+ * @param uuid The string to validate
+ * @returns boolean indicating if the string is a valid UUID
+ */
+export function isUUID(uuid: string): boolean {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(uuid);
+}
+
+/**
+ * Generate initials from a name
+ * @param name Full name
+ * @returns Initials (up to 2 characters)
+ */
 export function getInitials(name?: string): string {
   if (!name) return '';
   
