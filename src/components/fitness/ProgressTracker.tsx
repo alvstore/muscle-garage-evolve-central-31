@@ -10,7 +10,7 @@ import { TrendingUp, TrendingDown, Camera, Save, Plus, Loader2 } from "lucide-re
 import { ProgressMetrics } from "@/types/class";
 import { Member } from '@/types'; 
 import { toast } from "sonner";
-import MemberProgressChart from '@/features/dashboard/components/MemberProgressChart';
+import MemberProgressChart from '@/components/dashboard/MemberProgressChart';
 import { supabase } from '@/services/api/supabaseClient';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useMemberMeasurements } from '@/hooks/members/use-member-measurements';

@@ -1,5 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
-import { Staff, CreateStaffInput, UpdateStaffInput } from '@/types/core/team/staff';
+import { Staff, CreateStaffInput, UpdateStaffInput } from '@/types/team/staff';
 
 export const staffService = {
   // Get all staff members with their user information

@@ -6,7 +6,7 @@ import { useAuth } from "@/hooks/auth/use-auth";
 import DashboardSidebar from "./DashboardSidebar";
 import MemberSidebar from "../members/MemberSidebar";
 import TrainerSidebar from "./TrainerSidebar";
-import { DashboardHeader } from "@/features/dashboard/components";
+import DashboardHeader from "@/components/dashboard/sections/DashboardHeader";
 import { Toaster } from "sonner";
 
 interface DashboardLayoutProps {

@@ -15,7 +15,7 @@ import {
   AlertCircleIcon, CheckCircleIcon, MinusCircleIcon, 
   PackageIcon, CalendarIcon
 } from "lucide-react";
-import { InventoryAlert } from "@/types/features/store/inventory";
+import { InventoryAlert } from "@/types/inventory";
 import { format } from "date-fns";
 import { toast } from "sonner";
 

@@ -11,7 +11,7 @@ import {
   CreateTrainerInput, 
   UpdateTrainerInput,
   User
-} from '@/types/core/team/trainer';
+} from '@/types/team/trainer';
 
 interface UseTrainersReturn {
   trainers: Trainer[];

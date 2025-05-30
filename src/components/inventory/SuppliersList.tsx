@@ -25,7 +25,7 @@ import {
   SearchIcon, PlusIcon, MoreVerticalIcon, Building2Icon, 
   PhoneIcon, MailIcon, ExternalLinkIcon, PackageIcon
 } from "lucide-react";
-import { Supplier } from "@/types/features/store/inventory";
+import { Supplier } from "@/types/inventory";
 import { toast } from "sonner";
 
 // Mock data for suppliers

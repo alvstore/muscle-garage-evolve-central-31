@@ -10,7 +10,7 @@ import { useTrainers } from '@/hooks/team/use-trainers';
 import { toast } from 'sonner';
 import { CreateTeamMemberDialog } from '@/components/team/CreateTeamMemberDialog';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Trainer } from '@/types/core/team/trainer';
+import { Trainer } from '@/types/team/trainer';
 
 const TrainerList = () => {
   const [isCreateMemberDialogOpen, setIsCreateMemberDialogOpen] = useState(false);

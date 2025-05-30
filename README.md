@@ -36,75 +36,36 @@ This backend powers the Muscle Garage Evolve CRM platform, providing APIs and se
     /razorpay-webhook        # Payment gateway webhooks
     /send-notifications      # Email/SMS/WhatsApp notifications
     /generate-reports        # PDF report generation
-  /migrations               # Database migrations
-  config.toml               # Edge functions configuration
-
+  /migrations                # Database migrations
+  config.toml                # Edge functions configuration
 /src
-  /components               # Reusable UI components
-    /access-control/        # Access control components
-    /admin/                 # Admin-specific components
-    /analytics/             # Data visualization components
-    /attendance/            # Attendance-related components
-    /auth/                  # Authentication components
-    /branch/                # Branch management components
-    /classes/               # Class management components
-    /communication/         # Messaging and notifications
-    /crm/                   # CRM components
-    /finance/               # Financial components
-    /fitness/               # Workout and diet plan components
-    /inventory/             # Inventory management
-    /layout/                # Layout components
-    /members/               # Member management
-    /settings/              # System settings components
-    /shared/                # Shared UI components
-    /staff/                 # Staff management
-    /templates/             # Email/template components
-    /theme/                 # Theming components
-    /ui/                    # Base UI components
-
-  /services                 # API service functions
-    /api/                   # API client configuration
-    /auth/                  # Authentication services
-    /classes/               # Class management
-    /crm/                   # CRM services
-    /finance/               # Financial services
-    /fitness/               # Workout and diet services
-    /integrations/          # Third-party integrations
-    /members/               # Member services
-    /notifications/         # Notification services
-    /settings/              # System settings
-    /storage/               # File storage operations
-    /supabase/              # Supabase-specific services
-    /trainers/              # Trainer services
-
-  /types                    # TypeScript type definitions
-    /core/                  # Core domain models
-      /auth/                # Authentication types
-      /branch/              # Branch types
-      /class/               # Class types
-      /member/              # Member types
-      /membership/          # Membership types
-      /payment/             # Payment types
-    
-    /features/            # Feature-specific types
-      /attendance/          # Attendance tracking
-      /crm/                 # CRM and lead management
-      /dashboard/           # Dashboard types
-      /finance/             # Financial types
-      /fitness/            # Fitness-related types
-      /settings/           # System settings
-    
-    /services/           # Service layer types
-      /api/                # API request/response types
-      /supabase/           # Supabase-specific types
-    
-    /ui/                 # UI component types
-      /forms/              # Form-related types
-      /tables/             # Data table types
-    
-    /utils/              # Utility types
-      /api/                # API utility types
-      /common/             # Common utility types
+  /services                  # API service functions
+    /api.ts                  # Base API configuration
+    /supabaseClient.ts       # Supabase client configuration
+    /authService.ts          # Authentication functions
+    /memberService.ts        # Member management
+    /classService.ts         # Class scheduling and bookings
+    /trainerService.ts       # Trainer assignments
+    /dietPlanService.ts      # Diet plan management
+    /workoutService.ts       # Workout plan management
+    /settingsService.ts      # System settings
+    /crmService.ts           # Lead and follow-up management
+    /invoiceService.ts       # Invoice and payment handling
+    /permissionService.ts    # Role-based permissions
+    /integrationService.ts   # Third-party integrations
+    /storageService.ts       # File storage operations
+  /types                     # TypeScript type definitions
+    /index.ts                # Common types
+    /member.ts               # Member types
+    /membership-assignment.ts # Membership assignment types
+    /user.ts                 # User and profile types
+    /branch.ts               # Branch types
+    /class.ts                # Class scheduling types
+    /crm.ts                  # CRM and lead types
+    /diet.ts                 # Diet plan types
+    /workout.ts              # Workout plan types
+    /finance.ts              # Financial types
+    /navigation.ts           # Dashboard navigation types
 ```
 
 ## 🚀 Getting Started

@@ -31,7 +31,7 @@ import { cn } from "@/lib/utils";
 import { CalendarIcon } from "lucide-react";
 import { toast } from "sonner";
 import { Announcement } from '@/types/communication/notification';
-import { UserRole } from '@/types/core/auth/user';
+import { UserRole } from '@/types/auth/user';
 import { useBranch } from "@/hooks/settings/use-branches";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/auth/use-auth";

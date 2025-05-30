@@ -49,7 +49,7 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from "@/components/ui/drawer";
-import { InventoryItem, InventoryCategory } from "@/types/features/store/inventory";
+import { InventoryItem, InventoryCategory } from "@/types/inventory";
 
 const formSchema = z.object({
   name: z.string().min(2, {

@@ -7,7 +7,7 @@ import ProductForm from '@/components/store/ProductForm';
 import OrderList from '@/components/store/OrderList';
 import POSSystem from '@/components/store/POSSystem';
 import ProductCheckout from '@/components/store/ProductCheckout';
-import { CartItem, Product } from '@/types/features/store/store';
+import { CartItem, Product } from '@/types/store';
 import { useAuth } from '@/hooks/auth/use-auth';
 import { ShoppingCart } from 'lucide-react';
 import { toast } from 'sonner';

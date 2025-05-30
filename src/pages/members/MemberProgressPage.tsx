@@ -13,7 +13,7 @@ import { CalendarIcon, Plus, Save, BarChart3, LineChart, Ruler, Weight, Activity
 import { useAuth } from "@/hooks/auth/use-auth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ProgressMetrics } from "@/types/class";
-import MemberProgressChart from "@/features/dashboard/components/MemberProgressChart";
+import MemberProgressChart from "@/components/dashboard/MemberProgressChart";
 import { mockMembers } from "@/data/mockData";
 import { toast } from "sonner";
 

@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { SearchIcon, PlusIcon, ArrowUpIcon, ArrowDownIcon } from "lucide-react";
-import { InventoryTransaction, StockTransactionType } from "@/types/features/store/inventory";
+import { InventoryTransaction, StockTransactionType } from "@/types/inventory";
 import { format } from "date-fns";
 import { toast } from "sonner";
 
