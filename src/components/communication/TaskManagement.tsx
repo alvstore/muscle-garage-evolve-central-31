@@ -58,8 +58,7 @@ import {
 import { useAuth } from '@/hooks/auth/use-auth';
 import { usePermissions } from '@/hooks/auth/use-permissions';
 import { taskService, Task as TaskType } from '@/services/taskService';
-import { staffService } from '@/services/team/staffService';
-import type { Staff } from '@/types/team/staff';
+import { staffService, StaffMember } from '@/services/communication/taskService';
 
 // Types and Interfaces
 interface User {
@@ -95,7 +94,7 @@ const TaskManagement = () => {
   
   // State management
   const [tasks, setTasks] = useState<Task[]>([]);
-  const [staffMembers, setStaffMembers] = useState<Staff[]>([]);
+  const [staffMembers, setStaffMembers] = useState<StaffMember[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingStaff, setIsLoadingStaff] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -188,9 +187,9 @@ const TaskManagement = () => {
           }
           
           // Load staff members
-          const data = await staffService.getStaff();
+          const staff = await staffService.getStaffMembers();
           if (isMounted) {
-            setStaffMembers(data);
+            setStaffMembers(staff);
           }
         }
       } catch (err) {

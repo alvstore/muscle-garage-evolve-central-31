@@ -1,6 +1,6 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { classService } from '@/services/classes/classService';
+import { classService } from '@/services/members/classService';
 import { GymClass, ClassBooking } from '@/types/class';
 import { toast } from 'sonner';
 

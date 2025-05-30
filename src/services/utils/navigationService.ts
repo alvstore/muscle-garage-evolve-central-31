@@ -1,11 +1,10 @@
-import { NavSection } from '@/types/navigation';
+import { NavSection, NavItem } from '@/types/navigation';
 import { adminNavSections } from '@/data/adminNavigation';
 import { routesToNavItems, groupNavItemsBySection } from '@/utils/route-navigation';
-import AdminRoutes from '@/router/AdminRoutes';
+import { adminRoutes } from '@/router/routes/adminRoutes';
 import { crmRoutes } from '@/router/routes/crmRoutes';
 import { settingsRoutes } from '@/router/routes/settingsRoutes';
 import { classRoutes } from '@/router/routes/classRoutes';
-import type { Permission } from '@/hooks/auth/use-permissions';
 
 // Section mapping for route-based navigation
 const sectionMap = {
@@ -20,88 +19,36 @@ const sectionMap = {
  * This preserves the structure of adminNavSections while adding any missing routes
  */
 export function getEnhancedNavigation(userRole?: string): NavSection[] {
-  try {
-    // Get static navigation
-    const staticNavigation = [...adminNavSections];
+  // Get static navigation
+  const staticNavigation = [...adminNavSections];
+  
+  // Generate dynamic navigation from routes
+  const allRoutes = [...adminRoutes, ...crmRoutes, ...settingsRoutes, ...classRoutes];
+  const navItems = routesToNavItems(allRoutes);
+  
+  // Filter items based on role instead of permissions array
+  const filteredItems = navItems.filter(item => {
+    // If no role, show nothing
+    if (!userRole) return false;
     
-    // Generate dynamic navigation from routes
-    const allRoutes = [
-      ...(AdminRoutes?.children || []), 
-      ...(crmRoutes || []), 
-      ...(settingsRoutes || []), 
-      ...(classRoutes || [])
-    ];
+    // Admin sees everything
+    if (userRole === 'admin') return true;
     
-    const navItems = routesToNavItems(allRoutes);
+    // For other roles, you'll need to implement role-based permission checking
+    // This is a simplified example - you should adapt it to your permission system
+    const rolePermissions = {
+      'staff': ['access_dashboards', 'manage_members', 'view_classes'],
+      'trainer': ['access_dashboards', 'view_classes', 'trainer_view_classes'],
+      'member': ['member_view_plans']
+    };
     
-    // If no user role, return only public items or empty array
-    if (!userRole) {
-      console.warn('No user role provided to getEnhancedNavigation');
-      return [];
-    }
-    
-    // Filter items based on role and permissions
-    const filteredItems = navItems.filter(item => {
-      try {
-        // Admin sees everything
-        if (userRole === 'admin') return true;
-        
-        // Map permissions to roles based on the Permission type from use-permissions
-        const rolePermissions: Record<string, Permission[]> = {
-          'staff': [
-            'view:dashboard',
-            'view:members',
-            'create:members',
-            'edit:members',
-            'view:classes',
-            'create:classes',
-            'edit:classes',
-            'view:memberships',
-            'create:memberships',
-            'edit:memberships',
-            'view:reports'
-          ] as Permission[],
-          'trainer': [
-            'view:dashboard',
-            'view:members',
-            'view:classes',
-            'view:memberships'
-          ] as Permission[],
-          'member': [
-            'view:dashboard',
-            'view:classes',
-            'view:memberships'
-          ] as Permission[]
-        };
-        
-        // Check if the user's role has the required permission for this item
-        const userPermissions = rolePermissions[userRole] || [];
-        const hasPermission = item.permission ? userPermissions.includes(item.permission as Permission) : false;
-        
-        return hasPermission;
-      } catch (error) {
-        console.error('Error filtering navigation items:', error);
-        return false;
-      }
-    });
-    
-    const dynamicSections = groupNavItemsBySection(filteredItems, sectionMap);
-    
-    // Merge static and dynamic navigation
-    return mergeNavigations(staticNavigation, dynamicSections);
-  } catch (error) {
-    console.error('Error in getEnhancedNavigation:', error);
-    // Return a minimal navigation to prevent UI breakage
-    return [{
-      name: 'Dashboard',
-      items: [{
-        href: '/dashboard',
-        label: 'Dashboard',
-        permission: 'view:dashboard' as const,
-        icon: '🏠'
-      }]
-    }];
-  }
+    return rolePermissions[userRole as keyof typeof rolePermissions]?.includes(item.permission) || false;
+  });
+  
+  const dynamicSections = groupNavItemsBySection(filteredItems, sectionMap);
+  
+  // Merge static and dynamic navigation
+  return mergeNavigations(staticNavigation, dynamicSections);
 }
 
 /**

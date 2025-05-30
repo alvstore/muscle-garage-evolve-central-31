@@ -1,4 +1,4 @@
-import api from '../api';
+import api from './api';
 import { DietPlan, DietAssignment } from '@/types/diet';
 import { toast } from 'sonner';
 import { Member } from '@/types';

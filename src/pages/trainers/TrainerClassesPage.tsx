@@ -8,7 +8,7 @@ import TrainerClassForm from '@/components/trainers/TrainerClassForm';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import { useAuth } from '@/hooks/auth/use-auth';
-import { classScheduleService } from '@/services/classes/classScheduleService';
+import { classScheduleService } from '@/services/classScheduleService';
 
 const TrainerClassesPage = () => {
   const [isCreatingClass, setIsCreatingClass] = useState(false);

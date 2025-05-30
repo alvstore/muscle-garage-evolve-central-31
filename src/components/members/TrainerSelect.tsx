@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import trainersService from '@/services/team/trainersService';
+import trainersService from '@/services/trainersService';
 
 interface TrainerSelectProps {
   value: string;

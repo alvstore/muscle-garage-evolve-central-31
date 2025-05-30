@@ -4,7 +4,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/componen
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { StoreProduct } from '@/services/store/storeService';
+import { StoreProduct } from '@/services/storeService';
 import { formatCurrency } from '@/utils/formatters';
 import { Edit, Plus, ShoppingCart, Loader2 } from 'lucide-react';
 import { useStoreProducts } from '@/hooks/store/use-store-products';

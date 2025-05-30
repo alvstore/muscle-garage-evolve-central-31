@@ -17,8 +17,8 @@ import { toast } from "sonner";
 import { WorkoutPlan } from '@/types/workout';
 import { DietPlan } from '@/types/diet';
 import { Member } from '@/types/members/member';
-import workoutPlansService from '../../services/fitness/workoutPlansService';
-import dietPlansService from '../../services/fitness/dietPlansService';
+import workoutPlansService from '../../services/workoutPlansService';
+import dietPlansService from '../../services/dietPlansService';
 import { memberService } from '@/services/members/memberService';
 import { supabase } from '@/integrations/supabase/client';
 

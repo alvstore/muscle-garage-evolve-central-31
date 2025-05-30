@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { leadService } from '@/services/crm/leadService';
+import { leadService } from '@/services/leadService';
 import { useBranch } from '@/hooks/settings/use-branches';
 import { Lead } from '@/types/crm';
 import { Skeleton } from '@/components/ui/skeleton';

@@ -115,7 +115,7 @@ const ContactSection = () => {
         // first_name and last_name are not in the schema
       };
       
-      const result = await import('@/services/crm/crmService').then(m => m.crmService.createLead(leadInput));
+      const result = await import('@/services/crmService').then(m => m.crmService.createLead(leadInput));
       if (result) {
         toast({
           title: "Message Sent!",

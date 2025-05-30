@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Container } from '@/components/ui/container';
 import { DietPlanList } from '@/components/fitness';
-import { dietPlanService } from '@/services/fitness/dietPlanService';
+import { dietPlanService } from '@/services/dietPlanService';
 import { toast } from 'sonner';
 import { DietPlan } from '@/types/diet';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";

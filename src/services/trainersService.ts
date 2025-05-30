@@ -1,3 +1,4 @@
+import { supabase } from '@/integrations/supabase/client';
 import { Trainer, TrainerDocument, TrainerSchedule, CreateTrainerInput, UpdateTrainerInput } from '@/types/team/trainer';
 
 export const trainersService = {

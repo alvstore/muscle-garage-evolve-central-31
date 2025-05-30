@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { classTypesService } from '@/services/classes/class-types-service';
+import { classTypesService } from '@/services/members/class-types-service';
 import { ClassType } from '@/types/classes';
 import { toast } from 'sonner';
 
