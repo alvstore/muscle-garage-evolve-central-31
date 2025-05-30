@@ -1,4 +1,8 @@
+
 // Main types export file
+// Re-export UserRole for backward compatibility
+export type { UserRole } from './core/auth';
+
 // Core domain types
 export * from './core';
 

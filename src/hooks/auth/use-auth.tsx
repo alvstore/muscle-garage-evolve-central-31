@@ -18,7 +18,7 @@ export interface User {
   name?: string;
   full_name?: string;
   avatar?: string;
-  role: UserRole;  // Make role required
+  role: UserRole;
   branch_id?: string;
 }
 
@@ -26,7 +26,7 @@ interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  role: UserRole;  // Make role required
+  role: UserRole;
   login: (email: string, password: string) => Promise<{ success: boolean; error: any }>;
   logout: () => Promise<void>;
   register: (email: string, password: string, userData: any) => Promise<{ success: boolean; error: any }>;
@@ -39,7 +39,7 @@ const defaultAuthContext: AuthContextType = {
   user: null,
   isLoading: true,
   isAuthenticated: false,
-  role: 'guest',  // Default role
+  role: 'guest',
   login: async () => ({ success: false, error: new Error('Auth not initialized') }),
   logout: async () => {},
   register: async () => ({ success: false, error: new Error('Auth not initialized') }),
@@ -54,7 +54,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Function to update user state from session
   const updateUserFromSession = async (session: any) => {
     try {
       if (!session?.user) {
@@ -62,7 +61,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return;
       }
 
-      // Fetch profile data
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('*')
@@ -74,12 +72,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         throw profileError;
       }
       
-      // Ensure the role is valid, default to 'member' if not
       const userRole = profile?.role && isUserRole(profile.role) 
         ? profile.role 
         : 'member' as UserRole;
 
-      // Set user data from session and profile
       setUser({
         id: session.user.id,
         email: session.user.email || '',
@@ -96,7 +92,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   useEffect(() => {
-    // Set up the auth state change listener first
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log('Auth state changed:', event);
@@ -115,7 +110,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
     );
 
-    // Initial check
     const initAuth = async () => {
       try {
         setIsLoading(true);
@@ -163,7 +157,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return { success: false, error: new Error('No session returned') };
       }
       
-      // Explicitly update the user state after successful login
       await updateUserFromSession(data.session);
       
       return { success: true, error: null };
@@ -220,7 +213,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const resetPassword = async (email: string) => {
-    // Alias for forgotPassword for backward compatibility
     return forgotPassword(email);
   };
 
@@ -241,14 +233,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     user,
     isLoading,
     isAuthenticated: !!user,
-    role: user?.role,
+    role: user?.role || 'guest',
     login,
     logout,
     register,
     forgotPassword,
     resetPassword,
     changePassword
-  }), [user, isLoading, login, logout, register, forgotPassword, resetPassword, changePassword]);
+  }), [user, isLoading]);
 
   return (
     <AuthContext.Provider value={value}>
