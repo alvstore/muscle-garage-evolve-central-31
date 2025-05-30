@@ -1,86 +1,59 @@
 
+// Member types
 export interface Member {
   id: string;
   name: string;
-  email?: string;
+  email: string;
   phone?: string;
+  gender?: string;
   address?: string;
   city?: string;
   state?: string;
   country?: string;
   zip_code?: string;
-  zipCode?: string; // For backward compatibility
-  status?: string;
-  membership_id?: string;
-  membership_status?: string;
-  membership_start_date?: string;
-  membership_end_date?: string;
-  profile_picture?: string;
-  branch_id?: string;
-  gender?: string;
   date_of_birth?: string;
-  dateOfBirth?: string; // For backward compatibility
-  created_at?: string;
-  updated_at?: string;
-  trainer_id?: string;
-  user_id?: string;
+  avatar?: string;
   goal?: string;
-  avatar?: string; // Backward compatibility field
-  avatar_url?: string; // For profiles table compatibility
   occupation?: string;
   blood_group?: string;
   id_type?: string;
   id_number?: string;
-  emergency_contact_name?: string;
-  emergency_contact_phone?: string;
-  emergency_contact_relation?: string;
-  // For backward compatibility
-  trainerId?: string;
-  membershipStartDate?: string;
-  membershipEndDate?: string;
-}
-
-export interface Membership {
-  id: string;
-  name: string;
-  description?: string;
-  price: number;
-  duration_days: number;
-  durationDays?: number; // For backward compatibility
-  status?: string;
-  is_active?: boolean;
-  isActive?: boolean; // For backward compatibility
-  features?: any[];
-  benefits?: any[];
-  branch_id?: string;
-  created_at?: string;
+  trainer_id?: string;
+  membership_id?: string;
+  membership_status: string;
+  membership_start_date?: string;
+  membership_end_date?: string;
+  status: 'active' | 'inactive' | 'suspended' | 'cancelled';
+  role: string;
+  branch_id: string;
+  created_at: string;
   updated_at?: string;
 }
 
-export enum MembershipPlanStatus {
-  ACTIVE = 'active',
-  INACTIVE = 'inactive',
-  DRAFT = 'draft',
-  ARCHIVED = 'archived'
+export interface MemberFormData {
+  name: string;
+  email: string;
+  phone?: string;
+  gender?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  country?: string;
+  zip_code?: string;
+  date_of_birth?: string;
+  goal?: string;
+  occupation?: string;
+  blood_group?: string;
+  id_type?: string;
+  id_number?: string;
+  trainer_id?: string;
+  branch_id: string;
 }
 
-export interface MembershipPlan {
-  id: string;
-  name: string;
-  description?: string;
-  price: number;
-  duration_days: number;
-  durationDays?: number; // For backward compatibility
-  features?: any[];
-  benefits?: any[];
-  is_active?: boolean;
-  isActive?: boolean; // For backward compatibility
-  status?: MembershipPlanStatus;
-  branch_id?: string;
-  created_at?: string;
-  updated_at?: string;
-  // Additional fields for backward compatibility
-  createdAt?: string;
-  updatedAt?: string;
-  durationLabel?: string;
+export interface MemberStats {
+  total_members: number;
+  active_members: number;
+  new_this_month: number;
+  expiring_soon: number;
+  cancelled_this_month: number;
 }

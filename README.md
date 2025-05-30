@@ -1,386 +1,306 @@
 
-# Muscle Garaage - Gym CRM Backend
+# Muscle Garage - Gym CRM System
 
-A comprehensive backend system for managing gym operations with multi-branch architecture, role-based access control, and integrated fitness management.
+A comprehensive gym management system built with React, TypeScript, Supabase, and Tailwind CSS. This system provides complete management capabilities for gym operations including member management, class scheduling, financial tracking, CRM, and access control integration.
 
-## 📋 Overview
+## 🏗️ Architecture
 
-This backend powers the Muscle Garage Evolve CRM platform, providing APIs and services for:
+### Frontend Stack
+- **React 18** with TypeScript for type safety
+- **Vite** for fast development and building
+- **Tailwind CSS** for styling with **shadcn/ui** components
+- **React Router v7** for navigation
+- **TanStack Query** for data fetching and state management
+- **React Hook Form** with Zod validation
+- **Recharts** for analytics and reporting
+- **Lucide React** for icons
 
-- **Member Management**: Registration, profiles, membership plans, and attendance tracking
-- **Branch Operations**: Multi-branch architecture with isolated data per location
-- **Staff & Trainer Management**: Role-based access with appropriate permissions
-- **Fitness Planning**: Workout plans, diet plans, and progress tracking
-- **Financial Operations**: Invoicing, payments with Razorpay integration, transaction tracking
-- **CRM Features**: Lead management, follow-ups, and sales funnel
-- **Access Control**: Integration with physical access control devices (Hikvision/eSSL)
-- **Communication**: Email, SMS, and WhatsApp notifications
-
-## 🛠️ Technologies Used
-
-- **Database**: PostgreSQL via Supabase
-- **API Layer**: Supabase API with Row Level Security (RLS) policies
-- **Authentication**: Supabase Auth with JWT
-- **Edge Functions**: Deno-based serverless functions for custom backend logic
-- **Real-time**: Supabase Realtime for live updates
-- **Storage**: Supabase Storage for file uploads
-- **Webhooks**: For payment gateway and device integrations
-- **DevOps**: GitHub Actions for CI/CD
+### Backend Stack
+- **Supabase** for database, authentication, and real-time features
+- **PostgreSQL** database with Row Level Security (RLS)
+- **Supabase Edge Functions** for custom backend logic
+- **Supabase Storage** for file management
 
 ## 📁 Project Structure
 
 ```
-/supabase
-  /functions                 # Serverless edge functions
-    /attendance-webhook      # Integration with access control devices
-    /razorpay-webhook        # Payment gateway webhooks
-    /send-notifications      # Email/SMS/WhatsApp notifications
-    /generate-reports        # PDF report generation
-  /migrations                # Database migrations
-  config.toml                # Edge functions configuration
 /src
-  /services                  # API service functions
-    /api.ts                  # Base API configuration
-    /supabaseClient.ts       # Supabase client configuration
-    /authService.ts          # Authentication functions
-    /memberService.ts        # Member management
-    /classService.ts         # Class scheduling and bookings
-    /trainerService.ts       # Trainer assignments
-    /dietPlanService.ts      # Diet plan management
-    /workoutService.ts       # Workout plan management
-    /settingsService.ts      # System settings
-    /crmService.ts           # Lead and follow-up management
-    /invoiceService.ts       # Invoice and payment handling
-    /permissionService.ts    # Role-based permissions
-    /integrationService.ts   # Third-party integrations
-    /storageService.ts       # File storage operations
-  /types                     # TypeScript type definitions
-    /index.ts                # Common types
-    /member.ts               # Member types
-    /membership-assignment.ts # Membership assignment types
-    /user.ts                 # User and profile types
-    /branch.ts               # Branch types
-    /class.ts                # Class scheduling types
-    /crm.ts                  # CRM and lead types
-    /diet.ts                 # Diet plan types
-    /workout.ts              # Workout plan types
-    /finance.ts              # Financial types
-    /navigation.ts           # Dashboard navigation types
+  /components            # Reusable UI components
+    /access-control     # Hikvision/eSSL device integration
+    /admin             # Admin-specific components
+    /analytics         # Charts and reporting components
+    /attendance        # Member check-in/check-out
+    /auth              # Authentication forms and guards
+    /branch            # Multi-branch management
+    /classes           # Class scheduling and booking
+    /communication     # Notifications, announcements
+    /crm               # Lead management and follow-ups
+    /dashboard         # Dashboard widgets and sections
+    /finance           # Invoicing, payments, transactions
+    /fitness           # Workout/diet plans, progress tracking
+    /inventory         # Store and inventory management
+    /marketing         # Campaigns and promotions
+    /members           # Member profiles and management
+    /settings          # System configuration
+    /trainers          # Trainer management and assignment
+    /ui                # Base UI components (shadcn/ui)
+  
+  /hooks               # Custom React hooks
+    /auth             # Authentication hooks
+    /classes          # Class management hooks
+    /communication    # Notification hooks
+    /data             # Data fetching hooks
+    /finance          # Financial operation hooks
+    /permissions      # Role-based access hooks
+    /settings         # Settings management hooks
+  
+  /layouts             # Page layout components
+  /pages               # Route components
+  /router              # Route configuration
+  /services            # API service functions
+  /types               # TypeScript type definitions
+    /core             # Core entity types (user, member, etc.)
+    /features         # Feature-specific types
+    /services         # Service-related types
+    /ui               # UI component types
+    /utils            # Utility types
+  /utils               # Helper functions
 ```
 
-## 🚀 Getting Started
+## 🚀 Quick Start
 
 ### Prerequisites
+- Node.js 18+ and npm/yarn
+- Supabase account and project
+- (Optional) Hikvision/eSSL devices for access control
 
-- [Node.js](https://nodejs.org/) (v16+)
-- [npm](https://www.npmjs.com/) or [Yarn](https://yarnpkg.com/)
-- [Supabase CLI](https://supabase.com/docs/guides/cli) (for local development)
+### Installation
 
-### Environment Setup
-
-1. Clone the repository:
+1. **Clone the repository**
 ```bash
-git clone https://github.com/your-org/muscle-garage-evolve.git
-cd muscle-garage-evolve
+git clone <repository-url>
+cd muscle-garage-crm
 ```
 
-2. Install dependencies:
+2. **Install dependencies**
 ```bash
 npm install
 ```
 
-3. Create a `.env` file in the root directory with the following variables:
-```
+3. **Environment Setup**
+Create a `.env` file in the root directory:
+```env
 # Supabase Configuration
-VITE_SUPABASE_URL=https://rnqgpucxlvubwqpkgstc.supabase.co
-VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+VITE_SUPABASE_URL=your_supabase_project_url
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 
-# Payment Gateway (Razorpay)
-RAZORPAY_KEY_ID=rzp_test_...
-RAZORPAY_KEY_SECRET=...
+# Payment Integration (Optional)
+VITE_RAZORPAY_KEY_ID=your_razorpay_key
 
-# Communication Services
-SMS_API_KEY=...
-WHATSAPP_API_KEY=...
-SENDGRID_API_KEY=...
-
-# Access Control Integration
-HIKVISION_APP_KEY=...
-HIKVISION_SECRET_KEY=...
+# Access Control (Optional)
+VITE_HIKVISION_API_URL=your_hikvision_api_url
 ```
 
-### Running Locally
+4. **Database Setup**
+The Supabase database schema is automatically synced. Key tables include:
+- `profiles` - User profiles and roles
+- `branches` - Multi-branch support
+- `members` - Gym member data
+- `trainers` - Trainer profiles and specializations
+- `classes` - Class scheduling
+- `invoices` - Billing and payments
+- `leads` - CRM lead management
 
-1. Start the development server:
+5. **Start Development Server**
 ```bash
 npm run dev
 ```
 
-2. For local Supabase development:
-```bash
-supabase start
-```
+Visit `http://localhost:8080` to access the application.
 
-### Database Setup & Migrations
+## 🔐 Authentication & Roles
 
-#### Initial Setup with Supabase
+The system implements role-based access control with these roles:
 
-1. Create a new project in [Supabase](https://supabase.com/)
-2. Run the schema migrations:
-```bash
-supabase db push
-```
-
-3. Seed initial data (if needed):
-```bash
-supabase db reset --seed-data
-```
-
-#### Manual SQL Migrations
-
-You can also run migrations manually in the Supabase dashboard SQL editor:
-
-1. Navigate to your project's SQL Editor
-2. Copy schema from `/supabase/migrations` directory
-3. Execute the SQL statements
-
-## 🔑 Authentication & Authorization
-
-### Role-Based Access Control
-
-The system implements a comprehensive RBAC system with these main roles:
-
-- **Super Admin**: Full access across all branches
-- **Branch Admin**: Full access to a specific branch
-- **Staff**: Limited admin capabilities for a branch
+- **Admin**: Full system access across all branches
+- **Staff**: Branch-specific administrative access
 - **Trainer**: Access to assigned members and fitness planning
-- **Member**: Personal account access only
+- **Member**: Personal account and class booking access
 
-### Row Level Security (RLS)
-
-Data is protected by Row Level Security policies in Supabase that filter data based on:
-
-1. User role
-2. Branch assignment
-3. Ownership (for members and trainers)
-
-## 📂 File Storage
-
-Muscle Garage uses Supabase Storage for file management:
-
-### Storage Buckets
-
-Two main storage buckets are used:
-
-1. **avatars**: For profile pictures and member photos
-2. **documents**: For medical records, contracts, and other documents
-
-### Usage Instructions
-
-#### Uploading Files
-
-```typescript
-import { uploadFile } from '@/services/storageService';
-
-// Upload a profile image
-const uploadProfileImage = async (memberId: string, file: File) => {
-  const fileName = `${memberId}-${Date.now()}.jpg`;
-  const filePath = `${memberId}/${fileName}`;
-  
-  const imageUrl = await uploadFile('avatars', filePath, file);
-  return imageUrl;
-};
+### Default Admin Account
+```
+Email: Rajat.lekhari@hotmail.com
+Password: Rajat@3003
 ```
 
-#### Retrieving Files
+## 🏢 Multi-Branch Architecture
 
-```typescript
-// Get file URL from storage
-const getFileUrl = (bucket: string, filePath: string) => {
-  return supabase.storage.from(bucket).getPublicUrl(filePath).data.publicUrl;
-};
-```
+The system supports multiple gym locations with:
+- Branch-specific data isolation
+- Cross-branch reporting for admins
+- Branch-specific staff and trainer assignments
+- Centralized member management with branch transfers
 
-#### Deleting Files
-
-```typescript
-import { deleteFile } from '@/services/storageService';
-
-// Delete a file
-const deleteProfileImage = async (filePath: string) => {
-  return await deleteFile('avatars', filePath);
-};
-```
-
-### Best Practices
-
-1. **Content Types**: Always set the correct content-type when uploading files
-2. **File Organization**: Use member/entity IDs in file paths for proper organization
-3. **Permissions**: Remember files are protected by RLS - ensure proper access policies
-4. **File Size**: Limit uploads to 50MB or less (current bucket setting)
-
-## 📡 API Documentation
+## 🧩 Key Features
 
 ### Member Management
+- Complete member profiles with photos
+- Membership plan assignment and tracking
+- Progress tracking with body measurements
+- Automated renewal notifications
+- Member communication tools
 
-#### GET /members
-- **Description**: Retrieve members with pagination and filters
-- **Authorization**: Admin, Staff, Trainer (limited to assigned)
-- **Parameters**:
-  - `branch_id`: Filter by branch
-  - `status`: Filter by status (active, inactive, etc)
-  - `page`, `limit`: Pagination controls
+### Class Scheduling
+- Flexible class scheduling with recurring options
+- Online class booking for members
+- Trainer assignment and availability
+- Capacity management and waitlists
+- Attendance tracking
 
-#### POST /members
-- **Description**: Create a new member
-- **Authorization**: Admin, Staff
-- **Body**: Member details including personal info and membership
+### Financial Management
+- Invoice generation and tracking
+- Multiple payment methods (cash, card, online)
+- Razorpay payment gateway integration
+- Expense tracking and categorization
+- Financial reporting and analytics
 
-#### PUT /members/:id
-- **Description**: Update member information
-- **Authorization**: Admin, Staff, Self (limited fields)
+### CRM & Lead Management
+- Lead capture and scoring
+- Automated follow-up sequences
+- Lead conversion tracking
+- Sales funnel visualization
+- Communication templates
 
-#### GET /members/:id/attendance
-- **Description**: Get attendance history for a member
-- **Authorization**: Admin, Staff, Trainer (if assigned), Self
+### Access Control Integration
+- Hikvision device integration for automated check-ins
+- Face recognition and card-based access
+- Real-time attendance logging
+- Door access privilege management
 
-### Fitness Management
+### Communication System
+- Announcements and notifications
+- Email, SMS, and WhatsApp integration
+- Automated reminders
+- Feedback collection
+- Template management
 
-#### GET /workout-plans
-- **Description**: Retrieve workout plans
-- **Authorization**: Admin, Trainer, Self (limited)
-- **Parameters**:
-  - `trainer_id`: Filter by creator
-  - `member_id`: Filter by assigned member
-  - `is_global`: Filter templates vs. assigned plans
+## 🛠️ Development
 
-#### POST /workout-plans
-- **Description**: Create a new workout plan
-- **Authorization**: Admin, Trainer
+### Code Style
+- TypeScript for type safety
+- ESLint and Prettier for code formatting
+- Conventional commits for git history
+- Component-first architecture
 
-#### GET /diet-plans
-- **Description**: Retrieve diet plans
-- **Authorization**: Admin, Trainer, Self (limited)
-- **Parameters**:
-  - `trainer_id`: Filter by creator
-  - `member_id`: Filter by assigned member
+### File Organization
+- Components are organized by feature domain
+- Shared UI components in `/components/ui`
+- Business logic in custom hooks
+- Type definitions organized by category
 
-### Classes & Scheduling
+### Database Patterns
+- All tables have RLS policies for security
+- Audit logs for critical operations
+- Optimistic updates with conflict resolution
+- Real-time subscriptions for live data
 
-#### GET /classes
-- **Description**: Get class schedule
-- **Authorization**: All authenticated users
-- **Parameters**:
-  - `branch_id`: Filter by branch
-  - `trainer_id`: Filter by trainer
-  - `from_date`, `to_date`: Date range
+### API Integration
+```typescript
+// Example service usage
+import { memberService } from '@/services/members';
 
-#### POST /bookings
-- **Description**: Book a class
-- **Authorization**: Admin, Staff, Member
-- **Body**: Class ID, member ID
-
-### Financial Operations
-
-#### GET /invoices
-- **Description**: Retrieve invoices
-- **Authorization**: Admin, Staff, Self (limited)
-- **Parameters**:
-  - `member_id`: Filter by member
-  - `status`: Filter by payment status
-
-#### POST /payments/razorpay/create
-- **Description**: Create a Razorpay payment order
-- **Authorization**: Admin, Staff, Member
-
-## 🔌 Integration Points
-
-### Frontend Integration
-
-The backend exposes RESTful APIs that can be consumed by:
-
-```javascript
-// Example API call with authentication
-import { supabase } from '@/services/supabaseClient';
-
-async function fetchMembers() {
-  const { data, error } = await supabase
-    .from('members')
-    .select('*')
-    .eq('branch_id', currentBranchId);
-  
-  if (error) throw error;
-  return data;
-}
+const members = await memberService.getMembers({
+  branch_id: currentBranch.id,
+  status: 'active'
+});
 ```
 
-### Mobile App Integration
+## 📊 Analytics & Reporting
 
-The same Supabase APIs can be used with mobile clients:
+The system provides comprehensive analytics:
+- Member growth and retention metrics
+- Revenue tracking and forecasting
+- Class attendance patterns
+- Trainer performance metrics
+- Equipment utilization reports
 
-- Use the Supabase JS client for React Native
-- Use the Supabase REST API for native iOS/Android apps
+## 🔧 Configuration
 
-### Webhook Integration
+### Payment Gateway Setup
+1. Configure Razorpay keys in Settings > Payments
+2. Set up webhook endpoints for payment confirmations
+3. Test payments in sandbox mode
 
-For third-party services, webhook endpoints are provided:
+### Access Control Setup
+1. Configure Hikvision API credentials
+2. Add devices and door mappings
+3. Sync member data with access control system
+4. Set up privilege rules
 
-- `/supabase/functions/razorpay-webhook`: Payment callbacks
-- `/supabase/functions/attendance-webhook`: Device callbacks
+### Communication Setup
+1. Configure email provider (SendGrid/SMTP)
+2. Set up SMS provider credentials
+3. Configure WhatsApp Business API
+4. Create message templates
 
-## 💾 Backup & Export
+## 🚀 Deployment
 
-### Manual Export
-
-1. Navigate to Supabase Dashboard > Database
-2. Use the "Backup" feature to export data
-3. Download the SQL dump
-
-### Programmatic Export
-
-```javascript
-// Using the API to export data
-async function exportMembers() {
-  const { data, error } = await supabase
-    .from('members')
-    .select('*');
-  
-  if (error) throw error;
-  
-  // Convert to CSV
-  const csv = convertToCSV(data);
-  downloadCSV(csv, 'members-export.csv');
-}
+### Production Build
+```bash
+npm run build
 ```
 
-## 🚨 Troubleshooting
+### Deployment Options
+- **Vercel/Netlify**: For static hosting
+- **Docker**: Container-based deployment
+- **Traditional hosting**: Build output can be served from any web server
 
-### Common Issues
+### Environment Variables
+Ensure all production environment variables are set:
+- Supabase production URLs and keys
+- Payment gateway production keys
+- Communication service credentials
 
-1. **Authentication Failed**: Check JWT expiration and refresh tokens
-2. **RLS Policies Blocking Data**: Verify user roles and branch assignments
-3. **Edge Function Errors**: Check logs in Supabase Dashboard
-4. **Storage Errors**: Ensure RLS policies allow access, check bucket permissions
-5. **File Upload Issues**: Verify content-type headers and RLS permissions
+## 🧪 Testing
 
-### Logs & Monitoring
+```bash
+# Run type checking
+npm run type-check
 
-- Edge Function logs: Supabase Dashboard > Edge Functions > Logs
-- Database logs: Supabase Dashboard > Database > Logs
-- Storage logs: Supabase Dashboard > Storage > Logs
+# Run linting
+npm run lint
+
+# Build for production (includes checks)
+npm run build
+```
+
+## 📈 Performance Optimization
+
+- Route-based code splitting
+- Image optimization with lazy loading
+- Database query optimization
+- Caching strategies with TanStack Query
+- Bundle size monitoring
 
 ## 🤝 Contributing
 
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
+3. Commit changes (`git commit -m 'feat: add amazing feature'`)
+4. Push to branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
 ## 📄 License
 
-This project is proprietary and confidential. Unauthorized copying, transfer, or reproduction of the contents is strictly prohibited.
+This project is proprietary and confidential. Unauthorized copying or distribution is prohibited.
 
 ## 📞 Support
 
-For support, please contact rajat.lekhari@hotmail.com
+For technical support or questions:
+- Email: rajat.lekhari@hotmail.com
+- Create an issue in the repository
+- Check the documentation wiki
+
+---
+
+**Built with ❤️ for the fitness industry**
