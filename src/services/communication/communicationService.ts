@@ -1,5 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
-import { Feedback } from '@/types/notification';
+import { Feedback } from '@/types/communication/notification';
 
 export const communicationService = {
   getAnnouncements: async (branchId?: string): Promise<any[]> => {

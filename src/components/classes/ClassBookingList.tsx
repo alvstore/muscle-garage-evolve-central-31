@@ -6,14 +6,16 @@ import {
   CardContent,
   CardDescription, 
   CardHeader, 
-  CardTitle
+  CardTitle,
+  CardFooter
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { 
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -27,7 +29,17 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { format, parseISO } from "date-fns";
-import { MoreVertical, Calendar, UserCheck, X, CheckCircle, Search, AlertCircle } from "lucide-react";
+import { 
+  MoreVertical, 
+  Calendar, 
+  UserCheck, 
+  X, 
+  CheckCircle, 
+  Search, 
+  AlertCircle, 
+  Clock, 
+  Calendar as CalendarIcon 
+} from "lucide-react";
 import { toast } from "sonner";
 import { ClassBooking, BookingStatus } from "@/types/class";
 import { supabase } from "@/integrations/supabase/client";
@@ -112,21 +124,88 @@ const updateBookingStatus = async (bookingId: string, status: BookingStatus, att
 };
 
 const ClassBookingList = ({ classId }: ClassBookingListProps) => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
-  
-  const { currentBranch } = useBranch();
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState<BookingStatus | "all">("all");
+  const { branch } = useBranch();
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const branchId = currentBranch?.id;
   
-  // Fetch bookings for the class
-  const { data: bookings = [], isLoading, error } = useQuery<ClassBooking[]>({
-    queryKey: ['classBookings', classId, branchId],
-    queryFn: () => fetchBookings(classId, branchId),
-    enabled: !!classId && (!!branchId || user?.role === 'admin')
+  // Status badge styling
+  const getStatusBadge = (status: BookingStatus) => {
+    const baseStyles = "px-2 py-1 text-xs rounded-full";
+    
+    switch (status) {
+      case 'booked':
+        return `${baseStyles} bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300`;
+      case 'attended':
+        return `${baseStyles} bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300`;
+      case 'cancelled':
+        return `${baseStyles} bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300`;
+      case 'no-show':
+        return `${baseStyles} bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-300`;
+      default:
+        return `${baseStyles} bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300`;
+    }
+  };
+  
+  // Get initials for avatar fallback
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(n => n[0])
+      .join('')
+      .toUpperCase();
+  };
+  
+  // Filter bookings based on search and status
+  const filterBookings = (bookings: ClassBooking[]) => {
+    return bookings.filter(booking => {
+      const matchesSearch = booking.memberName.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesStatus = statusFilter === 'all' || booking.status === statusFilter;
+      return matchesSearch && matchesStatus;
+    });
+  };
+  
+  // Categorize bookings for tabs
+  const categorizeBookings = (bookings: ClassBooking[]) => {
+    const now = new Date();
+    return {
+      upcoming: bookings.filter(b => 
+        b.status === 'booked' && 
+        b.bookingDate && 
+        new Date(b.bookingDate) > now
+      ),
+      past: bookings.filter(b => 
+        (b.status === 'attended' || b.status === 'no-show' || 
+         (b.bookingDate && new Date(b.bookingDate) <= now))
+      ),
+      cancelled: bookings.filter(b => b.status === 'cancelled')
+    };
+  };
+  
+  // Fetch bookings
+  const { data: allBookings = [], isLoading, error } = useQuery({
+    queryKey: ['classBookings', classId, branch?.id],
+    queryFn: () => fetchBookings(classId, branch?.id)
   });
   
+  // Categorize bookings
+  const { upcoming, past, cancelled } = categorizeBookings(allBookings);
+  
+  // Get filtered bookings for current tab
+  const getFilteredBookings = (tab: string) => {
+    switch (tab) {
+      case 'upcoming':
+        return filterBookings(upcoming);
+      case 'past':
+        return filterBookings(past);
+      case 'cancelled':
+        return filterBookings(cancelled);
+      default:
+        return [];
+    }
+  };
+
   // Mutation for marking attendance
   const attendanceMutation = useMutation({
     mutationFn: ({ bookingId }: { bookingId: string }) => {
@@ -141,7 +220,7 @@ const ClassBookingList = ({ classId }: ClassBookingListProps) => {
       toast.error(`Failed to mark attendance: ${error.message}`);
     }
   });
-  
+
   // Mutation for cancelling booking
   const cancelMutation = useMutation({
     mutationFn: ({ bookingId }: { bookingId: string }) => {
@@ -155,7 +234,7 @@ const ClassBookingList = ({ classId }: ClassBookingListProps) => {
       toast.error(`Failed to cancel booking: ${error.message}`);
     }
   });
-  
+
   // Function to mark attendance
   const markAttendance = (bookingId: string) => {
     attendanceMutation.mutate({ bookingId });
@@ -166,161 +245,156 @@ const ClassBookingList = ({ classId }: ClassBookingListProps) => {
     cancelMutation.mutate({ bookingId });
   };
 
-  const getStatusBadge = (status: BookingStatus) => {
-    switch (status) {
-      case "confirmed":
-        return <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">Confirmed</Badge>;
-      case "attended":
-        return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">Attended</Badge>;
-      case "cancelled":
-        return <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">Cancelled</Badge>;
-      case "missed":
-        return <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">Missed</Badge>;
-      case "pending":
-        return <Badge variant="outline" className="bg-gray-50 text-gray-700 border-gray-200">Pending</Badge>;
-      default:
-        return <Badge variant="outline">{status}</Badge>;
+  // Function to handle update status
+  const handleUpdateStatus = (bookingId: string, status: BookingStatus) => {
+    if (status === 'attended') {
+      markAttendance(bookingId);
+    } else if (status === 'cancelled') {
+      cancelBooking(bookingId);
     }
   };
 
-  const getInitials = (name: string) => {
-    return name
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase();
-  };
-  
-  // Filter bookings based on search term and status filter
-  const filteredBookings = bookings.filter(booking => {
-    const matchesSearch = booking.memberName.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || booking.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
-
   return (
     <Card>
-      <CardHeader className="pb-3">
-        <CardTitle>Bookings</CardTitle>
-        <CardDescription>Manage member bookings for this class</CardDescription>
-      </CardHeader>
-      <CardContent>
-        {/* Search and filter */}
-        <div className="flex flex-col md:flex-row gap-4 mb-6">
-          <div className="relative flex-1">
+      <CardHeader>
+        <div className="flex justify-between items-center">
+          <div>
+            <CardTitle>Class Bookings</CardTitle>
+            <CardDescription className="mt-1">
+              Manage class bookings and attendance
+            </CardDescription>
+          </div>
+          <div className="flex gap-2">
             <div className="relative">
-              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
+                type="search"
                 placeholder="Search members..."
+                className="pl-8 w-[200px]"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-8"
               />
             </div>
           </div>
-          
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Filter by status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Statuses</SelectItem>
-              <SelectItem value="confirmed">Confirmed</SelectItem>
-              <SelectItem value="attended">Attended</SelectItem>
-              <SelectItem value="cancelled">Cancelled</SelectItem>
-              <SelectItem value="missed">Missed</SelectItem>
-              <SelectItem value="pending">Pending</SelectItem>
-            </SelectContent>
-          </Select>
         </div>
-        
-        {isLoading ? (
-          // Loading skeletons
-          Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="flex items-center justify-between p-4 rounded-lg border mb-4">
-              <div className="flex items-center space-x-4">
-                <Skeleton className="h-10 w-10 rounded-full" />
-                <div>
-                  <Skeleton className="h-4 w-32 mb-2" />
-                  <Skeleton className="h-3 w-40" />
-                </div>
-              </div>
-              <Skeleton className="h-6 w-24" />
-            </div>
-          ))
-        ) : error ? (
-          <div className="flex items-center justify-center text-destructive p-8">
-            <AlertCircle className="h-5 w-5 mr-2" />
-            Error loading bookings
-          </div>
-        ) : filteredBookings.length === 0 ? (
-          <div className="text-center py-8">
-            <Calendar className="h-12 w-12 mx-auto text-muted-foreground" />
-            <h3 className="mt-4 text-lg font-medium">No bookings</h3>
-            <p className="mt-2 text-sm text-muted-foreground">
-              {bookings.length === 0 
-                ? "There are no bookings for this class yet." 
-                : "No bookings match your search criteria."}
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {filteredBookings.map((booking) => (
-              <div
-                key={booking.id}
-                className="flex items-center justify-between p-4 rounded-lg border"
+      </CardHeader>
+      
+      <CardContent>
+        <Tabs defaultValue="upcoming" className="w-full">
+          <div className="flex items-center justify-between mb-4">
+            <TabsList>
+              <TabsTrigger value="upcoming" className="flex items-center gap-1">
+                <CalendarIcon className="h-4 w-4 mr-1" />
+                Upcoming
+                {upcoming.length > 0 && (
+                  <Badge variant="secondary" className="ml-1">
+                    {upcoming.length}
+                  </Badge>
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="past" className="flex items-center gap-1">
+                <Clock className="h-4 w-4 mr-1" />
+                Past
+                {past.length > 0 && (
+                  <Badge variant="secondary" className="ml-1">
+                    {past.length}
+                  </Badge>
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="cancelled" className="flex items-center gap-1">
+                <X className="h-4 w-4 mr-1" />
+                Cancelled
+                {cancelled.length > 0 && (
+                  <Badge variant="secondary" className="ml-1">
+                    {cancelled.length}
+                  </Badge>
+                )}
+              </TabsTrigger>
+            </TabsList>
+            
+            <div className="flex items-center gap-2">
+              <Select
+                value={statusFilter}
+                onValueChange={(value: BookingStatus | "all") => setStatusFilter(value)}
               >
-                <div className="flex items-center space-x-4">
-                  <Avatar>
-                    <AvatarImage src={booking.memberAvatar} alt={booking.memberName} />
-                    <AvatarFallback>{getInitials(booking.memberName)}</AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <p className="font-medium">{booking.memberName}</p>
-                    <div className="flex items-center text-sm text-muted-foreground">
-                      <Calendar className="h-3.5 w-3.5 mr-1" />
-                      <span>
-                        Booked for {format(parseISO(booking.bookingDate), "MMM dd, h:mm a")}
-                      </span>
-                    </div>
-                    {booking.notes && (
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Note: {booking.notes}
-                      </p>
-                    )}
-                  </div>
-                </div>
-                <div className="flex items-center space-x-2">
-                  {getStatusBadge(booking.status)}
-                  
-                  {booking.status === "confirmed" && (
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm">
-                          <MoreVertical className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => markAttendance(booking.id)}>
-                          <UserCheck className="h-4 w-4 mr-2" />
-                          Mark Attendance
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => cancelBooking(booking.id)}>
-                          <X className="h-4 w-4 mr-2" />
-                          Cancel Booking
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  )}
-                  
-                  {booking.status === "attended" && (
-                    <CheckCircle className="h-5 w-5 text-green-500" />
-                  )}
-                </div>
-              </div>
-            ))}
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Filter by status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Statuses</SelectItem>
+                  <SelectItem value="booked">Booked</SelectItem>
+                  <SelectItem value="attended">Attended</SelectItem>
+                  <SelectItem value="cancelled">Cancelled</SelectItem>
+                  <SelectItem value="no-show">No Show</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
-        )}
+          
+          <TabsContent value="upcoming" className="space-y-4">
+            {isLoading ? (
+              <div className="space-y-4">
+                {[...Array(3)].map((_, i) => (
+                  <Skeleton key={i} className="h-20 w-full" />
+                ))}
+              </div>
+            ) : error ? (
+              <div className="text-red-500 text-center p-4">
+                Error loading bookings. Please try again.
+              </div>
+            ) : getFilteredBookings('upcoming').length > 0 ? (
+              getFilteredBookings('upcoming').map((booking) => (
+                <BookingCard 
+                  key={booking.id} 
+                  booking={booking} 
+                  onUpdateStatus={handleUpdateStatus}
+                  getStatusBadge={getStatusBadge}
+                  getInitials={getInitials}
+                />
+              ))
+            ) : (
+              <div className="text-center p-8 text-muted-foreground">
+                No upcoming bookings found
+              </div>
+            )}
+          </TabsContent>
+          
+          <TabsContent value="past" className="space-y-4">
+            {getFilteredBookings('past').length > 0 ? (
+              getFilteredBookings('past').map((booking) => (
+                <BookingCard 
+                  key={booking.id} 
+                  booking={booking} 
+                  onUpdateStatus={handleUpdateStatus}
+                  getStatusBadge={getStatusBadge}
+                  getInitials={getInitials}
+                />
+              ))
+            ) : (
+              <div className="text-center p-8 text-muted-foreground">
+                No past bookings found
+              </div>
+            )}
+          </TabsContent>
+          
+          <TabsContent value="cancelled" className="space-y-4">
+            {getFilteredBookings('cancelled').length > 0 ? (
+              getFilteredBookings('cancelled').map((booking) => (
+                <BookingCard 
+                  key={booking.id} 
+                  booking={booking} 
+                  onUpdateStatus={handleUpdateStatus}
+                  getStatusBadge={getStatusBadge}
+                  getInitials={getInitials}
+                />
+              ))
+            ) : (
+              <div className="text-center p-8 text-muted-foreground">
+                No cancelled bookings found
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
       </CardContent>
     </Card>
   );

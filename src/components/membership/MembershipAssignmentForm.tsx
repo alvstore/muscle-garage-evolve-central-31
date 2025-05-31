@@ -180,25 +180,72 @@ const MembershipAssignmentForm: React.FC<MembershipAssignmentFormProps> = ({
     setIsSubmitting(true);
     
     try {
+      // Validate required fields with more specific messages
+      if (!selectedPlanId) {
+        throw new Error('Please select a membership plan');
+      }
+      
+      if (isNaN(amountPaid) || amountPaid < 0) {
+        throw new Error('Please enter a valid payment amount (must be 0 or greater)');
+      }
+      
+      if (!memberId) {
+        throw new Error('Member ID is required');
+      }
+      
       const paymentDetails: PaymentDetails = {
         amount: amountPaid,
-        method: paymentMethod, // Use the selected payment method
-        notes: notes || undefined
+        method: paymentMethod,
+        notes: notes || undefined,
+        // Add more payment details if needed
+        paid_at: new Date().toISOString()
       };
       
+      // Log assignment details for debugging
+      const assignmentDetails = {
+        memberId,
+        membershipId: selectedPlanId,
+        paymentDetails: {
+          ...paymentDetails,
+          // Don't log sensitive info
+          transaction_id: paymentDetails.transaction_id ? '***' : undefined,
+          reference_number: paymentDetails.reference_number ? '***' : undefined
+        },
+        options: {
+          branchId: currentBranch?.id || 'not specified',
+          startDate: startDate ? new Date(startDate).toISOString() : 'not specified',
+          endDate: endDate ? new Date(endDate).toISOString() : 'not specified',
+          hasNotes: Boolean(notes),
+          staffId: 'not specified' // This would come from auth context in a real app
+        }
+      };
+      
+      console.log('Assigning membership with details:', assignmentDetails);
+      
+      // Prepare options for the membership assignment
+      const assignmentOptions = {
+        branchId: currentBranch?.id || null,
+        startDate: startDate ? new Date(startDate) : undefined,
+        endDate: endDate ? new Date(endDate) : undefined,
+        notes: notes || undefined,
+        staffId: undefined // Will fall back to memberId
+      };
+      
+      // Show loading state
+      toast.loading('Assigning membership...');
+      
+      // Call the membership service
       const result = await membershipService.assignMembership(
         memberId,
-        selectedPlanId!,
+        selectedPlanId,
         paymentDetails,
-        {
-          branchId: currentBranch?.id,
-          startDate: startDate ? new Date(startDate) : undefined,
-          endDate: endDate ? new Date(endDate) : undefined,
-          notes: notes || undefined,
-          // In a real app, you'd get the staff ID from your auth context
-          staffId: undefined // Will fall back to memberId
-        }
+        assignmentOptions
       );
+      
+      // Dismiss the loading toast
+      toast.dismiss();
+      
+      console.log('Membership assignment result:', result);
       
       if (result.success) {
         toast.success(result.message || 'Membership assigned successfully');
@@ -210,7 +257,57 @@ const MembershipAssignmentForm: React.FC<MembershipAssignmentFormProps> = ({
       }
     } catch (error) {
       console.error('Error assigning membership:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to assign membership. Please try again.');
+      
+      // User-friendly error messages
+      if (error instanceof Error) {
+        const errorMessage = error.message;
+        
+        // Check for specific error patterns
+        if (errorMessage.includes('Member not found')) {
+          toast.error('Member not found. Please check the member ID and try again.');
+        } else if (errorMessage.includes('Invalid membership plan')) {
+          toast.error('The selected membership plan is not valid. Please refresh the page and try again.');
+        } else if (errorMessage.includes('Invalid branch')) {
+          toast.error('The selected branch is not valid. Please select a different branch or contact support.');
+        } else if (errorMessage.includes('already has an active membership')) {
+          toast.error('This member already has an active membership. Please check the member\'s current membership status.');
+        } else if (errorMessage.includes('violates foreign key constraint')) {
+          // Handle different types of foreign key violations
+          if (errorMessage.includes('member_id')) {
+            toast.error('Invalid member. The specified member does not exist.');
+          } else if (errorMessage.includes('membership_id')) {
+            toast.error('Invalid membership plan. The selected plan does not exist.');
+          } else if (errorMessage.includes('branch_id')) {
+            toast.error('Invalid branch. The specified branch does not exist.');
+          } else {
+            toast.error('Data validation error. Please check your input and try again.');
+          }
+        } else if (errorMessage.includes('network')) {
+          toast.error('Network error. Please check your connection and try again.');
+        } else {
+          // Show the actual error message for other cases
+          toast.error(errorMessage || 'Failed to assign membership. Please try again.');
+        }
+      } else {
+        toast.error('An unexpected error occurred. Please try again.');
+      }
+      
+      // Log full error details for debugging (excluding sensitive info)
+      console.error('Full error details:', {
+        error: error instanceof Error ? {
+          name: error.name,
+          message: error.message,
+          stack: error.stack
+        } : error,
+        memberId,
+        selectedPlanId,
+        paymentMethod,
+        amountPaid,
+        currentBranch: currentBranch?.id || 'not specified',
+        startDate: startDate || 'not specified',
+        endDate: endDate || 'not specified',
+        hasNotes: Boolean(notes)
+      });
     } finally {
       setIsSubmitting(false);
     }

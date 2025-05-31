@@ -16,12 +16,12 @@ import {
 
 export const adminRoutes: AppRoute[] = [
   {
-    path: '/admin/dashboard',
+    path: '/dashboard/admin',
     element: <AdminDashboard />,
     meta: {
       title: 'Admin Dashboard',
       breadcrumb: 'Dashboard',
-      permission: 'view_dashboard',
+      permission: 'view:dashboard',
       icon: <LayoutDashboard className="h-5 w-5" />
     }
   },
@@ -30,8 +30,8 @@ export const adminRoutes: AppRoute[] = [
     element: <SystemBackupPage />,
     meta: {
       title: 'System Backup',
-      breadcrumb: 'System Backup',
-      permission: 'manage_settings',
+      breadcrumb: 'Backup',
+      permission: 'edit:settings',
       icon: <Archive className="h-5 w-5" />
     }
   },
@@ -50,8 +50,8 @@ export const adminRoutes: AppRoute[] = [
     element: <UserManagementPage />,
     meta: {
       title: 'User Management',
-      breadcrumb: 'User Management',
-      permission: 'manage_staff',
+      breadcrumb: 'Users',
+      permission: 'view:staff',
       icon: <Users className="h-5 w-5" />
     }
   },
@@ -61,7 +61,7 @@ export const adminRoutes: AppRoute[] = [
     meta: {
       title: 'Trainer Management',
       breadcrumb: 'Trainers',
-      permission: 'manage_trainers',
+      permission: 'view:trainers',
       icon: <Dumbbell className="h-5 w-5" />
     }
   },
@@ -71,7 +71,7 @@ export const adminRoutes: AppRoute[] = [
     meta: {
       title: 'Website Management',
       breadcrumb: 'Website',
-      permission: 'manage_website',
+      permission: 'edit:settings',
       icon: <Globe className="h-5 w-5" />
     }
   },

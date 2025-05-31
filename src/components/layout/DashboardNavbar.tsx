@@ -40,9 +40,23 @@ const DashboardNavbar = ({
     let isMounted = true;
     
     const fetchNotifications = async () => {
-      if (!user?.id || !isMounted) return;
+      if (!user?.id) {
+        console.warn('No user ID available for fetching notifications');
+        setNotifications([]);
+        setUnreadCount(0);
+        return;
+      }
+      
+      // Skip if user ID is invalid (e.g., "0")
+      if (user.id === '0' || !user.id) {
+        console.warn('Invalid user ID for notifications:', user.id);
+        setNotifications([]);
+        setUnreadCount(0);
+        return;
+      }
       
       setIsLoadingNotifications(true);
+      
       try {
         const notificationService = (await import('@/services/communication/notificationService')).default;
         const data = await notificationService.getNotifications(user.id);
@@ -69,11 +83,16 @@ const DashboardNavbar = ({
     fetchNotifications();
 
     // Set up real-time subscription for notifications using Supabase
-    const setupRealtimeSubscriptions = async () => {
+    const setupRealtimeSubscriptions = async (): Promise<(() => void) | null> => {
       if (!user?.id) return null;
       
       try {
+        // Use dynamic import for client-side code
         const { supabase } = await import('@/integrations/supabase/client');
+        if (!supabase) {
+          console.error('Supabase client not available');
+          return null;
+        }
 
         // Subscribe to changes in the notifications table
         const notificationsSubscription = supabase
@@ -83,13 +102,13 @@ const DashboardNavbar = ({
             schema: 'public',
             table: 'notifications',
             filter: `user_id=eq.${user.id}`
-          }, (payload) => {
+          }, (payload: any) => {
             // Only refresh if component is still mounted
             if (isMounted) {
               fetchNotifications();
             }
           })
-          .subscribe((status) => {
+          .subscribe((status: string) => {
             if (status !== 'SUBSCRIBED' && isMounted) {
               console.warn('Notification subscription status:', status);
             }
@@ -110,9 +129,14 @@ const DashboardNavbar = ({
           })
           .subscribe();
           
+        // Return cleanup function
         return () => {
-          notificationsSubscription.unsubscribe();
-          followUpSubscription.unsubscribe();
+          try {
+            notificationsSubscription.unsubscribe();
+            followUpSubscription.unsubscribe();
+          } catch (error) {
+            console.error('Error unsubscribing:', error);
+          }
         };
       } catch (error) {
         console.error('Error setting up notification subscriptions:', error);
@@ -120,18 +144,20 @@ const DashboardNavbar = ({
       }
     };
     
-    const cleanupSubscriptions = setupRealtimeSubscriptions();
+    // Handle the async setup of subscriptions
+    let cleanup: (() => void) | null = null;
+    setupRealtimeSubscriptions().then((result) => {
+      if (isMounted) {
+        cleanup = result;
+      }
+    });
     
     // Cleanup function
     return () => {
       isMounted = false;
       // Clean up subscriptions when component unmounts
-      if (cleanupSubscriptions) {
-        if (typeof cleanupSubscriptions === 'function') {
-          cleanupSubscriptions();
-        } else if (cleanupSubscriptions instanceof Promise) {
-          cleanupSubscriptions.then(fn => fn && fn());
-        }
+      if (cleanup) {
+        cleanup();
       }
     };
   }, [user?.id]);

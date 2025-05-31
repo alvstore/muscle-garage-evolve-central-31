@@ -1,6 +1,10 @@
 import { supabase } from '@/integrations/supabase/client';
-import { EmailSettings, IntegrationStatus, AttendanceSettings } from '@/types/notification';
-import { AutomationRule } from '@/types/crm';
+import { 
+  EmailSettings, 
+  IntegrationStatus, 
+  AutomationRule, 
+  AttendanceSettings 
+} from '@/types/communication/notification';
 import { toast } from 'sonner';
 
 export const integrationsService = {

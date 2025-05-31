@@ -36,7 +36,7 @@ const RealTimeDashboardPage = () => {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       
-      // Fetch today's attendance for the current branch
+      // Fetch today's attendance with member and membership info
       const { data: attendanceData, error: attendanceError } = await supabase
         .from('member_attendance')
         .select(`
@@ -44,11 +44,20 @@ const RealTimeDashboardPage = () => {
           check_in,
           check_out,
           member_id,
-          members:member_id (
+          members!inner(
             id,
             name,
-            membership_status,
-            membership_end_date
+            member_memberships!inner(
+              id,
+              status,
+              start_date,
+              end_date,
+              payment_status,
+              memberships!inner(
+                id,
+                name
+              )
+            )
           ),
           access_method
         `)
@@ -61,38 +70,48 @@ const RealTimeDashboardPage = () => {
       }
       
       // Format attendance data for display
-      const formattedAttendance = attendanceData.map((record: any) => ({
-        id: record.member_id,
-        name: record.members?.name || 'Unknown Member',
-        membershipPlan: 'Active Member', // This could be enhanced with more data
-        checkInTime: record.check_in,
-        checkOut: record.check_out, // Add this property to match what's being accessed
-        status: record.members?.membership_status || 'active',
-        // Check if membership is expiring within 7 days
-        expiryDate: record.members?.membership_end_date || null,
-      }));
+      const formattedAttendance = (attendanceData || []).map((record: any) => {
+        const membership = record.members?.member_memberships?.[0];
+        return {
+          id: record.member_id,
+          name: record.members?.name || 'Unknown Member',
+          membershipPlan: membership?.memberships?.name || 'No Active Membership',
+          checkInTime: record.check_in,
+          checkOut: record.check_out,
+          status: membership?.status || 'inactive',
+          expiryDate: membership?.end_date || null,
+        };
+      });
       
       setTodayAttendance(formattedAttendance);
-      setActiveMembers(formattedAttendance.length);
+      
+      // Calculate active members with valid memberships
+      const activeMemberCount = new Set(
+        formattedAttendance
+          .filter(m => m.status === 'active')
+          .map(m => m.id)
+      ).size;
+      setActiveMembers(activeMemberCount);
       
       // Calculate current occupancy (members who checked in but not out)
-      const currentlyInGym = formattedAttendance.filter(m => !m.checkOut).length;
-      setCurrentOccupancy(currentlyInGym > 0 ? currentlyInGym : Math.floor(formattedAttendance.length / 2));
+      const currentlyInGym = formattedAttendance.filter(m => m.checkInTime && !m.checkOut).length;
+      setCurrentOccupancy(currentlyInGym);
       
       // Fetch expiring memberships (within next 7 days)
       const nextWeek = new Date();
       nextWeek.setDate(nextWeek.getDate() + 7);
       
       const { data: expiryData, error: expiryError } = await supabase
-        .from('members')
-        .select('id')
+        .from('member_memberships')
+        .select('id', { count: 'exact' })
         .eq('branch_id', currentBranch.id)
-        .eq('membership_status', 'active')
-        .lt('membership_end_date', nextWeek.toISOString())
-        .gt('membership_end_date', today.toISOString());
+        .eq('status', 'active')
+        .lt('end_date', nextWeek.toISOString())
+        .gt('end_date', today.toISOString());
         
       if (expiryError) {
         console.error("Error fetching expiring memberships:", expiryError);
+        toast.error("Failed to load expiring memberships");
       } else {
         setExpiringMemberships(expiryData?.length || 0);
       }
@@ -100,13 +119,15 @@ const RealTimeDashboardPage = () => {
       // Fetch overdue payments
       const { data: paymentData, error: paymentError } = await supabase
         .from('invoices')
-        .select('id')
+        .select('id, member_id, due_date, amount, payment_status', { count: 'exact' })
         .eq('branch_id', currentBranch.id)
-        .eq('status', 'pending')
-        .lt('due_date', today.toISOString());
+        .in('status', ['pending', 'partially_paid'])
+        .lt('due_date', today.toISOString())
+        .order('due_date', { ascending: true });
         
       if (paymentError) {
         console.error("Error fetching overdue payments:", paymentError);
+        toast.error("Failed to load overdue payments");
       } else {
         setOverduePayments(paymentData?.length || 0);
       }
@@ -138,15 +159,20 @@ const RealTimeDashboardPage = () => {
   };
 
   // Format attendance data for the tracker
-  const attendanceData = todayAttendance.map(member => ({
-    memberId: member.id,
-    memberName: member.name,
-    time: new Date(member.checkInTime).toISOString(),
-    type: 'check-in' as const,
-    location: 'Main Entrance',
-    device: 'Entrance Terminal',
-    status: member.status
-  }));
+  const attendanceData = todayAttendance.map(member => {
+    const checkInTime = member.checkInTime ? new Date(member.checkInTime) : new Date();
+    return {
+      memberId: member.id,
+      memberName: member.name,
+      time: checkInTime.toISOString(),
+      type: 'check-in' as const,
+      location: 'Main Entrance',
+      device: 'Entrance Terminal',
+      status: member.status,
+      membershipPlan: member.membershipPlan,
+      checkOutTime: member.checkOut ? new Date(member.checkOut).toISOString() : null
+    };
+  });
 
   return (
     <Container>

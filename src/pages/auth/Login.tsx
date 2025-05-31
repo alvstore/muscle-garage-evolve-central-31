@@ -17,25 +17,24 @@ const Login = () => {
       // Get the role from either the role prop or user.role, defaulting to 'member'
       const roleValue = role || user.role || 'member';
       // Ensure the role is valid, default to 'member' if not
-      const userRole: UserRole = isUserRole(roleValue) ? roleValue : 'member';
+      const userRole = isUserRole(roleValue) ? roleValue : 'member';
       
       console.log("Redirecting authenticated user with role:", userRole);
       
       // Redirect based on role
       switch (userRole) {
         case 'admin':
-          navigate("/admin/dashboard");
+          navigate('/dashboard/admin', { replace: true });
           break;
         case 'staff':
-          navigate("/dashboard/overview");
+          navigate('/dashboard/staff', { replace: true });
           break;
         case 'trainer':
-          navigate("/trainers/dashboard");
+          navigate('/dashboard/trainer', { replace: true });
           break;
         case 'member':
-        case 'guest':
         default:
-          navigate("/dashboard/overview");
+          navigate('/dashboard/member', { replace: true });
       }
     }
   }, [navigate, user, role, isAuthenticated, isLoading]);

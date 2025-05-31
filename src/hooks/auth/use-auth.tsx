@@ -1,8 +1,42 @@
 
-import { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { User } from '@/types/core/auth/user';
 import { toast } from 'sonner';
+
+export type UserRole = 'admin' | 'staff' | 'trainer' | 'member';
+
+export const isUserRole = (role: string): role is UserRole => {
+  return ['admin', 'staff', 'trainer', 'member'].includes(role);
+};
+
+interface AuthContextType {
+  user: User | null;
+  isLoading: boolean;
+  isAuthenticated: boolean;
+  login: (email: string, password: string) => Promise<{ success: boolean; error?: any }>;
+  logout: () => Promise<void>;
+  register: (email: string, password: string, userData: any) => Promise<{ success: boolean; error?: any }>;
+  forgotPassword: (email: string) => Promise<{ success: boolean; error?: any }>;
+  resetPassword: (newPassword: string) => Promise<{ success: boolean; error?: any }>;
+  changePassword: (currentPassword: string, newPassword: string) => Promise<{ success: boolean; error?: any }>;
+  role?: UserRole;
+}
+
+const AuthContext = React.createContext<AuthContextType | undefined>(undefined);
+
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const auth = useAuth();
+  return <AuthContext.Provider value={auth}>{children}</AuthContext.Provider>;
+}
+
+export function useAuthContext() {
+  const context = React.useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuthContext must be used within an AuthProvider');
+  }
+  return context;
+}
 
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
@@ -156,6 +190,7 @@ export function useAuth() {
     register,
     forgotPassword,
     resetPassword,
-    changePassword
+    changePassword,
+    role: user?.role as UserRole | undefined
   };
 }

@@ -31,15 +31,30 @@ const ContactSection = () => {
         const activeBranches = branchesData.filter(branch => branch.is_active);
         setBranches(activeBranches);
         
+        // If there are no branches, don't proceed further
+        if (activeBranches.length === 0) {
+          console.warn('No active branches found');
+          return;
+        }
+        
         // Try to get user's branch ID if logged in
-        const userBranchId = await getCurrentUserBranch();
-        
-        // Set default branch ID (either user's branch or first active branch)
-        const defaultBranchId = userBranchId || (activeBranches.length > 0 ? activeBranches[0].id : null);
-        setBranchId(defaultBranchId);
-        
-        // Set the default branch in the form
-        if (defaultBranchId) {
+        try {
+          const userBranchId = await getCurrentUserBranch();
+          
+          // Set default branch ID (either user's branch or first active branch)
+          const defaultBranchId = userBranchId || activeBranches[0].id;
+          setBranchId(defaultBranchId);
+          
+          // Set the default branch in the form
+          setFormData(prev => ({
+            ...prev,
+            branchId: defaultBranchId
+          }));
+        } catch (error) {
+          // If there's an error getting user branch, just use the first active branch
+          console.log('Using default branch, could not get user branch:', error);
+          const defaultBranchId = activeBranches[0].id;
+          setBranchId(defaultBranchId);
           setFormData(prev => ({
             ...prev,
             branchId: defaultBranchId

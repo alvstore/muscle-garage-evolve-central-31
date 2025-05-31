@@ -10,8 +10,8 @@ import { useToast } from "@/hooks/ui/use-toast";
 import { Loader2, Save } from "lucide-react";
 import { useBranch } from '@/hooks/settings/use-branches';
 import { supabase } from '@/services/api/supabaseClient';
-import { integrationsService } from '@/services/integrationsService';
-import { EmailSettings as EmailSettingsType } from '@/types/notification';
+import { integrationsService } from '@/services/settings/integrationsService';
+import { EmailSettings as EmailSettingsType } from '@/types/communication/notification';
 
 const EmailSettings = () => {
   const { toast } = useToast();

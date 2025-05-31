@@ -1,5 +1,6 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import {
   Card,
   CardContent,
@@ -13,14 +14,16 @@ import { Calendar as CalendarIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
-// Mock data - replace with real data from API
-const mockAttendanceData = [
-  { id: "1", date: "2023-06-15", checkin: "09:15 AM", checkout: "06:30 PM", duration: "9h 15m" },
-  { id: "2", date: "2023-06-14", checkin: "09:00 AM", checkout: "05:45 PM", duration: "8h 45m" },
-  { id: "3", date: "2023-06-13", checkin: "09:20 AM", checkout: "06:00 PM", duration: "8h 40m" },
-  { id: "4", date: "2023-06-12", checkin: "08:55 AM", checkout: "06:15 PM", duration: "9h 20m" },
-  { id: "5", date: "2023-06-09", checkin: "09:05 AM", checkout: "05:30 PM", duration: "8h 25m" },
-];
+interface AttendanceRecord {
+  id: string;
+  check_in: string;
+  check_out?: string;
+  duration_minutes?: number;
+  status: 'checked_in' | 'checked_out' | 'missed' | 'on_leave';
+  notes?: string;
+  created_at: string;
+  updated_at: string;
+}
 
 interface DateRange {
   from: Date;
@@ -36,6 +39,50 @@ const AttendanceHistory: React.FC<AttendanceHistoryProps> = ({ memberId }) => {
     from: addDays(new Date(), -30),
     to: new Date(),
   });
+  const [attendanceData, setAttendanceData] = useState<AttendanceRecord[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  
+  useEffect(() => {
+    const fetchAttendanceData = async () => {
+      if (!memberId) return;
+      
+      setIsLoading(true);
+      setError(null);
+      
+      try {
+        const { data, error: fetchError } = await supabase
+          .from('member_attendance')
+          .select('*')
+          .eq('member_id', memberId)
+          .gte('check_in', date.from.toISOString())
+          .lte('check_in', date.to?.toISOString() || new Date().toISOString())
+          .order('check_in', { ascending: false });
+          
+        if (fetchError) throw fetchError;
+        
+        setAttendanceData(data || []);
+      } catch (err) {
+        console.error('Error fetching attendance data:', err);
+        setError('Failed to load attendance data');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchAttendanceData();
+  }, [memberId, date]);
+  
+  const formatDuration = (minutes?: number) => {
+    if (!minutes) return 'N/A';
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    return `${hours}h ${mins}m`;
+  };
+  
+  const formatTime = (dateString: string) => {
+    return new Date(dateString).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
   
   const handleDateChange = (newDate: DateRange) => {
     // Ensure the 'to' date is defined, defaulting to 'from' if not provided
@@ -80,14 +127,42 @@ const AttendanceHistory: React.FC<AttendanceHistoryProps> = ({ memberId }) => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {mockAttendanceData.map(record => (
-                <TableRow key={record.id}>
-                  <TableCell>{record.date}</TableCell>
-                  <TableCell>{record.checkin}</TableCell>
-                  <TableCell>{record.checkout}</TableCell>
-                  <TableCell>{record.duration}</TableCell>
+              {isLoading ? (
+                <TableRow>
+                  <TableCell colSpan={4} className="text-center py-4">
+                    Loading attendance data...
+                  </TableCell>
                 </TableRow>
-              ))}
+              ) : error ? (
+                <TableRow>
+                  <TableCell colSpan={4} className="text-center text-red-500 py-4">
+                    {error}
+                  </TableCell>
+                </TableRow>
+              ) : attendanceData.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={4} className="text-center text-muted-foreground py-4">
+                    No attendance records found for the selected period
+                  </TableCell>
+                </TableRow>
+              ) : (
+                attendanceData.map(record => (
+                  <TableRow key={record.id}>
+                    <TableCell>
+                      {new Date(record.check_in).toLocaleDateString()}
+                    </TableCell>
+                    <TableCell>
+                      {formatTime(record.check_in)}
+                    </TableCell>
+                    <TableCell>
+                      {record.check_out ? formatTime(record.check_out) : 'Still checked in'}
+                    </TableCell>
+                    <TableCell>
+                      {record.duration_minutes ? formatDuration(record.duration_minutes) : 'N/A'}
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
         </div>

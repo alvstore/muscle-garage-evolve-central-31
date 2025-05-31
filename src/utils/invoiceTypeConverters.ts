@@ -1,6 +1,26 @@
-
-import { Invoice as NotificationInvoice } from '@/types/notification';
 import { Invoice as FinanceInvoice } from '@/types/finance';
+
+// Define a local interface for the notification invoice type
+interface NotificationInvoice {
+  id: string;
+  member_id: string;
+  member_name: string;
+  amount: number;
+  description?: string;
+  status: string;
+  due_date: string;
+  issued_date?: string;
+  created_at: string;
+  updated_at?: string;
+  payment_date?: string;
+  paid_date?: string;
+  payment_method?: string;
+  notes?: string;
+  branch_id?: string;
+  items?: any[];
+  membership_plan_id?: string;
+  membershipPlanId?: string;
+}
 
 export function notificationToFinanceInvoice(invoice: NotificationInvoice): FinanceInvoice {
   return {

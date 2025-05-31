@@ -1,5 +1,5 @@
 import React from 'react';
-import { Notification } from '@/types/notification';
+import { Notification } from '@/types/communication/notification';
 import { Bell, BadgeCheck, Flame, User, Calendar, MessageSquare, CreditCard, Check, AlertCircle, Bell as BellIcon } from 'lucide-react';
 import { format } from 'date-fns';
 

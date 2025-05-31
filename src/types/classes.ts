@@ -1,8 +1,14 @@
-// Class types (alias for compatibility)
+// Re-export all types from class.ts
 export * from './class';
-export type { ClassType, Class, ClassBooking, ClassSchedule } from './class';
 
-// Add adapter function for class types
+// Import ClassType for the adapter function
+import type { ClassType } from './class';
+
+/**
+ * Adapts a class type from database format to application format
+ * @param data Raw class type data from database
+ * @returns Formatted ClassType object
+ */
 export const adaptClassTypeFromDB = (data: any): ClassType => {
   return {
     id: data.id,

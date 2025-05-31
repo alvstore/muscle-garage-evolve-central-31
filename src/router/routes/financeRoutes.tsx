@@ -2,7 +2,6 @@
 import React from 'react';
 import { RouteObject } from 'react-router-dom';
 import PrivateRoute from '@/components/auth/PrivateRoute';
-import InvoicePage from '@/pages/finance/InvoicePage';
 import InvoicesPage from '@/pages/finance/InvoicesPage';
 import NewInvoicePage from '@/pages/finance/NewInvoicePage';
 import TransactionPage from '@/pages/finance/TransactionPage';

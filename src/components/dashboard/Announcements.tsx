@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { format, parseISO } from 'date-fns';
-import { Announcement } from '@/types/notification';
+import { Announcement } from '@/types/communication/notification';
 import { MessageSquare } from 'lucide-react';
 
 interface AnnouncementsProps {

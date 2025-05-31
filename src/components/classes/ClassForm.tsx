@@ -1,6 +1,6 @@
 
 import { useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, type SubmitHandler } from "react-hook-form";
 import { format, addHours, parseISO } from "date-fns";
 import { 
   Dialog, 
@@ -35,14 +35,7 @@ import { CalendarIcon, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { GymClass, ClassDifficulty } from "@/types/class";
 
-interface ClassFormProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  initialData: GymClass | null;
-  onClose: () => void;
-}
-
-interface ClassFormData {
+type ClassFormValues = {
   name: string;
   description: string;
   trainerId: string;
@@ -56,7 +49,16 @@ interface ClassFormData {
   level: string;
   recurring: boolean;
   recurringPattern: string;
+};
+
+interface ClassFormProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  initialData: GymClass | null;
+  onClose: () => void;
 }
+
+// ClassFormData type is now defined as ClassFormValues
 
 const ClassForm = ({ 
   open, 
@@ -81,7 +83,7 @@ const ClassForm = ({
     "Zumba", "Spinning", "Boxing", "CrossFit", "Other"
   ];
   
-  const form = useForm<ClassFormData>({
+  const form = useForm<ClassFormValues>({
     defaultValues: {
       name: "",
       description: "",
@@ -92,59 +94,14 @@ const ClassForm = ({
       endTime: "09:00",
       type: "",
       location: "",
-      difficulty: "all",
+      difficulty: "beginner",
       level: "all",
       recurring: false,
       recurringPattern: "WEEKLY",
     }
   });
-  
-  useEffect(() => {
-    if (initialData) {
-      const startDate = parseISO(initialData.startTime);
-      const startTimeStr = format(startDate, "HH:mm");
-      const endTimeStr = format(parseISO(initialData.endTime), "HH:mm");
-      
-      form.reset({
-        name: initialData.name,
-        description: initialData.description || "",
-        trainerId: initialData.trainerId,
-        capacity: initialData.capacity,
-        date: startDate,
-        startTime: startTimeStr,
-        endTime: endTimeStr,
-        type: initialData.type,
-        location: initialData.location || "",
-        difficulty: initialData.difficulty,
-        level: initialData.level || "all",
-        recurring: initialData.recurring,
-        recurringPattern: initialData.recurringPattern || "WEEKLY",
-      });
-      
-      setIsRecurring(initialData.recurring);
-      setSelectedTrainer(initialData.trainerId);
-    } else {
-      form.reset({
-        name: "",
-        description: "",
-        trainerId: "",
-        capacity: 10,
-        date: new Date(),
-        startTime: "08:00",
-        endTime: "09:00",
-        type: "",
-        location: "",
-        difficulty: "all",
-        level: "all",
-        recurring: false,
-        recurringPattern: "WEEKLY",
-      });
-      setIsRecurring(false);
-      setSelectedTrainer("");
-    }
-  }, [initialData, form]);
-  
-  const onSubmit = (data: ClassFormData) => {
+
+  const onSubmit: SubmitHandler<ClassFormValues> = (data) => {
     // In a real app, would send to API
     console.log("Form submitted with data:", data);
     
@@ -185,6 +142,51 @@ const ClassForm = ({
     // Close form
     onClose();
   };
+  
+  useEffect(() => {
+    if (initialData) {
+      const startDate = parseISO(initialData.startTime);
+      const startTimeStr = format(startDate, "HH:mm");
+      const endTimeStr = format(parseISO(initialData.endTime), "HH:mm");
+      
+      form.reset({
+        name: initialData.name,
+        description: initialData.description || "",
+        trainerId: initialData.trainerId,
+        capacity: initialData.capacity,
+        date: startDate,
+        startTime: startTimeStr,
+        endTime: endTimeStr,
+        type: initialData.type,
+        location: initialData.location || "",
+        difficulty: initialData.difficulty as ClassDifficulty || "beginner",
+        level: initialData.level || "all",
+        recurring: initialData.recurring,
+        recurringPattern: initialData.recurringPattern || "WEEKLY",
+      });
+      
+      setIsRecurring(initialData.recurring);
+      setSelectedTrainer(initialData.trainerId);
+    } else {
+      form.reset({
+        name: "",
+        description: "",
+        trainerId: "",
+        capacity: 10,
+        date: new Date(),
+        startTime: "08:00",
+        endTime: "09:00",
+        type: "",
+        location: "",
+        difficulty: "beginner",
+        level: "all",
+        recurring: false,
+        recurringPattern: "WEEKLY",
+      });
+      setIsRecurring(false);
+      setSelectedTrainer("");
+    }
+  }, [initialData, form]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

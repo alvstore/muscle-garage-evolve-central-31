@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useAuth } from '@/hooks/auth/use-auth';
 import { useNavigate } from 'react-router-dom';
-import { Notification } from '@/types/notification';
+import { Notification } from '@/types/communication/notification';
 import NotificationItem from '@/components/notifications/NotificationItem';
 import { Badge } from '@/components/ui/badge';
 
