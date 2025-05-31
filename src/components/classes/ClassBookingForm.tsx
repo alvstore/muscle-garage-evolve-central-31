@@ -28,10 +28,10 @@ const ClassBookingForm = ({ gymClass, open, onClose, onBookingComplete }: ClassB
   // For admin/staff - allow selecting a member
   const [selectedMemberId, setSelectedMemberId] = useState("");
   
-  // Fetch members from the branch
+  // Fetch members from the branch - use branch_id instead of branchId
   const { data: members, isLoading: isLoadingMembers } = useQuery({
-    queryKey: ['members', gymClass.branchId],
-    queryFn: () => memberService.getMembersByBranch(gymClass.branchId),
+    queryKey: ['members', gymClass.branch_id],
+    queryFn: () => memberService.getMembersByBranch(gymClass.branch_id),
     enabled: open && (user?.role === 'admin' || user?.role === 'staff'),
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
@@ -63,8 +63,8 @@ const ClassBookingForm = ({ gymClass, open, onClose, onBookingComplete }: ClassB
       return;
     }
     
-    // Validation for class time (don't book past classes)
-    if (new Date(gymClass.startTime) < new Date()) {
+    // Validation for class time (don't book past classes) - use start_time
+    if (new Date(gymClass.start_time) < new Date()) {
       toast.error("Cannot book a class that has already started or ended");
       return;
     }
@@ -134,13 +134,13 @@ const ClassBookingForm = ({ gymClass, open, onClose, onBookingComplete }: ClassB
           <div className="space-y-2">
             <label className="text-sm font-medium">Class Details</label>
             <div className="rounded-md bg-accent/20 p-3 text-sm">
-              <p className="mb-1"><strong>Start:</strong> {new Date(gymClass.startTime).toLocaleString()}</p>
-              <p className="mb-1"><strong>End:</strong> {new Date(gymClass.endTime).toLocaleString()}</p>
+              <p className="mb-1"><strong>Start:</strong> {new Date(gymClass.start_time).toLocaleString()}</p>
+              <p className="mb-1"><strong>End:</strong> {new Date(gymClass.end_time).toLocaleString()}</p>
               <p className={`mb-1 ${gymClass.enrolled >= gymClass.capacity ? "text-red-500 font-medium" : ""}`}>
                 <strong>Availability:</strong> {gymClass.enrolled}/{gymClass.capacity} enrolled
                 {gymClass.enrolled >= gymClass.capacity && " (Class Full)"}
               </p>
-              <p><strong>Trainer:</strong> {gymClass.trainerName || gymClass.trainer || 'Unassigned'}</p>
+              <p><strong>Trainer:</strong> {gymClass.trainer || 'Unassigned'}</p>
             </div>
           </div>
           
@@ -160,7 +160,7 @@ const ClassBookingForm = ({ gymClass, open, onClose, onBookingComplete }: ClassB
           </Button>
           <Button 
             onClick={handleSubmit} 
-            disabled={isPending || gymClass.enrolled >= gymClass.capacity || new Date(gymClass.startTime) < new Date()}
+            disabled={isPending || gymClass.enrolled >= gymClass.capacity || new Date(gymClass.start_time) < new Date()}
             className="w-full sm:w-auto"
           >
             {isPending ? "Booking..." : "Confirm Booking"}

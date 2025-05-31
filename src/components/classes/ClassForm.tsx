@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useForm, type SubmitHandler } from "react-hook-form";
 import { format, addHours, parseISO } from "date-fns";
@@ -38,7 +37,7 @@ import { GymClass, ClassDifficulty } from "@/types/class";
 type ClassFormValues = {
   name: string;
   description: string;
-  trainerId: string;
+  trainer_id: string;
   capacity: number;
   date: Date;
   startTime: string;
@@ -57,8 +56,6 @@ interface ClassFormProps {
   initialData: GymClass | null;
   onClose: () => void;
 }
-
-// ClassFormData type is now defined as ClassFormValues
 
 const ClassForm = ({ 
   open, 
@@ -87,14 +84,14 @@ const ClassForm = ({
     defaultValues: {
       name: "",
       description: "",
-      trainerId: "",
+      trainer_id: "",
       capacity: 10,
       date: new Date(),
       startTime: "08:00",
       endTime: "09:00",
       type: "",
       location: "",
-      difficulty: "beginner",
+      difficulty: "Beginner",
       level: "all",
       recurring: false,
       recurringPattern: "WEEKLY",
@@ -109,19 +106,19 @@ const ClassForm = ({
     const newClass: Partial<GymClass> = {
       name: data.name,
       description: data.description,
-      trainerId: data.trainerId,
-      trainerName: trainers.find(t => t.id === data.trainerId)?.name || "",
+      trainer_id: data.trainer_id,
+      trainer: trainers.find(t => t.id === data.trainer_id)?.name || "",
       capacity: data.capacity,
       enrolled: initialData?.enrolled || 0,
       // Combine date and time strings into ISO strings
-      startTime: new Date(
+      start_time: new Date(
         data.date.getFullYear(),
         data.date.getMonth(),
         data.date.getDate(),
         parseInt(data.startTime.split(':')[0]),
         parseInt(data.startTime.split(':')[1])
       ).toISOString(),
-      endTime: new Date(
+      end_time: new Date(
         data.date.getFullYear(),
         data.date.getMonth(),
         data.date.getDate(),
@@ -145,40 +142,40 @@ const ClassForm = ({
   
   useEffect(() => {
     if (initialData) {
-      const startDate = parseISO(initialData.startTime);
+      const startDate = parseISO(initialData.start_time);
       const startTimeStr = format(startDate, "HH:mm");
-      const endTimeStr = format(parseISO(initialData.endTime), "HH:mm");
+      const endTimeStr = format(parseISO(initialData.end_time), "HH:mm");
       
       form.reset({
         name: initialData.name,
         description: initialData.description || "",
-        trainerId: initialData.trainerId,
+        trainer_id: initialData.trainer_id || "",
         capacity: initialData.capacity,
         date: startDate,
         startTime: startTimeStr,
         endTime: endTimeStr,
-        type: initialData.type,
+        type: initialData.type || "",
         location: initialData.location || "",
-        difficulty: initialData.difficulty as ClassDifficulty || "beginner",
+        difficulty: (initialData.difficulty as ClassDifficulty) || "Beginner",
         level: initialData.level || "all",
-        recurring: initialData.recurring,
+        recurring: initialData.recurring || false,
         recurringPattern: initialData.recurringPattern || "WEEKLY",
       });
       
-      setIsRecurring(initialData.recurring);
-      setSelectedTrainer(initialData.trainerId);
+      setIsRecurring(initialData.recurring || false);
+      setSelectedTrainer(initialData.trainer_id || "");
     } else {
       form.reset({
         name: "",
         description: "",
-        trainerId: "",
+        trainer_id: "",
         capacity: 10,
         date: new Date(),
         startTime: "08:00",
         endTime: "09:00",
         type: "",
         location: "",
-        difficulty: "beginner",
+        difficulty: "Beginner",
         level: "all",
         recurring: false,
         recurringPattern: "WEEKLY",
@@ -219,7 +216,7 @@ const ClassForm = ({
               
               <FormField
                 control={form.control}
-                name="trainerId"
+                name="trainer_id"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Trainer</FormLabel>

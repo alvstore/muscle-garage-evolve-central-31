@@ -35,6 +35,10 @@ export interface Class {
   is_active?: boolean;
   created_at?: string;
   updated_at?: string;
+  difficulty?: ClassDifficulty;
+  level?: string;
+  recurring?: boolean;
+  recurringPattern?: string;
 }
 
 export interface ClassBooking {
@@ -63,7 +67,12 @@ export interface ProgressMetrics {
 // For backward compatibility
 export type { ClassType as adaptClassTypeFromDB };
 
-// Additional class interface for forms
+// Additional class interface for forms with camelCase properties for easier form handling
 export interface GymClass extends Class {
-  difficulty?: ClassDifficulty;
+  // Add camelCase aliases for form compatibility
+  startTime?: string;
+  endTime?: string;
+  trainerId?: string;
+  trainerName?: string;
+  branchId?: string;
 }

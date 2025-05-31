@@ -5,7 +5,7 @@ import { useAuth } from '@/hooks/auth/use-auth';
  * Extracts auth actions from the auth context for easier access
  */
 export const useAuthActions = () => {
-  const { login, logout, register, forgotPassword, resetPassword, changePassword } = useAuth();
+  const { login, logout, register, forgotPassword, resetPassword, changePassword, isLoading } = useAuth();
   
   // Wrap the login function to ensure it returns a consistent result format
   const handleLogin = async (email: string, password: string) => {
@@ -24,6 +24,7 @@ export const useAuthActions = () => {
     register,
     forgotPassword,
     resetPassword,
-    changePassword
+    changePassword,
+    isLoading
   };
 };

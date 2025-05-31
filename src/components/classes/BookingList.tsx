@@ -1,223 +1,187 @@
 
-import React from 'react';
-import { format } from 'date-fns';
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { CheckIcon, Clock, X, UserCheck, UserX } from 'lucide-react';
-import { ClassBooking, BookingStatus } from '@/types/class';
-import { getInitials } from '@/utils/stringUtils';
+import React, { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ClassBooking } from '@/types/class';
+import { useBranch } from '@/hooks/settings/use-branches';
+import { Search, Calendar, Users, Clock } from 'lucide-react';
+import BookingCard from './BookingCard';
 
-// Sample data for demonstration
-export const mockBookings: ClassBooking[] = [
-  {
-    id: '1',
-    class_id: 'class1',
-    member_id: 'member1',
-    memberName: 'Jane Smith',
-    memberAvatar: '/avatar-1.jpg',
-    bookingDate: '2023-04-15T08:00:00Z',
-    status: 'confirmed',
-    attended: false,
-    created_at: '2023-04-10T12:00:00Z',
-    updated_at: '2023-04-10T12:00:00Z'
-  },
-  {
-    id: '2',
-    class_id: 'class1',
-    member_id: 'member2',
-    memberName: 'John Doe',
-    memberAvatar: '/avatar-2.jpg',
-    bookingDate: '2023-04-15T08:00:00Z',
-    status: 'booked',
-    attended: false,
-    created_at: '2023-04-11T10:00:00Z',
-    updated_at: '2023-04-11T10:00:00Z'
-  },
-  {
-    id: '3',
-    class_id: 'class1',
-    member_id: 'member3',
-    memberName: 'Sara Wilson',
-    memberAvatar: '/avatar-3.jpg',
-    bookingDate: '2023-04-15T08:00:00Z',
-    status: 'attended',
-    attended: true,
-    attendanceTime: '2023-04-15T08:05:00Z',
-    created_at: '2023-04-12T09:00:00Z',
-    updated_at: '2023-04-15T08:05:00Z'
-  },
-  {
-    id: '4',
-    class_id: 'class1',
-    member_id: 'member4',
-    memberName: 'Mike Johnson',
-    memberAvatar: '',
-    bookingDate: '2023-04-15T08:00:00Z',
-    status: 'no-show',
-    attended: false,
-    notes: 'Did not show up for the second time',
-    created_at: '2023-04-13T14:00:00Z',
-    updated_at: '2023-04-15T09:00:00Z'
-  }
-];
+const BookingList = () => {
+  const { currentBranch } = useBranch();
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [dateFilter, setDateFilter] = useState('all');
 
-interface BookingListProps {
-  bookings?: ClassBooking[];
-  onMarkAttended?: (booking: ClassBooking) => void;
-  onMarkNoShow?: (booking: ClassBooking) => void;
-  onCancel?: (booking: ClassBooking) => void;
-  isHistorical?: boolean;
-}
+  // Mock data - replace with actual API call
+  const { data: bookings = [], isLoading } = useQuery({
+    queryKey: ['bookings', currentBranch?.id],
+    queryFn: () => Promise.resolve([]), // Replace with actual service call
+    enabled: !!currentBranch?.id,
+  });
 
-const BookingList: React.FC<BookingListProps> = ({
-  bookings = mockBookings,
-  onMarkAttended,
-  onMarkNoShow,
-  onCancel,
-  isHistorical = false
-}) => {
-  // Find bookings by status
-  const confirmedBookings = bookings.filter(b => b.status === 'confirmed' || b.status === 'waitlist');
-  const attendedBookings = bookings.filter(b => b.status === 'attended');
-  const cancelledBookings = bookings.filter(b => b.status === 'cancelled' || b.status === 'no-show');
+  const filteredBookings = bookings.filter((booking: ClassBooking) => {
+    const matchesSearch = booking.memberName?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = statusFilter === 'all' || booking.status === statusFilter;
+    // Add date filtering logic here
+    return matchesSearch && matchesStatus;
+  });
 
-  // If there are no bookings at all
-  if (bookings.length === 0) {
-    return (
-      <div className="text-center py-12">
-        <p className="text-gray-500">No bookings yet</p>
-      </div>
-    );
+  const getStatusCounts = () => {
+    return {
+      all: bookings.length,
+      confirmed: bookings.filter((b: ClassBooking) => b.status === 'confirmed').length,
+      attended: bookings.filter((b: ClassBooking) => b.status === 'attended').length,
+      cancelled: bookings.filter((b: ClassBooking) => b.status === 'cancelled').length,
+      'no-show': bookings.filter((b: ClassBooking) => b.status === 'no-show').length,
+    };
+  };
+
+  const statusCounts = getStatusCounts();
+
+  if (isLoading) {
+    return <div className="flex justify-center p-8">Loading bookings...</div>;
   }
 
   return (
-    <div className="space-y-8">
-      {/* Confirmed/Waitlisted Bookings */}
-      {confirmedBookings.length > 0 && (
-        <div>
-          <h3 className="font-medium text-lg mb-4">
-            Confirmed Bookings ({confirmedBookings.length})
-          </h3>
-          <ul className="space-y-4">
-            {confirmedBookings.map(booking => (
-              <li key={booking.id} className="border rounded-lg p-4 flex flex-wrap justify-between items-center gap-4">
-                <div className="flex items-center space-x-4">
-                  <Avatar className="h-10 w-10">
-                    <AvatarImage src={booking.memberAvatar} alt={booking.memberName} />
-                    <AvatarFallback>
-                      {getInitials(booking.memberName || '')}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <div className="font-medium">{booking.memberName || 'Unknown Member'}</div>
-                    <div className="text-sm text-gray-500">
-                      Booked: {booking.bookingDate ? format(new Date(booking.bookingDate), 'MMM d, yyyy') : 'Unknown date'}
-                    </div>
-                  </div>
-                </div>
-                
-                {!isHistorical && (
-                  <div className="flex items-center space-x-2">
-                    <Button 
-                      size="sm" 
-                      variant="outline"
-                      className="flex items-center"
-                      onClick={() => onCancel?.(booking)}
-                    >
-                      <X className="h-4 w-4 mr-1" /> Cancel
-                    </Button>
-                    <Button 
-                      size="sm" 
-                      className="flex items-center"
-                      onClick={() => onMarkAttended?.(booking)}
-                    >
-                      <CheckIcon className="h-4 w-4 mr-1" /> Check In
-                    </Button>
-                  </div>
-                )}
-              </li>
-            ))}
-          </ul>
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold">Class Bookings</h2>
+        <div className="flex gap-2">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+            <Input
+              placeholder="Search members..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10 w-64"
+            />
+          </div>
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-40">
+              <SelectValue placeholder="Filter by status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Status</SelectItem>
+              <SelectItem value="confirmed">Confirmed</SelectItem>
+              <SelectItem value="attended">Attended</SelectItem>
+              <SelectItem value="cancelled">Cancelled</SelectItem>
+              <SelectItem value="no-show">No Show</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
-      )}
+      </div>
 
-      {/* Attended Bookings */}
-      {attendedBookings.length > 0 && (
-        <div>
-          <h3 className="font-medium text-lg mb-4">
-            Attended ({attendedBookings.length})
-          </h3>
-          <ul className="space-y-4">
-            {attendedBookings.map(booking => (
-              <li key={booking.id} className="border rounded-lg p-4 flex flex-wrap justify-between items-center gap-4">
-                <div className="flex items-center space-x-4">
-                  <Avatar className="h-10 w-10">
-                    <AvatarImage src={booking.memberAvatar} alt={booking.memberName} />
-                    <AvatarFallback>
-                      {getInitials(booking.memberName || '')}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <div className="font-medium">{booking.memberName || 'Unknown Member'}</div>
-                    <div className="text-sm text-gray-500">
-                      Booked: {booking.bookingDate ? format(new Date(booking.bookingDate), 'MMM d, yyyy') : 'Unknown date'}
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="flex items-center">
-                  <Badge variant="outline" className="flex items-center space-x-1">
-                    <Clock className="h-3 w-3 mr-1" />
-                    <span>
-                      {booking.attendanceTime ? format(new Date(booking.attendanceTime), 'h:mm a') : 'Check-in recorded'}
-                    </span>
-                  </Badge>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
+      <Tabs value={statusFilter} onValueChange={setStatusFilter} className="space-y-4">
+        <TabsList className="grid w-full grid-cols-5">
+          <TabsTrigger value="all" className="flex items-center gap-2">
+            <Users className="h-4 w-4" />
+            All ({statusCounts.all})
+          </TabsTrigger>
+          <TabsTrigger value="confirmed" className="flex items-center gap-2">
+            <Calendar className="h-4 w-4" />
+            Confirmed ({statusCounts.confirmed})
+          </TabsTrigger>
+          <TabsTrigger value="attended" className="flex items-center gap-2">
+            <Clock className="h-4 w-4" />
+            Attended ({statusCounts.attended})
+          </TabsTrigger>
+          <TabsTrigger value="cancelled">
+            Cancelled ({statusCounts.cancelled})
+          </TabsTrigger>
+          <TabsTrigger value="no-show">
+            No Show ({statusCounts['no-show']})
+          </TabsTrigger>
+        </TabsList>
 
-      {/* Cancelled/No-Show Bookings */}
-      {cancelledBookings.length > 0 && (
-        <div>
-          <h3 className="font-medium text-lg mb-4">
-            Cancelled/No-Show ({cancelledBookings.length})
-          </h3>
-          <ul className="space-y-4">
-            {cancelledBookings.map(booking => (
-              <li key={booking.id} className="border rounded-lg p-4 flex flex-wrap justify-between items-center gap-4">
-                <div className="flex items-center space-x-4">
-                  <Avatar className="h-10 w-10">
-                    <AvatarImage src={booking.memberAvatar} alt={booking.memberName} />
-                    <AvatarFallback>
-                      {getInitials(booking.memberName || '')}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <div className="font-medium">{booking.memberName || 'Unknown Member'}</div>
-                    <div className="text-sm text-gray-500">
-                      Booked: {booking.bookingDate ? format(new Date(booking.bookingDate), 'MMM d, yyyy') : 'Unknown date'}
-                    </div>
-                  </div>
-                </div>
-                
-                <div>
-                  <Badge variant={booking.status === 'no-show' ? 'destructive' : 'secondary'}>
-                    {booking.status === 'no-show' ? 'No-Show' : 'Cancelled'}
-                  </Badge>
-                  
-                  {booking.notes && (
-                    <div className="text-sm text-gray-500 mt-2">
-                      Note: {booking.notes}
-                    </div>
-                  )}
-                </div>
-              </li>
+        <TabsContent value="all" className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {filteredBookings.map((booking: ClassBooking) => (
+              <BookingCard
+                key={booking.id}
+                booking={booking}
+                onClick={() => {
+                  // Handle booking click
+                  console.log('Booking clicked:', booking.id);
+                }}
+              />
             ))}
-          </ul>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="confirmed" className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {filteredBookings
+              .filter((booking: ClassBooking) => booking.status === 'confirmed')
+              .map((booking: ClassBooking) => (
+                <BookingCard
+                  key={booking.id}
+                  booking={booking}
+                  onClick={() => {
+                    console.log('Confirmed booking clicked:', booking.id);
+                  }}
+                />
+              ))}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="attended" className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {filteredBookings
+              .filter((booking: ClassBooking) => booking.status === 'attended')
+              .map((booking: ClassBooking) => (
+                <BookingCard
+                  key={booking.id}
+                  booking={booking}
+                  onClick={() => {
+                    console.log('Attended booking clicked:', booking.id);
+                  }}
+                />
+              ))}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="cancelled" className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {filteredBookings
+              .filter((booking: ClassBooking) => booking.status === 'cancelled')
+              .map((booking: ClassBooking) => (
+                <BookingCard
+                  key={booking.id}
+                  booking={booking}
+                  onClick={() => {
+                    console.log('Cancelled booking clicked:', booking.id);
+                  }}
+                />
+              ))}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="no-show" className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {filteredBookings
+              .filter((booking: ClassBooking) => booking.status === 'no-show')
+              .map((booking: ClassBooking) => (
+                <BookingCard
+                  key={booking.id}
+                  booking={booking}
+                  onClick={() => {
+                    console.log('No-show booking clicked:', booking.id);
+                  }}
+                />
+              ))}
+          </div>
+        </TabsContent>
+      </Tabs>
+
+      {filteredBookings.length === 0 && (
+        <div className="text-center py-12">
+          <p className="text-muted-foreground">No bookings found.</p>
         </div>
       )}
     </div>
