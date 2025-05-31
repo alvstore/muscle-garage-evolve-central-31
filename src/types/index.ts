@@ -1,13 +1,30 @@
 // Main types export file
-export * from './notification';
+
+// Core types
+export * from './communication';
+
+// Feature modules
 export * from './crm';
-export * from './finance';
-export * from './permissions';
-export * from './webhooks';
+
+// Export specific types from finance to avoid duplicates
+type _FinanceTypes = typeof import('./finance');
+// Export only what's actually available
+export type { Invoice } from './finance';
+
+// Export specific types from permissions to avoid duplicates
+export type { UserRole } from './permissions';
+
+// Webhook types are already exported from communication module
+// No need to re-export from webhooks
+
 export * from './invoice';
-export * from './measurements';
-export * from './workout';
-export * from './diet';
+// Commenting out missing modules - uncomment and implement when ready
+// export * from './measurements';
+// export * from './workout';
+// export * from './diet';
+
+// Re-export user types for compatibility
+export * from './auth/user';
 
 // Basic types
 export interface Member {
@@ -73,5 +90,3 @@ export interface FollowUpTemplate {
   created_by?: string;
 }
 
-// Re-export user types for compatibility
-export * from './auth/user';
