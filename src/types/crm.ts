@@ -1,40 +1,51 @@
 
-// CRM and lead management types
+export type LeadSource = 'website' | 'referral' | 'social_media' | 'walk_in' | 'advertisement' | 'other';
+
+export type LeadStatus = 'new' | 'contacted' | 'qualified' | 'converted' | 'lost';
+
+export type FunnelStage = 'lead' | 'prospect' | 'opportunity' | 'customer' | 'closed-won' | 'closed-lost';
+
 export interface Lead {
   id: string;
   name: string;
   email: string;
   phone?: string;
-  source: string;
-  status: 'new' | 'contacted' | 'qualified' | 'converted' | 'lost';
-  funnel_stage: 'cold' | 'warm' | 'hot' | 'converted';
-  tags?: string[];
+  source: LeadSource;
+  status: LeadStatus;
+  stage: FunnelStage;
+  score?: number;
+  interests?: string[];
   notes?: string;
   assigned_to?: string;
+  branch_id?: string;
   created_at: string;
   updated_at: string;
-  branch_id?: string;
-  conversion_value?: number;
-  conversion_date?: string;
-  last_contact_date?: string;
-  follow_up_date?: string;
 }
 
-export interface FollowUp {
+export interface FollowUpHistory {
   id: string;
   lead_id: string;
-  type: FollowUpType;
+  type: 'call' | 'email' | 'sms' | 'meeting' | 'note';
   content: string;
-  scheduled_at: string;
+  status: 'scheduled' | 'completed' | 'cancelled';
+  scheduled_at?: string;
   sent_at?: string;
-  response?: string;
   response_at?: string;
-  status: 'pending' | 'sent' | 'responded' | 'failed';
+  response?: string;
   sent_by?: string;
   template_id?: string;
 }
 
-export type FollowUpType = 'email' | 'call' | 'sms' | 'whatsapp' | 'meeting';
+export interface FollowUpScheduled {
+  id: string;
+  lead_id: string;
+  type: 'call' | 'email' | 'sms' | 'meeting';
+  scheduled_at: string;
+  content: string;
+  status: 'pending' | 'completed' | 'cancelled';
+  created_by?: string;
+  created_at: string;
+}
 
 export interface FollowUpTemplate {
   id: string;
@@ -45,51 +56,28 @@ export interface FollowUpTemplate {
   created_at: string;
 }
 
-export interface LeadsListProps {
-  onLeadUpdate: () => void;
-  searchTerm: string;
-}
-
-export interface LeadFormProps {
-  onSave: () => void;
-  onClose: () => void;
-}
-
-export interface FunnelBoardProps {
-  leads: Lead[];
-  onLeadUpdate?: () => void;
-}
-
-export interface LeadDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  lead: Lead | null;
-  title?: string;
-  children: React.ReactNode;
-}
-
-export interface CRMStats {
-  total_leads: number;
-  new_leads: number;
-  qualified_leads: number;
-  converted_leads: number;
-  conversion_rate: number;
-  avg_deal_value: number;
-}
-
-export interface LeadActivity {
+export interface Deal {
   id: string;
+  title: string;
+  value: number;
   lead_id: string;
-  type: string;
-  description: string;
+  stage: string;
+  probability: number;
+  expected_close_date?: string;
+  notes?: string;
   created_at: string;
-  created_by?: string;
+  updated_at: string;
 }
 
-export interface LeadConversionData {
-  membership_plan_id: string;
-  start_date: string;
-  payment_method: string;
-  amount: number;
+export interface Contact {
+  id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  company?: string;
+  position?: string;
+  tags?: string[];
   notes?: string;
+  created_at: string;
+  updated_at: string;
 }

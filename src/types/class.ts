@@ -1,123 +1,57 @@
 
-// Class and scheduling types
-export interface Class {
-  id: string;
-  name: string;
-  type?: string;
-  description?: string;
-  trainer_id?: string;
-  trainer?: string;
-  location?: string;
-  capacity: number;
-  enrolled: number;
-  start_time: string;
-  end_time: string;
-  recurrence?: string;
-  status: 'scheduled' | 'cancelled' | 'completed' | 'in_progress';
-  branch_id?: string;
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
-}
+export type ClassStatus = 'scheduled' | 'in_progress' | 'completed' | 'cancelled';
 
-export interface ClassSchedule {
-  id: string;
-  name: string;
-  type: string;
-  description?: string;
-  trainer_id: string;
-  location: string;
-  difficulty: string;
-  capacity: number;
-  enrolled: number;
-  start_time: string;
-  end_time: string;
-  recurring: boolean;
-  recurring_pattern?: string;
-  status: 'scheduled' | 'cancelled' | 'completed' | 'in_progress';
-  branch_id?: string;
-  created_at: string;
-  updated_at: string;
-}
-
-export type BookingStatus = 'confirmed' | 'cancelled' | 'waitlist' | 'attended' | 'missed' | 'pending' | 'booked' | 'no-show';
-
-export interface ClassBooking {
-  id: string;
-  class_id: string;
-  classId?: string; // Alias for camelCase compatibility
-  member_id: string;
-  memberId?: string; // Alias for camelCase compatibility
-  memberName?: string; // Additional property for display
-  memberAvatar?: string; // Additional property for display
-  bookingDate?: string; // Additional property for display
-  attendanceTime?: string; // Additional property for attendance tracking
-  notes?: string; // Additional property for notes
-  status: BookingStatus;
-  attended: boolean;
-  created_at: string;
-  createdAt?: string; // Alias for camelCase compatibility
-  updated_at: string;
-  // Payment related fields
-  paid_amount?: number;
-  payment_status?: string;
-  payment_method?: string;
-}
+export type ClassDifficulty = 'Beginner' | 'Intermediate' | 'Advanced' | 'All Levels';
 
 export interface ClassType {
   id: string;
   name: string;
   description?: string;
   level?: string;
-  difficulty?: string;
+  difficulty?: ClassDifficulty;
   branch_id?: string;
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
+  is_active?: boolean;
+  created_at?: string;
+  updated_at?: string;
 }
 
-export interface ClassFormData {
-  name: string;
-  type: string;
-  description?: string;
-  trainer_id: string;
-  trainerId?: string; // Alias for camelCase compatibility
-  location: string;
-  difficulty: string;
-  capacity: number;
-  start_time: string;
-  end_time: string;
-  recurring: boolean;
-  recurring_pattern?: string;
-  branch_id?: string;
-}
-
-// Define ClassDifficulty type
-export type ClassDifficulty = 'beginner' | 'intermediate' | 'advanced' | 'all-levels' | 'all';
-
-// Additional type for compatibility with enhanced properties
-export interface GymClass {
+export interface Class {
   id: string;
   name: string;
-  type: string;
-  trainer: string;
-  trainerId?: string;
-  trainerName?: string;
-  trainerAvatar?: string;
-  schedule: string;
-  capacity: number;
-  enrolled: number;
-  status: string;
   description?: string;
+  type?: string;
+  trainer_id?: string;
+  trainer?: string;
+  capacity: number;
+  enrolled?: number;
+  start_time: string;
+  end_time: string;
   location?: string;
-  difficulty?: string;
-  level?: string;
-  recurring?: boolean;
-  recurringPattern?: string;
-  startTime?: string;
-  endTime?: string;
-  branchId?: string;
-  start_time?: string;
-  end_time?: string;
+  status?: ClassStatus;
+  recurrence?: string;
   branch_id?: string;
+  is_active?: boolean;
+  created_at?: string;
+  updated_at?: string;
 }
+
+export interface ClassBooking {
+  id: string;
+  class_id: string;
+  member_id: string;
+  status: 'confirmed' | 'cancelled' | 'waitlist';
+  attended?: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface ProgressMetrics {
+  weight?: number;
+  bmi?: number;
+  body_fat_percentage?: number;
+  muscle_mass?: number;
+  date: string;
+}
+
+// For backward compatibility
+export type { ClassType as adaptClassTypeFromDB };
