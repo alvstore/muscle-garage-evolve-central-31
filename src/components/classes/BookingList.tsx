@@ -1,238 +1,227 @@
 
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { format, parseISO } from "date-fns";
-import { CheckCircle, XCircle, Clock, CalendarClock } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import React from 'react';
+import { format } from 'date-fns';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ClassBooking, BookingStatus } from "@/types/class";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { CheckIcon, Clock, X, UserCheck, UserX } from 'lucide-react';
+import { ClassBooking, BookingStatus } from '@/types/class';
+import { getInitials } from '@/utils/stringUtils';
 
-// Mock data fetching function
-const fetchBookings = async (): Promise<ClassBooking[]> => {
-  // In a real app, this would be an API call
-  return [
-    {
-      id: "1",
-      classId: "1",
-      memberId: "m1",
-      memberName: "John Doe",
-      memberAvatar: "/placeholder.svg",
-      bookingDate: "2025-04-15T06:30:00",
-      status: "booked",
-      createdAt: "2025-04-10T15:30:00",
-      updatedAt: "2025-04-10T15:30:00"
-    },
-    {
-      id: "2",
-      classId: "1",
-      memberId: "m2",
-      memberName: "Lisa Wong",
-      bookingDate: "2025-04-15T06:30:00",
-      status: "attended",
-      attendanceTime: "2025-04-15T06:25:00",
-      createdAt: "2025-04-09T10:15:00",
-      updatedAt: "2025-04-15T06:25:00"
-    },
-    {
-      id: "3",
-      classId: "2",
-      memberId: "m3",
-      memberName: "David Miller",
-      memberAvatar: "/placeholder.svg",
-      bookingDate: "2025-04-15T09:00:00",
-      status: "cancelled",
-      notes: "Feeling unwell",
-      createdAt: "2025-04-08T17:45:00",
-      updatedAt: "2025-04-14T08:30:00"
-    }
-  ];
-};
+// Sample data for demonstration
+export const mockBookings: ClassBooking[] = [
+  {
+    id: '1',
+    class_id: 'class1',
+    member_id: 'member1',
+    memberName: 'Jane Smith',
+    memberAvatar: '/avatar-1.jpg',
+    bookingDate: '2023-04-15T08:00:00Z',
+    status: 'confirmed',
+    attended: false,
+    created_at: '2023-04-10T12:00:00Z',
+    updated_at: '2023-04-10T12:00:00Z'
+  },
+  {
+    id: '2',
+    class_id: 'class1',
+    member_id: 'member2',
+    memberName: 'John Doe',
+    memberAvatar: '/avatar-2.jpg',
+    bookingDate: '2023-04-15T08:00:00Z',
+    status: 'booked',
+    attended: false,
+    created_at: '2023-04-11T10:00:00Z',
+    updated_at: '2023-04-11T10:00:00Z'
+  },
+  {
+    id: '3',
+    class_id: 'class1',
+    member_id: 'member3',
+    memberName: 'Sara Wilson',
+    memberAvatar: '/avatar-3.jpg',
+    bookingDate: '2023-04-15T08:00:00Z',
+    status: 'attended',
+    attended: true,
+    attendanceTime: '2023-04-15T08:05:00Z',
+    created_at: '2023-04-12T09:00:00Z',
+    updated_at: '2023-04-15T08:05:00Z'
+  },
+  {
+    id: '4',
+    class_id: 'class1',
+    member_id: 'member4',
+    memberName: 'Mike Johnson',
+    memberAvatar: '',
+    bookingDate: '2023-04-15T08:00:00Z',
+    status: 'no-show',
+    attended: false,
+    notes: 'Did not show up for the second time',
+    created_at: '2023-04-13T14:00:00Z',
+    updated_at: '2023-04-15T09:00:00Z'
+  }
+];
 
-const BookingList = () => {
-  const { data: bookings, isLoading } = useQuery({
-    queryKey: ['bookings'],
-    queryFn: fetchBookings,
-  });
+interface BookingListProps {
+  bookings?: ClassBooking[];
+  onMarkAttended?: (booking: ClassBooking) => void;
+  onMarkNoShow?: (booking: ClassBooking) => void;
+  onCancel?: (booking: ClassBooking) => void;
+  isHistorical?: boolean;
+}
 
-  const getStatusColor = (status: BookingStatus) => {
-    switch (status) {
-      case "booked":
-        return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300";
-      case "attended":
-        return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300";
-      case "cancelled":
-        return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300";
-      case "no-show":
-        return "bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-300";
-      default:
-        return "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300";
-    }
-  };
+const BookingList: React.FC<BookingListProps> = ({
+  bookings = mockBookings,
+  onMarkAttended,
+  onMarkNoShow,
+  onCancel,
+  isHistorical = false
+}) => {
+  // Find bookings by status
+  const confirmedBookings = bookings.filter(b => b.status === 'confirmed' || b.status === 'waitlist');
+  const attendedBookings = bookings.filter(b => b.status === 'attended');
+  const cancelledBookings = bookings.filter(b => b.status === 'cancelled' || b.status === 'no-show');
 
-  const getInitials = (name: string) => {
-    return name
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase();
-  };
-
-  if (isLoading) {
-    return <div>Loading bookings...</div>;
+  // If there are no bookings at all
+  if (bookings.length === 0) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-gray-500">No bookings yet</p>
+      </div>
+    );
   }
 
   return (
-    <Tabs defaultValue="upcoming">
-      <TabsList className="mb-4">
-        <TabsTrigger value="upcoming">Upcoming Bookings</TabsTrigger>
-        <TabsTrigger value="past">Past Bookings</TabsTrigger>
-        <TabsTrigger value="cancelled">Cancelled</TabsTrigger>
-      </TabsList>
-      
-      <TabsContent value="upcoming" className="space-y-4">
-        {bookings?.filter(b => b.status === "booked").map(booking => (
-          <Card key={booking.id}>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
+    <div className="space-y-8">
+      {/* Confirmed/Waitlisted Bookings */}
+      {confirmedBookings.length > 0 && (
+        <div>
+          <h3 className="font-medium text-lg mb-4">
+            Confirmed Bookings ({confirmedBookings.length})
+          </h3>
+          <ul className="space-y-4">
+            {confirmedBookings.map(booking => (
+              <li key={booking.id} className="border rounded-lg p-4 flex flex-wrap justify-between items-center gap-4">
                 <div className="flex items-center space-x-4">
-                  <Avatar>
-                    <AvatarImage 
-                      src={booking.memberAvatar || "/placeholder.svg"} 
-                      alt={booking.memberName} 
-                    />
-                    <AvatarFallback>{getInitials(booking.memberName || '')}</AvatarFallback>
+                  <Avatar className="h-10 w-10">
+                    <AvatarImage src={booking.memberAvatar} alt={booking.memberName} />
+                    <AvatarFallback>
+                      {getInitials(booking.memberName || '')}
+                    </AvatarFallback>
                   </Avatar>
                   <div>
-                    <p className="font-medium">{booking.memberName}</p>
-                    <div className="flex items-center text-sm text-muted-foreground">
-                      <CalendarClock className="mr-1 h-3 w-3" />
-                      <span>{format(parseISO(booking.bookingDate), "PPP")}</span>
-                      <span className="mx-1">•</span>
-                      <Clock className="mr-1 h-3 w-3" />
-                      <span>{format(parseISO(booking.bookingDate), "h:mm a")}</span>
+                    <div className="font-medium">{booking.memberName || 'Unknown Member'}</div>
+                    <div className="text-sm text-gray-500">
+                      Booked: {booking.bookingDate ? format(new Date(booking.bookingDate), 'MMM d, yyyy') : 'Unknown date'}
                     </div>
                   </div>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <Badge className={getStatusColor(booking.status)}>
-                    {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
+                
+                {!isHistorical && (
+                  <div className="flex items-center space-x-2">
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      className="flex items-center"
+                      onClick={() => onCancel?.(booking)}
+                    >
+                      <X className="h-4 w-4 mr-1" /> Cancel
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      className="flex items-center"
+                      onClick={() => onMarkAttended?.(booking)}
+                    >
+                      <CheckIcon className="h-4 w-4 mr-1" /> Check In
+                    </Button>
+                  </div>
+                )}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* Attended Bookings */}
+      {attendedBookings.length > 0 && (
+        <div>
+          <h3 className="font-medium text-lg mb-4">
+            Attended ({attendedBookings.length})
+          </h3>
+          <ul className="space-y-4">
+            {attendedBookings.map(booking => (
+              <li key={booking.id} className="border rounded-lg p-4 flex flex-wrap justify-between items-center gap-4">
+                <div className="flex items-center space-x-4">
+                  <Avatar className="h-10 w-10">
+                    <AvatarImage src={booking.memberAvatar} alt={booking.memberName} />
+                    <AvatarFallback>
+                      {getInitials(booking.memberName || '')}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <div className="font-medium">{booking.memberName || 'Unknown Member'}</div>
+                    <div className="text-sm text-gray-500">
+                      Booked: {booking.bookingDate ? format(new Date(booking.bookingDate), 'MMM d, yyyy') : 'Unknown date'}
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="flex items-center">
+                  <Badge variant="outline" className="flex items-center space-x-1">
+                    <Clock className="h-3 w-3 mr-1" />
+                    <span>
+                      {booking.attendanceTime ? format(new Date(booking.attendanceTime), 'h:mm a') : 'Check-in recorded'}
+                    </span>
                   </Badge>
-                  <div className="flex space-x-1">
-                    <Button size="sm" variant="outline">
-                      <CheckCircle className="mr-1 h-4 w-4 text-green-600" />
-                      Check In
-                    </Button>
-                    <Button size="sm" variant="outline">
-                      <XCircle className="mr-1 h-4 w-4 text-red-600" />
-                      Cancel
-                    </Button>
-                  </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-        
-        {bookings?.filter(b => b.status === "booked").length === 0 && (
-          <div className="text-center p-8 text-muted-foreground">
-            No upcoming bookings found.
-          </div>
-        )}
-      </TabsContent>
-      
-      <TabsContent value="past" className="space-y-4">
-        {bookings?.filter(b => b.status === "attended").map(booking => (
-          <Card key={booking.id}>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* Cancelled/No-Show Bookings */}
+      {cancelledBookings.length > 0 && (
+        <div>
+          <h3 className="font-medium text-lg mb-4">
+            Cancelled/No-Show ({cancelledBookings.length})
+          </h3>
+          <ul className="space-y-4">
+            {cancelledBookings.map(booking => (
+              <li key={booking.id} className="border rounded-lg p-4 flex flex-wrap justify-between items-center gap-4">
                 <div className="flex items-center space-x-4">
-                  <Avatar>
-                    <AvatarImage 
-                      src={booking.memberAvatar || "/placeholder.svg"} 
-                      alt={booking.memberName} 
-                    />
-                    <AvatarFallback>{getInitials(booking.memberName || '')}</AvatarFallback>
+                  <Avatar className="h-10 w-10">
+                    <AvatarImage src={booking.memberAvatar} alt={booking.memberName} />
+                    <AvatarFallback>
+                      {getInitials(booking.memberName || '')}
+                    </AvatarFallback>
                   </Avatar>
                   <div>
-                    <p className="font-medium">{booking.memberName}</p>
-                    <div className="flex items-center text-sm text-muted-foreground">
-                      <CalendarClock className="mr-1 h-3 w-3" />
-                      <span>{format(parseISO(booking.bookingDate), "PPP")}</span>
-                      <span className="mx-1">•</span>
-                      <Clock className="mr-1 h-3 w-3" />
-                      <span>{format(parseISO(booking.bookingDate), "h:mm a")}</span>
+                    <div className="font-medium">{booking.memberName || 'Unknown Member'}</div>
+                    <div className="text-sm text-gray-500">
+                      Booked: {booking.bookingDate ? format(new Date(booking.bookingDate), 'MMM d, yyyy') : 'Unknown date'}
                     </div>
-                    {booking.attendanceTime && (
-                      <div className="text-xs text-green-600 mt-1">
-                        Checked in at {format(parseISO(booking.attendanceTime), "h:mm a")}
-                      </div>
-                    )}
                   </div>
                 </div>
-                <Badge className={getStatusColor(booking.status)}>
-                  {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
-                </Badge>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-        
-        {bookings?.filter(b => b.status === "attended").length === 0 && (
-          <div className="text-center p-8 text-muted-foreground">
-            No past bookings found.
-          </div>
-        )}
-      </TabsContent>
-      
-      <TabsContent value="cancelled" className="space-y-4">
-        {bookings?.filter(b => b.status === "cancelled" || b.status === "no-show").map(booking => (
-          <Card key={booking.id}>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-4">
-                  <Avatar>
-                    <AvatarImage 
-                      src={booking.memberAvatar || "/placeholder.svg"} 
-                      alt={booking.memberName} 
-                    />
-                    <AvatarFallback>{getInitials(booking.memberName || '')}</AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <p className="font-medium">{booking.memberName}</p>
-                    <div className="flex items-center text-sm text-muted-foreground">
-                      <CalendarClock className="mr-1 h-3 w-3" />
-                      <span>{format(parseISO(booking.bookingDate), "PPP")}</span>
-                      <span className="mx-1">•</span>
-                      <Clock className="mr-1 h-3 w-3" />
-                      <span>{format(parseISO(booking.bookingDate), "h:mm a")}</span>
+                
+                <div>
+                  <Badge variant={booking.status === 'no-show' ? 'destructive' : 'secondary'}>
+                    {booking.status === 'no-show' ? 'No-Show' : 'Cancelled'}
+                  </Badge>
+                  
+                  {booking.notes && (
+                    <div className="text-sm text-gray-500 mt-2">
+                      Note: {booking.notes}
                     </div>
-                    {booking.notes && (
-                      <div className="text-xs text-muted-foreground mt-1">
-                        Note: {booking.notes}
-                      </div>
-                    )}
-                  </div>
+                  )}
                 </div>
-                <Badge className={getStatusColor(booking.status)}>
-                  {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
-                </Badge>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-        
-        {bookings?.filter(b => b.status === "cancelled" || b.status === "no-show").length === 0 && (
-          <div className="text-center p-8 text-muted-foreground">
-            No cancelled bookings found.
-          </div>
-        )}
-      </TabsContent>
-    </Tabs>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
   );
 };
 
 export default BookingList;
-

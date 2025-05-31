@@ -150,6 +150,7 @@ export function useAuth() {
     user,
     isLoading,
     isAuthenticated,
+    role: user?.role,
     login,
     logout,
     register,

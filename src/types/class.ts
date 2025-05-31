@@ -56,6 +56,7 @@ export interface ClassBooking {
   status: BookingStatus;
   attended: boolean;
   created_at: string;
+  createdAt?: string; // Alias for camelCase compatibility
   updated_at: string;
   // Payment related fields
   paid_amount?: number;
@@ -80,6 +81,7 @@ export interface ClassFormData {
   type: string;
   description?: string;
   trainer_id: string;
+  trainerId?: string; // Alias for camelCase compatibility
   location: string;
   difficulty: string;
   capacity: number;
@@ -91,7 +93,7 @@ export interface ClassFormData {
 }
 
 // Define ClassDifficulty type
-export type ClassDifficulty = 'beginner' | 'intermediate' | 'advanced' | 'all-levels';
+export type ClassDifficulty = 'beginner' | 'intermediate' | 'advanced' | 'all-levels' | 'all';
 
 // Additional type for compatibility with enhanced properties
 export interface GymClass {

@@ -1,1094 +1,592 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { format } from 'date-fns';
-import { Container } from '@/components/ui/container';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { useParams } from 'react-router-dom';
+import { Container } from "@/components/ui/container";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import { supabase } from '@/services/api/supabaseClient';
+import MemberProfile from '@/components/members/MemberProfile';
+import MembershipAssignmentDialog from '@/components/members/MembershipAssignmentDialog';
+import { toast } from 'sonner';
+import { format, parseISO, differenceInDays } from "date-fns";
+import { CalendarIcon, User, Mail, Phone, MapPin, CreditCard, Calendar, Loader2, Activity, LineChart } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Button } from '@/components/ui/button';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { CalendarDays, Mail, Phone, Loader2, Plus, CreditCard, ReceiptText, User, Edit, Dumbbell, ClipboardList, Activity, Clock, Check, X } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/auth/use-auth';
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import MembershipAssignmentForm from '@/components/membership/MembershipAssignmentForm';
-import { useBranch } from '@/hooks/settings/use-branches';
-import { membershipService } from '@/services/members/membershipService';
-import { toast } from '@/components/ui/sonner';
-import { formatCurrency } from '@/utils/stringUtils';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import AttendanceHistory from "@/components/attendance/AttendanceHistory";
-import BodyMeasurementForm from '@/components/fitness/BodyMeasurementForm';
-import ProfileImageUpload from '@/components/members/ProfileImageUpload';
-import * as biometricService from '@/services/settings/biometricService';
-import { Member } from '@/types/members/member';
+import { DataTable } from "@/components/ui/data-table";
+import { ColumnDef } from "@tanstack/react-table";
+import { useMemberProfileData } from '@/hooks/members/use-member-profile-data';
+import { useMemberProfileAnalytics } from '@/hooks/members/use-member-profile-analytics';
 
-interface MemberData extends Member {
-  id: string;
-  name: string;
-  email?: string;
-  phone?: string;
-  date_of_birth?: string;
-  goal?: string;
-  trainer_id?: string;
-  membership_id?: string;
-  membership_start_date?: string;
-  membership_end_date?: string;
-  status?: string;
-  membership_status?: string;
-  address?: string;
-  city?: string;
-  state?: string;
-  country?: string;
-  gender?: string;
-  occupation?: string;
-  profile_picture?: string;
-  created_at: string;
-}
+// Component for Member Membership Table
+const MembershipTable = ({ memberships }) => {
+  const columns = React.useMemo<ColumnDef<any>[]>(
+    () => [
+      {
+        accessorKey: "membership_plan.name",
+        header: "Plan",
+        cell: ({ row }) => {
+          const plan = row.original.membership_plan;
+          return <div>{plan?.name || 'Unknown Plan'}</div>;
+        }
+      },
+      {
+        accessorKey: "start_date",
+        header: "Start Date",
+        cell: ({ row }) => {
+          return <div>{format(parseISO(row.original.start_date), "PP")}</div>;
+        }
+      },
+      {
+        accessorKey: "end_date",
+        header: "End Date",
+        cell: ({ row }) => {
+          return <div>{format(parseISO(row.original.end_date), "PP")}</div>;
+        }
+      },
+      {
+        accessorKey: "status",
+        header: "Status",
+        cell: ({ row }) => {
+          return (
+            <Badge variant={row.original.status === 'active' ? 'default' : 'secondary'}>
+              {row.original.status}
+            </Badge>
+          );
+        }
+      },
+      {
+        accessorKey: "total_amount",
+        header: "Amount",
+        cell: ({ row }) => {
+          return <div>₹{row.original.total_amount.toLocaleString()}</div>;
+        }
+      },
+      {
+        accessorKey: "payment_status",
+        header: "Payment",
+        cell: ({ row }) => {
+          return (
+            <Badge variant={
+              row.original.payment_status === 'paid' ? 'success' : 
+              row.original.payment_status === 'partial' ? 'warning' : 'destructive'
+            }>
+              {row.original.payment_status}
+            </Badge>
+          );
+        }
+      }
+    ],
+    []
+  );
 
-interface Invoice {
-  id: string;
-  amount: number;
-  status: string;
-  issued_date: string;
-  due_date: string;
-  paid_date?: string;
-  payment_method?: string;
-  description?: string;
-}
+  return <DataTable columns={columns} data={memberships || []} />;
+};
 
-interface Measurement {
-  id: string;
-  measurement_date: string;
-  weight?: number;
-  height?: number;
-  bmi?: number;
-  body_fat_percentage?: number;
-}
+// Component for Member Invoice Table
+const InvoiceTable = ({ invoices }) => {
+  const columns = React.useMemo<ColumnDef<any>[]>(
+    () => [
+      {
+        accessorKey: "description",
+        header: "Description",
+      },
+      {
+        accessorKey: "issued_date",
+        header: "Issue Date",
+        cell: ({ row }) => {
+          return <div>{format(parseISO(row.original.issued_date), "PP")}</div>;
+        }
+      },
+      {
+        accessorKey: "due_date",
+        header: "Due Date",
+        cell: ({ row }) => {
+          return <div>{format(parseISO(row.original.due_date), "PP")}</div>;
+        }
+      },
+      {
+        accessorKey: "amount",
+        header: "Amount",
+        cell: ({ row }) => {
+          return <div>₹{row.original.amount.toLocaleString()}</div>;
+        }
+      },
+      {
+        accessorKey: "status",
+        header: "Status",
+        cell: ({ row }) => {
+          return (
+            <Badge variant={
+              row.original.status === 'paid' ? 'success' : 
+              row.original.status === 'pending' ? 'warning' : 'destructive'
+            }>
+              {row.original.status}
+            </Badge>
+          );
+        }
+      },
+      {
+        accessorKey: "payment_method",
+        header: "Method",
+        cell: ({ row }) => {
+          return row.original.payment_method || "—";
+        }
+      }
+    ],
+    []
+  );
 
-interface MembershipData {
-  id: string;
-  membership_id: string;
-  start_date: string;
-  end_date: string;
-  total_amount: number;
-  amount_paid: number;
-  payment_status: string;
-  memberships: {
-    name: string;
-    price: number;
-    duration_days: number;
-  };
-}
+  return <DataTable columns={columns} data={invoices || []} />;
+};
 
-interface BiometricDeviceStatus {
-  configured: boolean;
-  online: boolean;
-  lastCheck: string;
-  deviceCount: number;
-}
+// Component for Member Measurements Table
+const MeasurementsTable = ({ measurements }) => {
+  const columns = React.useMemo<ColumnDef<any>[]>(
+    () => [
+      {
+        accessorKey: "measurement_date",
+        header: "Date",
+        cell: ({ row }) => {
+          return <div>{format(parseISO(row.original.measurement_date), "PP")}</div>;
+        }
+      },
+      {
+        accessorKey: "weight",
+        header: "Weight (kg)",
+        cell: ({ row }) => row.original.weight ? `${row.original.weight} kg` : "—"
+      },
+      {
+        accessorKey: "height",
+        header: "Height (cm)",
+        cell: ({ row }) => row.original.height ? `${row.original.height} cm` : "—"
+      },
+      {
+        accessorKey: "bmi",
+        header: "BMI",
+        cell: ({ row }) => row.original.bmi ? row.original.bmi.toFixed(1) : "—"
+      },
+      {
+        accessorKey: "body_fat_percentage",
+        header: "Body Fat %",
+        cell: ({ row }) => row.original.body_fat_percentage ? `${row.original.body_fat_percentage}%` : "—"
+      },
+      {
+        accessorKey: "chest",
+        header: "Chest (cm)",
+        cell: ({ row }) => row.original.chest ? `${row.original.chest} cm` : "—"
+      },
+      {
+        accessorKey: "waist",
+        header: "Waist (cm)",
+        cell: ({ row }) => row.original.waist ? `${row.original.waist} cm` : "—"
+      }
+    ],
+    []
+  );
 
-interface BiometricStatus {
-  hasDevices: boolean;
-  hikvision?: BiometricDeviceStatus;
-  essl?: BiometricDeviceStatus;
-}
+  return <DataTable columns={columns} data={measurements || []} />;
+};
 
+// Component for Member Attendance Table
+const AttendanceTable = ({ attendance }) => {
+  const columns = React.useMemo<ColumnDef<any>[]>(
+    () => [
+      {
+        accessorKey: "date",
+        header: "Date",
+        cell: ({ row }) => {
+          return <div>{format(parseISO(row.original.date), "PP")}</div>;
+        }
+      },
+      {
+        accessorKey: "check_in_time",
+        header: "Check In",
+        cell: ({ row }) => {
+          return <div>{format(parseISO(row.original.check_in_time), "p")}</div>;
+        }
+      },
+      {
+        accessorKey: "check_out_time",
+        header: "Check Out",
+        cell: ({ row }) => {
+          return row.original.check_out_time ? 
+            <div>{format(parseISO(row.original.check_out_time), "p")}</div> : "—";
+        }
+      },
+      {
+        accessorKey: "duration",
+        header: "Duration",
+        cell: ({ row }) => {
+          if (!row.original.duration) return "—";
+          const minutes = row.original.duration;
+          const hours = Math.floor(minutes / 60);
+          const mins = Math.floor(minutes % 60);
+          return `${hours > 0 ? `${hours}h ` : ''}${mins}m`;
+        }
+      },
+      {
+        accessorKey: "activity_type",
+        header: "Activity",
+        cell: ({ row }) => row.original.activity_type || "General"
+      }
+    ],
+    []
+  );
+
+  return <DataTable columns={columns} data={attendance || []} />;
+};
+
+// Enhanced Member Profile Page
 const MemberProfilePage = () => {
   const { id } = useParams<{ id: string }>();
-  const { user } = useAuth();
-  // Using the toast helper directly from UI components
-  const { currentBranch } = useBranch();
-  const navigate = useNavigate();
-  const [member, setMember] = useState<MemberData | null>(null);
-  const [trainer, setTrainer] = useState<any>(null);
-  const [activeMemberships, setActiveMemberships] = useState<MembershipData[]>([]);
-  const [invoices, setInvoices] = useState<Invoice[]>([]);
-  const [measurements, setMeasurements] = useState<Measurement[]>([]);
+  const [member, setMember] = useState<any>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [isAddMembershipOpen, setIsAddMembershipOpen] = useState(false);
-  const [isAddMeasurementOpen, setIsAddMeasurementOpen] = useState(false);
-  const [biometricStatus, setBiometricStatus] = useState<BiometricStatus | null>(null);
-  const [biometricRegistrationStatus, setBiometricRegistrationStatus] = useState<string | null>(null);
-  const [isBiometricRegistering, setIsBiometricRegistering] = useState(false);
-
-  const [activeTab, setActiveTab] = useState("overview");
-  const [attendanceRecords, setAttendanceRecords] = useState<any[]>([]);
+  const [activeTab, setActiveTab] = useState("profile");
   
+  // Use the enhanced custom hooks for data fetching and analytics
+  const { 
+    data, 
+    loading, 
+    errors, 
+    assignMembership, 
+    addMeasurement,
+    recordAttendance 
+  } = useMemberProfileData(id as string);
+  
+  const { 
+    weightTrend, 
+    attendanceStats, 
+    membershipValue 
+  } = useMemberProfileAnalytics(
+    data.measurements, 
+    data.attendance,
+    [...(data.memberships.active || []), ...(data.memberships.past || [])]
+  );
+  
+  // Fetch the basic member profile data
   useEffect(() => {
-    const fetchMemberData = async () => {
-      setIsLoading(true);
-      setError(null);
+    const fetchMember = async () => {
+      if (!id) return;
       
+      setIsLoading(true);
       try {
-        // If no ID is provided at all, handle that case first
-        if (!id) {
-          if (user?.role === 'member') {
-            // For member users, show their own profile
-            const { data: memberData, error: memberError } = await supabase
-              .from('members')
-              .select('*')
-              .eq('user_id', user.id)
-              .single();
-              
-            if (memberError) throw memberError;
-            if (memberData) {
-              setMember(memberData);
-              await fetchRelatedData(memberData.id);
-            } else {
-              setError('Member profile not found');
-            }
-          } else {
-            setError('No member ID provided');
-          }
-          setIsLoading(false);
-          return;
-        }
-        
-        // Now handle cases where ID is provided
-        if (id === 'edit' || id === 'new') {
-          setError('Invalid member ID');
-          setIsLoading(false);
-          return;
-        }
-        
-        // Try to fetch the member by the provided ID
-        const { data, error: memberError } = await supabase
+        const { data, error } = await supabase
           .from('members')
-          .select('*')
+          .select('*, trainer:trainer_id(*)')
           .eq('id', id)
           .single();
-          
-        if (memberError) {
-          console.error('Error fetching member:', memberError);
-          throw new Error('Member not found or database error');
-        }
         
+        if (error) throw error;
         setMember(data);
-        await fetchRelatedData(data.id);
-        
-      } catch (err: any) {
-        console.error('Error fetching member:', err);
-        setError(err.message || 'Failed to load member data');
+      } catch (error: any) {
+        toast.error(`Error fetching member: ${error.message}`);
       } finally {
         setIsLoading(false);
       }
     };
     
-    const fetchRelatedData = async (memberId: string) => {
-      try {
-        // Fetch trainer if assigned
-        const memberData = await supabase
-          .from('members')
-          .select('*')
-          .eq('id', memberId)
-          .single();
-          
-        if (memberData.data?.trainer_id) {
-          const { data: trainerData, error: trainerError } = await supabase
-            .from('profiles')
-            .select('id, full_name, email, phone, avatar_url')
-            .eq('id', memberData.data.trainer_id)
-            .single();
-            
-          if (!trainerError && trainerData) {
-            setTrainer(trainerData);
-          }
-        }
-        
-        // Fetch active memberships
-        const memberships = await membershipService.getMemberActiveMemberships(memberId);
-        setActiveMemberships(memberships);
-        
-        // Fetch invoice history
-        const invoiceHistory = await membershipService.getMemberInvoiceHistory(memberId);
-        setInvoices(invoiceHistory);
-        
-        // Fetch measurements
-        const { data: measurementsData, error: measurementsError } = await supabase
-          .from('measurements')
-          .select('*')
-          .eq('member_id', memberId)
-          .order('measurement_date', { ascending: false });
-          
-        if (!measurementsError && measurementsData) {
-          setMeasurements(measurementsData);
-        }
-        
-        // Fetch attendance records
-        const { data: attendanceData, error: attendanceError } = await supabase
-          .from('member_attendance') // Changed from 'attendance' to 'member_attendance'
-          .select('*')
-          .eq('member_id', memberId)
-          .order('check_in', { ascending: false });
-          
-        if (!attendanceError && attendanceData) {
-          setAttendanceRecords(attendanceData);
-        }
-
-        // Check biometric registration status
-        if (currentBranch?.id) {
-          const status = await biometricService.checkBiometricDeviceStatus(currentBranch.id);
-          setBiometricStatus(status);
-        }
-      } catch (err) {
-        console.error('Error fetching related data:', err);
-      }
-    };
+    fetchMember();
+  }, [id]);
+  
+  // Handle membership assignment
+  const handleMembershipAssignment = async (membershipData) => {
+    if (!id) return;
     
-    fetchMemberData();
-  }, [id, user, currentBranch?.id]);
-
-  const handleAddMembershipSuccess = async () => {
-    if (member?.id) {
-      try {
-        setIsAddMembershipOpen(false);
-        toast.success("Membership has been successfully assigned to this member");
-        
-        // Refresh memberships
-        const memberships = await membershipService.getMemberActiveMemberships(member.id);
-        setActiveMemberships(memberships);
-        
-        // Refresh invoices
-        const invoiceHistory = await membershipService.getMemberInvoiceHistory(member.id);
-        setInvoices(invoiceHistory);
-        
-        // Refresh member data to get updated membership info
-        const { data: updatedMember, error: memberError } = await supabase
-          .from('members')
-          .select('*')
-          .eq('id', member.id)
-          .single();
-          
-        if (memberError) {
-          console.error('Error refreshing member data:', memberError);
-        } else if (updatedMember) {
-          setMember(updatedMember);
-        }
-      } catch (error) {
-        console.error('Error in handleAddMembershipSuccess:', error);
-        toast.error("Failed to refresh membership information");
-      }
-    }
-  };
-
-  const handleBiometricRegistration = async (deviceType: 'hikvision' | 'essl') => {
-    if (!member || !member.id || !currentBranch?.id) {
-      toast.error("Missing member or branch information");
-      return;
-    }
-
-    setIsBiometricRegistering(true);
-    setBiometricRegistrationStatus("Registering...");
+    const result = await assignMembership({
+      ...membershipData,
+      branch_id: member.branch_id
+    });
     
-    try {
-      const result = await biometricService.registerMemberInBiometricDevice({
-        memberId: member.id,
-        name: member.name,
-        phone: member.phone || '',
-        branchId: currentBranch.id,
-        deviceType,
-      });
-      
-      if (result.success) {
-        setBiometricRegistrationStatus("Registered");
-        toast.success({
-          title: "Success",
-          description: result.message
-        });
-      } else {
-        setBiometricRegistrationStatus("Failed");
-        toast.error({
-          title: "Registration failed",
-          description: result.message
-        });
-      }
-    } catch (error: any) {
-      setBiometricRegistrationStatus("Error");
-      toast.error({
-        title: "Error",
-        description: error.message || "An error occurred during biometric registration"
-      });
-    } finally {
-      setIsBiometricRegistering(false);
+    if (result.success) {
+      setIsDialogOpen(false);
     }
-  };
-
-  const getInitials = (name: string) => {
-    return name
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase();
-  };
-
-  const getMembershipStatusBadge = (status?: string) => {
-    switch (status) {
-      case 'active':
-        return <Badge className="bg-green-500">Active</Badge>;
-      case 'expired':
-        return <Badge variant="destructive">Expired</Badge>;
-      default:
-        return <Badge variant="secondary">None</Badge>;
-    }
-  };
-
-  const getInvoiceStatusBadge = (status: string) => {
-    switch (status) {
-      case 'paid':
-        return <Badge className="bg-green-500">Paid</Badge>;
-      case 'partially_paid':
-        return <Badge variant="secondary" className="bg-amber-500">Partial</Badge>;
-      case 'pending':
-        return <Badge variant="outline">Pending</Badge>;
-      case 'overdue':
-        return <Badge variant="destructive">Overdue</Badge>;
-      default:
-        return <Badge variant="outline">{status}</Badge>;
-    }
-  };
-
-  const getTotalPaid = () => {
-    return invoices
-      .filter(inv => inv.status === 'paid')
-      .reduce((sum, inv) => sum + inv.amount, 0);
   };
   
-  const getTotalDue = () => {
-    return invoices
-      .filter(inv => inv.status === 'pending' || inv.status === 'overdue')
-      .reduce((sum, inv) => sum + inv.amount, 0);
-  };
-
-  if (isLoading) {
+  // Error states
+  if (!id) {
     return (
       <Container>
-        <div className="flex h-[calc(100vh-200px)] items-center justify-center">
-          <div className="text-center">
-            <Loader2 className="h-10 w-10 animate-spin mx-auto text-primary" />
-            <p className="mt-4">Loading member data...</p>
-          </div>
+        <div className="py-10 text-center">
+          <h2 className="text-2xl font-bold mb-2">Invalid Member ID</h2>
+          <p>No member ID was provided in the URL.</p>
         </div>
       </Container>
     );
   }
-
-  if (error) {
+  
+  if (isLoading || loading.memberships || loading.invoices) {
     return (
       <Container>
-        <div className="py-6">
-          <Alert variant="destructive">
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
+        <div className="flex items-center justify-center h-64">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
       </Container>
     );
   }
-
+  
   if (!member) {
     return (
       <Container>
-        <div className="py-6">
-          <Alert>
-            <AlertDescription>Member not found</AlertDescription>
-          </Alert>
+        <div className="py-10 text-center">
+          <h2 className="text-2xl font-bold mb-2">Member Not Found</h2>
+          <p>The member you're looking for doesn't exist or has been removed.</p>
         </div>
       </Container>
     );
   }
-
+  
+  // Active membership - show the latest active membership or null if none exists
+  const activeMembership = data.memberships.active[0];
+  
+  // Calculate days left in current membership, if any
+  const daysLeft = activeMembership ? 
+    differenceInDays(new Date(activeMembership.end_date), new Date()) : 0;
+  
   return (
-    <>
-      <Container>
-        <div className="py-6">
-          <div className="flex justify-between items-center mb-6">
-            <h1 className="text-2xl font-bold">Member Profile</h1>
-            <div className="space-x-2">
-              <Button variant="outline" onClick={() => navigate(`/members/${member.id}/edit`)}>
-                <Edit className="h-4 w-4 mr-2" />
-                Edit
-              </Button>
-              <Button onClick={() => setIsAddMembershipOpen(true)}>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Membership
-              </Button>
-            </div>
+    <Container>
+      <div className="space-y-6 py-6">
+        {/* Member Profile Section */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center">
+          <h1 className="text-2xl font-bold">{member.name}'s Profile</h1>
+          <div className="flex gap-2 mt-2 sm:mt-0">
+            <Button 
+              variant="outline" 
+              onClick={() => window.history.back()}
+            >
+              Back
+            </Button>
+            <Button 
+              onClick={() => setIsDialogOpen(true)}
+            >
+              Assign Membership
+            </Button>
           </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-            <Card className="col-span-1 md:col-span-1">
-              <CardHeader className="flex justify-between items-start space-y-0 pb-2">
-                <div className="space-y-0.5">
-                  <CardTitle className="text-xl">{member.name}</CardTitle>
-                  <CardDescription>
-                    Member Since: {new Date(member.created_at || Date.now()).toLocaleDateString()}
-                  </CardDescription>
-                </div>
-                {getMembershipStatusBadge(member.membership_status)}
+        </div>
+        
+        <MemberProfile member={member} onEdit={() => console.log('Edit')} />
+        
+        {/* Enhanced Profile Tabs */}
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="memberships">Memberships</TabsTrigger>
+            <TabsTrigger value="invoices">Invoices</TabsTrigger>
+            <TabsTrigger value="measurements">Measurements</TabsTrigger>
+            <TabsTrigger value="attendance">Attendance</TabsTrigger>
+          </TabsList>
+          
+          {/* Memberships Tab */}
+          <TabsContent value="memberships">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle>Membership History</CardTitle>
+                <Button onClick={() => setIsDialogOpen(true)}>Assign New</Button>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex justify-center">
-                  <Avatar className="h-24 w-24">
-                    <AvatarImage src={member.profile_picture || ""} alt={member.name} />
-                    <AvatarFallback className="text-lg">{getInitials(member.name)}</AvatarFallback>
-                  </Avatar>
-                </div>
-
-                <div>
-                  <h4 className="text-sm font-medium text-muted-foreground">Contact Information</h4>
-                  <div className="space-y-2 mt-2">
-                    {member.email && (
-                      <div className="flex items-center">
-                        <Mail className="h-4 w-4 mr-2 text-muted-foreground" />
-                        <span>{member.email}</span>
-                      </div>
-                    )}
-                    {member.phone && (
-                      <div className="flex items-center">
-                        <Phone className="h-4 w-4 mr-2 text-muted-foreground" />
-                        <span>{member.phone}</span>
-                      </div>
-                    )}
-                    {member.date_of_birth && (
-                      <div className="flex items-center">
-                        <CalendarDays className="h-4 w-4 mr-2 text-muted-foreground" />
-                        <span>{new Date(member.date_of_birth).toLocaleDateString()}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <div>
-                  <h4 className="text-sm font-medium text-muted-foreground">Personal Details</h4>
-                  <div className="grid grid-cols-2 gap-2 mt-2">
-                    {member.gender && (
-                      <div>
-                        <p className="text-xs text-muted-foreground">Gender</p>
-                        <p>{member.gender}</p>
-                      </div>
-                    )}
-                    {member.occupation && (
-                      <div>
-                        <p className="text-xs text-muted-foreground">Occupation</p>
-                        <p>{member.occupation}</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {member.address && (
-                  <div>
-                    <h4 className="text-sm font-medium text-muted-foreground">Address</h4>
-                    <p className="mt-1">
-                      {member.address}
-                      {member.city && `, ${member.city}`}
-                      {member.state && `, ${member.state}`}
-                      {member.country && ` ${member.country}`}
-                    </p>
+              <CardContent>
+                {errors.memberships && (
+                  <div className="p-4 mb-4 bg-destructive/10 text-destructive rounded-md">
+                    {errors.memberships}
                   </div>
                 )}
-
-                {member.goal && (
-                  <div>
-                    <h4 className="text-sm font-medium text-muted-foreground">Fitness Goal</h4>
-                    <p className="mt-1">{member.goal}</p>
+                
+                {/* Active Memberships */}
+                <div className="mb-8">
+                  <h3 className="text-lg font-medium mb-4">Active Membership</h3>
+                  {data.memberships.active.length > 0 ? (
+                    <>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                        <Card>
+                          <CardContent className="p-4">
+                            <div className="text-sm text-muted-foreground">Current Plan</div>
+                            <div className="text-2xl font-bold">
+                              {activeMembership?.membership_plan?.name || 'Unknown'}
+                            </div>
+                          </CardContent>
+                        </Card>
+                        <Card>
+                          <CardContent className="p-4">
+                            <div className="text-sm text-muted-foreground">Days Left</div>
+                            <div className="text-2xl font-bold">
+                              {daysLeft}
+                            </div>
+                          </CardContent>
+                        </Card>
+                        <Card>
+                          <CardContent className="p-4">
+                            <div className="text-sm text-muted-foreground">End Date</div>
+                            <div className="text-2xl font-bold">
+                              {activeMembership ? format(parseISO(activeMembership.end_date), "PP") : 'N/A'}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </div>
+                      <MembershipTable memberships={data.memberships.active} />
+                    </>
+                  ) : (
+                    <div className="p-8 text-center bg-muted rounded-md">
+                      <div className="text-lg font-medium">No Active Membership</div>
+                      <div className="text-muted-foreground mt-1">This member doesn't have any active memberships.</div>
+                      <Button onClick={() => setIsDialogOpen(true)} className="mt-4">Assign Membership</Button>
+                    </div>
+                  )}
+                </div>
+                
+                {/* Past Memberships */}
+                {data.memberships.past.length > 0 && (
+                  <div className="mb-6">
+                    <h3 className="text-lg font-medium mb-4">Past Memberships</h3>
+                    <MembershipTable memberships={data.memberships.past} />
                   </div>
                 )}
-
-                <div>
-                  <h4 className="text-sm font-medium text-muted-foreground">Payment Summary</h4>
-                  <div className="grid grid-cols-2 gap-2 mt-2">
-                    <div>
-                      <p className="text-xs text-muted-foreground">Total Paid</p>
-                      <p className="font-medium text-green-600">{formatCurrency(getTotalPaid())}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground">Total Due</p>
-                      <p className="font-medium text-red-600">{formatCurrency(getTotalDue())}</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Biometric Registration Section */}
-                {biometricStatus && (
+                
+                {/* Future Memberships */}
+                {data.memberships.upcoming.length > 0 && (
                   <div>
-                    <h4 className="text-sm font-medium text-muted-foreground">Biometric Access</h4>
-                    <div className="mt-2 space-y-2">
-                      {biometricStatus.hikvision && (
-                        <div>
-                          <Badge variant="outline" className="mb-2">Hikvision</Badge>
-                          <Button 
-                            size="sm"
-                            variant="outline"
-                            className="w-full"
-                            disabled={isBiometricRegistering}
-                            onClick={() => handleBiometricRegistration('hikvision')}
-                          >
-                            {isBiometricRegistering ? (
-                              <>
-                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                                Registering...
-                              </>
-                            ) : (
-                              <>
-                                {biometricRegistrationStatus === "Registered" ? (
-                                  <Check className="h-4 w-4 mr-2" />
-                                ) : (
-                                  <Dumbbell className="h-4 w-4 mr-2" />
-                                )}
-                                Register with Hikvision
-                              </>
-                            )}
-                          </Button>
-                        </div>
-                      )}
-                      {biometricStatus.essl && (
-                        <div>
-                          <Badge variant="outline" className="mb-2">eSSL</Badge>
-                          <Button 
-                            size="sm"
-                            variant="outline"
-                            className="w-full"
-                            disabled={isBiometricRegistering}
-                            onClick={() => handleBiometricRegistration('essl')}
-                          >
-                            {isBiometricRegistering ? (
-                              <>
-                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                                Registering...
-                              </>
-                            ) : (
-                              <>
-                                {biometricRegistrationStatus === "Registered" ? (
-                                  <Check className="h-4 w-4 mr-2" />
-                                ) : (
-                                  <Dumbbell className="h-4 w-4 mr-2" />
-                                )}
-                                Register with eSSL
-                              </>
-                            )}
-                          </Button>
-                        </div>
-                      )}
-                      {!biometricStatus.hikvision && !biometricStatus.essl && (
-                        <p className="text-sm text-muted-foreground">
-                          No biometric devices are configured for this branch.
-                        </p>
-                      )}
-                    </div>
+                    <h3 className="text-lg font-medium mb-4">Upcoming Memberships</h3>
+                    <MembershipTable memberships={data.memberships.upcoming} />
                   </div>
                 )}
               </CardContent>
             </Card>
-
-            <div className="col-span-1 md:col-span-2">
-              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className="grid grid-cols-5 mb-4">
-                  <TabsTrigger value="overview">
-                    <User className="h-4 w-4 mr-2" />
-                    Overview
-                  </TabsTrigger>
-                  <TabsTrigger value="memberships">
-                    <CreditCard className="h-4 w-4 mr-2" />
-                    Memberships
-                  </TabsTrigger>
-                  <TabsTrigger value="invoices">
-                    <ReceiptText className="h-4 w-4 mr-2" />
-                    Invoices
-                  </TabsTrigger>
-                  <TabsTrigger value="progress">
-                    <Activity className="h-4 w-4 mr-2" />
-                    Progress
-                  </TabsTrigger>
-                  <TabsTrigger value="attendance">
-                    <Clock className="h-4 w-4 mr-2" />
-                    Attendance
-                  </TabsTrigger>
-                </TabsList>
-
-                <TabsContent value="overview">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <Card>
-                      <CardHeader>
-                        <CardTitle>Current Membership</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        {activeMemberships.length > 0 ? (
-                          <div>
-                            <p className="font-medium">{activeMemberships[0].memberships.name}</p>
-                            <p className="text-sm text-muted-foreground">
-                              Expires: {new Date(activeMemberships[0].end_date).toLocaleDateString()}
-                            </p>
-                            <div className="flex justify-between mt-2">
-                              <p className="text-sm">Total: {formatCurrency(activeMemberships[0].total_amount)}</p>
-                              <p className="text-sm">Paid: {formatCurrency(activeMemberships[0].amount_paid)}</p>
-                            </div>
-                            <div className="mt-2">
-                              {activeMemberships[0].payment_status === 'paid' ? (
-                                <Badge className="bg-green-500">Paid</Badge>
-                              ) : activeMemberships[0].payment_status === 'partial' ? (
-                                <Badge variant="secondary" className="bg-amber-500">Partial</Badge>
-                              ) : (
-                                <Badge variant="outline">Pending</Badge>
-                              )}
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="text-center py-4">
-                            <p className="text-muted-foreground">No active membership</p>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="mt-2"
-                              onClick={() => setIsAddMembershipOpen(true)}
-                            >
-                              <Plus className="h-4 w-4 mr-2" />
-                              Add Membership
-                            </Button>
-                          </div>
-                        )}
-                      </CardContent>
-                    </Card>
-
-                    <Card>
-                      <CardHeader>
-                        <CardTitle>Recent Measurements</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        {measurements.length > 0 ? (
-                          <div className="space-y-2">
-                            <p className="text-sm text-muted-foreground">
-                              Last updated: {new Date(measurements[0].measurement_date).toLocaleDateString()}
-                            </p>
-                            <div className="grid grid-cols-2 gap-4">
-                              {measurements[0].weight && (
-                                <div>
-                                  <p className="text-xs text-muted-foreground">Weight</p>
-                                  <p className="font-medium">{measurements[0].weight} kg</p>
-                                </div>
-                              )}
-                              {measurements[0].bmi && (
-                                <div>
-                                  <p className="text-xs text-muted-foreground">BMI</p>
-                                  <p className="font-medium">{measurements[0].bmi}</p>
-                                </div>
-                              )}
-                              {measurements[0].body_fat_percentage && (
-                                <div>
-                                  <p className="text-xs text-muted-foreground">Body Fat %</p>
-                                  <p className="font-medium">{measurements[0].body_fat_percentage}%</p>
-                                </div>
-                              )}
-                            </div>
-                            <Button
-                              variant="link"
-                              className="p-0 h-auto"
-                              onClick={() => setActiveTab("progress")}
-                            >
-                              View all measurements
-                            </Button>
-                          </div>
-                        ) : (
-                          <div className="text-center py-4">
-                            <p className="text-muted-foreground">No measurements recorded</p>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="mt-2"
-                              onClick={() => setIsAddMeasurementOpen(true)}
-                            >
-                              <Plus className="h-4 w-4 mr-2" />
-                              Add Measurement
-                            </Button>
-                          </div>
-                        )}
-                      </CardContent>
-                    </Card>
-
-                    {trainer && (
+          </TabsContent>
+          
+          {/* Invoices Tab */}
+          <TabsContent value="invoices">
+            <Card>
+              <CardHeader>
+                <CardTitle>Invoice History</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {errors.invoices && (
+                  <div className="p-4 mb-4 bg-destructive/10 text-destructive rounded-md">
+                    {errors.invoices}
+                  </div>
+                )}
+                
+                {data.invoices.length > 0 ? (
+                  <InvoiceTable invoices={data.invoices} />
+                ) : (
+                  <div className="p-8 text-center bg-muted rounded-md">
+                    <div className="text-lg font-medium">No Invoices Found</div>
+                    <div className="text-muted-foreground mt-1">This member doesn't have any invoices yet.</div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          {/* Measurements Tab */}
+          <TabsContent value="measurements">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle>Body Measurements</CardTitle>
+                <Button>Add Measurement</Button>
+              </CardHeader>
+              <CardContent>
+                {errors.measurements && (
+                  <div className="p-4 mb-4 bg-destructive/10 text-destructive rounded-md">
+                    {errors.measurements}
+                  </div>
+                )}
+                
+                {weightTrend.length > 0 && (
+                  <div className="mb-6">
+                    <h3 className="text-lg font-medium mb-4">Weight Trend</h3>
+                    <div className="h-60 bg-muted/20 rounded-md p-4 flex items-center justify-center">
+                      <LineChart className="h-10 w-10 text-muted-foreground" />
+                      <span className="ml-2 text-muted-foreground">Weight chart visualization would appear here</span>
+                    </div>
+                  </div>
+                )}
+                
+                {data.measurements.length > 0 ? (
+                  <div>
+                    <h3 className="text-lg font-medium mb-4">Measurement History</h3>
+                    <MeasurementsTable measurements={data.measurements} />
+                  </div>
+                ) : (
+                  <div className="p-8 text-center bg-muted rounded-md">
+                    <div className="text-lg font-medium">No Measurements Recorded</div>
+                    <div className="text-muted-foreground mt-1">This member doesn't have any body measurements recorded yet.</div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          {/* Attendance Tab */}
+          <TabsContent value="attendance">
+            <Card>
+              <CardHeader>
+                <CardTitle>Attendance History</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {errors.attendance && (
+                  <div className="p-4 mb-4 bg-destructive/10 text-destructive rounded-md">
+                    {errors.attendance}
+                  </div>
+                )}
+                
+                {/* Attendance Stats */}
+                {data.attendance.length > 0 && (
+                  <div className="mb-8">
+                    <h3 className="text-lg font-medium mb-4">Attendance Summary</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <Card>
-                        <CardHeader>
-                          <CardTitle>Assigned Trainer</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="flex items-center space-x-3">
-                            <Avatar>
-                              <AvatarImage src={trainer.avatar_url || ""} alt={trainer.full_name} />
-                              <AvatarFallback>{getInitials(trainer.full_name)}</AvatarFallback>
-                            </Avatar>
-                            <div>
-                              <p className="font-medium">{trainer.full_name}</p>
-                              {trainer.email && (
-                                <p className="text-sm text-muted-foreground">{trainer.email}</p>
-                              )}
-                            </div>
+                        <CardContent className="p-4">
+                          <div className="text-sm text-muted-foreground">Weekly Visits</div>
+                          <div className="text-2xl font-bold">
+                            {attendanceStats.frequency.toFixed(1)}
                           </div>
                         </CardContent>
                       </Card>
-                    )}
-
-                    <Card>
-                      <CardHeader>
-                        <CardTitle>Payment Summary</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-2">
-                          <div className="flex justify-between">
-                            <p className="font-medium">Total Paid</p>
-                            <p className="font-medium text-green-600">{formatCurrency(getTotalPaid())}</p>
+                      <Card>
+                        <CardContent className="p-4">
+                          <div className="text-sm text-muted-foreground">Consistency</div>
+                          <div className="text-2xl font-bold">
+                            {attendanceStats.consistency.toFixed(0)}%
                           </div>
-                          <div className="flex justify-between">
-                            <p className="font-medium">Total Due</p>
-                            <p className="font-medium text-red-600">{formatCurrency(getTotalDue())}</p>
+                        </CardContent>
+                      </Card>
+                      <Card>
+                        <CardContent className="p-4">
+                          <div className="text-sm text-muted-foreground">Avg. Duration</div>
+                          <div className="text-2xl font-bold">
+                            {Math.floor(attendanceStats.averageDuration / 60)}h {Math.floor(attendanceStats.averageDuration % 60)}m
                           </div>
-                          <div className="pt-2">
-                            <Button
-                              variant="link"
-                              className="p-0 h-auto"
-                              onClick={() => setActiveTab("invoices")}
-                            >
-                              View all invoices
-                            </Button>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
+                        </CardContent>
+                      </Card>
+                    </div>
                   </div>
-                </TabsContent>
-
-                <TabsContent value="memberships">
-                  <Card>
-                    <CardHeader className="flex flex-row items-center justify-between">
-                      <div>
-                        <CardTitle>Membership History</CardTitle>
-                        <CardDescription>All active and past memberships</CardDescription>
-                      </div>
-                      <Button onClick={() => setIsAddMembershipOpen(true)}>
-                        <Plus className="h-4 w-4 mr-2" />
-                        New Membership
-                      </Button>
-                    </CardHeader>
-                    <CardContent>
-                      {activeMemberships.length > 0 ? (
-                        <div className="space-y-4">
-                          {activeMemberships.map((membership) => (
-                            <div key={membership.id} className="border rounded-lg p-4">
-                              <div className="flex justify-between items-start">
-                                <div>
-                                  <h3 className="font-medium">{membership.memberships.name}</h3>
-                                  <p className="text-sm text-muted-foreground">
-                                    {new Date(membership.start_date).toLocaleDateString()} to {new Date(membership.end_date).toLocaleDateString()}
-                                  </p>
-                                </div>
-                                <Badge variant="outline">Active</Badge>
-                              </div>
-                              <div className="mt-4 grid grid-cols-3 gap-4 text-sm">
-                                <div>
-                                  <p className="text-muted-foreground">Total Amount</p>
-                                  <p className="font-medium">{formatCurrency(membership.total_amount)}</p>
-                                </div>
-                                <div>
-                                  <p className="text-muted-foreground">Amount Paid</p>
-                                  <p className="font-medium">{formatCurrency(membership.amount_paid)}</p>
-                                </div>
-                                <div>
-                                  <p className="text-muted-foreground">Payment Status</p>
-                                  <p className="font-medium capitalize">{membership.payment_status}</p>
-                                </div>
-                              </div>
-                              {membership.total_amount > membership.amount_paid && (
-                                <div className="mt-4">
-                                  <Button variant="outline" size="sm" onClick={() => navigate(`/finance/invoices/new?memberId=${member.id}`)}>
-                                    <CreditCard className="h-4 w-4 mr-2" />
-                                    Pay Remaining
-                                  </Button>
-                                </div>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="text-center py-8">
-                          <p className="text-muted-foreground">No memberships found</p>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="mt-2"
-                            onClick={() => setIsAddMembershipOpen(true)}
-                          >
-                            <Plus className="h-4 w-4 mr-2" />
-                            Add Membership
-                          </Button>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                </TabsContent>
-
-                <TabsContent value="invoices">
-                  <Card>
-                    <CardHeader className="flex flex-row items-center justify-between">
-                      <div>
-                        <CardTitle>Invoice History</CardTitle>
-                        <CardDescription>All invoices and payment records</CardDescription>
-                      </div>
-                      <Button variant="outline" onClick={() => navigate(`/finance/invoices/new?memberId=${member.id}`)}>
-                        <Plus className="h-4 w-4 mr-2" />
-                        New Invoice
-                      </Button>
-                    </CardHeader>
-                    <CardContent>
-                      {invoices.length > 0 ? (
-                        <div className="space-y-2">
-                          {invoices.map((invoice) => (
-                            <div key={invoice.id} className="flex items-center justify-between border-b py-2">
-                              <div className="flex items-center space-x-4">
-                                <div className="flex-shrink-0">
-                                  <Badge variant="outline" className="rounded-full w-10 h-10 flex items-center justify-center">
-                                    <ReceiptText className="h-5 w-5" />
-                                  </Badge>
-                                </div>
-                                <div>
-                                  <p className="font-medium">{invoice.description || `Invoice #${invoice.id.substring(0, 8)}`}</p>
-                                  <p className="text-sm text-muted-foreground">
-                                    {new Date(invoice.issued_date).toLocaleDateString()}
-                                  </p>
-                                </div>
-                              </div>
-                              <div className="flex items-center space-x-4">
-                                <div className="text-right">
-                                  <p className="font-medium">{formatCurrency(invoice.amount)}</p>
-                                  <div>{getInvoiceStatusBadge(invoice.status)}</div>
-                                </div>
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  onClick={() => navigate(`/finance/invoices/detail/${invoice.id}`)}
-                                >
-                                  View
-                                </Button>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="text-center py-8">
-                          <p className="text-muted-foreground">No invoices found</p>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="mt-2"
-                            onClick={() => navigate(`/finance/invoices/new?memberId=${member.id}`)}
-                          >
-                            <Plus className="h-4 w-4 mr-2" />
-                            Create Invoice
-                          </Button>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                </TabsContent>
-
-                <TabsContent value="progress">
-                  <Card>
-                    <CardHeader className="flex flex-row items-center justify-between">
-                      <div>
-                        <CardTitle>Fitness Progress</CardTitle>
-                        <CardDescription>Measurements and body statistics</CardDescription>
-                      </div>
-                      <Button
-                        variant="outline"
-                        className="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 focus:bg-white dark:focus:bg-gray-800 focus:text-gray-900 dark:focus:text-gray-100"
-                        onClick={() => setIsAddMeasurementOpen(true)}
-                      >
-                        <Plus className="h-4 w-4 mr-2" />
-                        Add Measurement
-                      </Button>
-                    </CardHeader>
-                    <CardContent>
-                      {measurements.length > 0 ? (
-                        <div className="space-y-6">
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            {measurements[0].weight && (
-                              <Card>
-                                <CardContent className="pt-6">
-                                  <div className="text-center">
-                                    <p className="text-2xl font-bold">{measurements[0].weight} kg</p>
-                                    <p className="text-sm text-muted-foreground">Current Weight</p>
-                                  </div>
-                                </CardContent>
-                              </Card>
-                            )}
-
-                            {measurements[0].bmi && (
-                              <Card>
-                                <CardContent className="pt-6">
-                                  <div className="text-center">
-                                    <p className="text-2xl font-bold">{measurements[0].bmi}</p>
-                                    <p className="text-sm text-muted-foreground">Body Mass Index</p>
-                                  </div>
-                                </CardContent>
-                              </Card>
-                            )}
-
-                            {measurements[0].body_fat_percentage && (
-                              <Card>
-                                <CardContent className="pt-6">
-                                  <div className="text-center">
-                                    <p className="text-2xl font-bold">{measurements[0].body_fat_percentage}%</p>
-                                    <p className="text-sm text-muted-foreground">Body Fat Percentage</p>
-                                  </div>
-                                </CardContent>
-                              </Card>
-                            )}
-                          </div>
-
-                          <div>
-                            <h3 className="text-lg font-medium mb-4">Measurement History</h3>
-                            <div className="space-y-2">
-                              {measurements.map((measurement) => (
-                                <div key={measurement.id} className="flex justify-between border-b py-2">
-                                  <div>
-                                    <p className="font-medium">
-                                      {new Date(measurement.measurement_date).toLocaleDateString()}
-                                    </p>
-                                  </div>
-                                  <div className="flex space-x-6">
-                                    {measurement.weight && (
-                                      <div>
-                                        <p className="text-sm text-muted-foreground">Weight</p>
-                                        <p>{measurement.weight} kg</p>
-                                      </div>
-                                    )}
-                                    {measurement.bmi && (
-                                      <div>
-                                        <p className="text-sm text-muted-foreground">BMI</p>
-                                        <p>{measurement.bmi}</p>
-                                      </div>
-                                    )}
-                                    {measurement.body_fat_percentage && (
-                                      <div>
-                                        <p className="text-sm text-muted-foreground">Body Fat</p>
-                                        <p>{measurement.body_fat_percentage}%</p>
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="text-center py-8">
-                          <p className="text-muted-foreground">No measurements recorded yet</p>
-                          <Button
-                            variant="outline"
-                            className="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700"
-                            onClick={() => setIsAddMeasurementOpen(true)}
-                          >
-                            <Plus className="h-4 w-4 mr-2" />
-                            Add First Measurement
-                          </Button>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                </TabsContent>
-
-                <TabsContent value="attendance">
-                  <AttendanceHistory memberId={member.id || ''} />
-                </TabsContent>
-              </Tabs>
-            </div>
-          </div>
-        </div>
-      </Container>
-
-      <Dialog open={isAddMembershipOpen} onOpenChange={setIsAddMembershipOpen}>
-        <DialogContent 
-          className="max-w-3xl"
-          aria-describedby="assign-membership-description"
-        >
-          <DialogHeader>
-            <DialogTitle>Assign Membership</DialogTitle>
-            <DialogDescription id="assign-membership-description">
-              Assign a membership plan to {member.name}
-            </DialogDescription>
-          </DialogHeader>
-          <MembershipAssignmentForm
-            isOpen={isAddMembershipOpen}
-            onClose={() => setIsAddMembershipOpen(false)}
-            memberId={member.id}
-            memberName={member.name}
-            onAssigned={handleAddMembershipSuccess} />
-        </DialogContent>
-      </Dialog>
-
-      {/* Add Measurement Dialog */}
-      <Dialog open={isAddMeasurementOpen} onOpenChange={setIsAddMeasurementOpen}>
-        <DialogContent className="sm:max-w-[600px]">
-          <DialogHeader>
-            <DialogTitle>Add Body Measurement</DialogTitle>
-            <DialogDescription>
-              Record new body measurements for this member.
-            </DialogDescription>
-          </DialogHeader>
-          {member && (
-            <BodyMeasurementForm
-              memberId={member.id}
-              currentUser={user!}
-              onSave={async (data) => {
-                try {
-                  // Convert the data to match the database schema
-                  const measurementData = {
-                    member_id: member.id,
-                    measurement_date: data.date,
-                    weight: data.weight,
-                    height: data.height,
-                    bmi: data.bmi,
-                    body_fat_percentage: data.bodyFat,
-                    chest: data.chest,
-                    waist: data.waist,
-                    hips: data.hips,
-                    biceps: data.biceps,
-                    thighs: data.thighs,
-                    notes: data.notes
-                  };
-                  
-                  // Save to database
-                  const { data: newMeasurement, error } = await supabase
-                    .from('measurements')
-                    .insert(measurementData)
-                    .select()
-                    .single();
-                    
-                  if (error) throw error;
-                  
-                  // Update the measurements list
-                  setMeasurements([newMeasurement, ...measurements]);
-                  
-                  toast.success({
-                    title: "Success",
-                    description: "Measurement added successfully"
-                  });
-                  
-                  setIsAddMeasurementOpen(false);
-                } catch (error: any) {
-                  console.error('Error adding measurement:', error);
-                  toast.error({
-                    title: "Error",
-                    description: error.message || "Failed to add measurement"
-                  });
-                }
-              }}
-              onCancel={() => setIsAddMeasurementOpen(false)}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
-    </>
+                )}
+                
+                {data.attendance.length > 0 ? (
+                  <div>
+                    <h3 className="text-lg font-medium mb-4">Recent Activity</h3>
+                    <AttendanceTable attendance={data.attendance} />
+                  </div>
+                ) : (
+                  <div className="p-8 text-center bg-muted rounded-md">
+                    <div className="text-lg font-medium">No Attendance Records</div>
+                    <div className="text-muted-foreground mt-1">This member doesn't have any attendance records yet.</div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      </div>
+      
+      {/* Membership Assignment Dialog */}
+      {isDialogOpen && (
+        <MembershipAssignmentDialog
+          open={isDialogOpen}
+          onClose={() => setIsDialogOpen(false)}
+          memberId={id}
+          onAssign={handleMembershipAssignment}
+        />
+      )}
+    </Container>
   );
 };
 

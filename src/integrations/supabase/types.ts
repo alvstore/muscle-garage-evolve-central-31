@@ -5295,6 +5295,16 @@ export type Database = {
         Args: { user_uuid: string }
         Returns: boolean
       }
+      check_active_memberships: {
+        Args: { p_member_id: string; p_date: string }
+        Returns: {
+          id: string
+          membership_id: string
+          start_date: string
+          end_date: string
+          status: string
+        }[]
+      }
       cleanup_profiles_table: {
         Args: Record<PropertyKey, never>
         Returns: undefined
