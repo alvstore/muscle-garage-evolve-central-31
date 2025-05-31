@@ -1,11 +1,10 @@
-
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { PaymentMethod, PaymentStatus, PAYMENT_METHODS } from "@/types/payment";
-import { PaymentMethodSelector } from "@/components/payment/PaymentMethodSelector";
 import { useNavigate } from "react-router-dom";
+import { PaymentMethod, PaymentDetails } from "@/services/members/membershipService";
+import { PaymentMethodSelector, PAYMENT_METHODS } from "@/components/payment/PaymentMethodSelector";
 import { Container } from "@/components/ui/container";
 import { Button } from "@/components/ui/button";
 import {
@@ -43,7 +42,7 @@ import { useMemberships } from "@/hooks";
 import { membershipService } from "@/services/members/membershipService";
 import { CalendarIcon, Loader2, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { MembershipPlan } from "@/types/members/membership";
+import type { Membership } from "@/hooks/members/use-memberships";
 
 // Form schema for member creation
 const memberFormSchema = z.object({
@@ -69,7 +68,7 @@ const memberFormSchema = z.object({
   startDate: z.date().optional(),
   membershipStatus: z.string().default("active"),
   paymentStatus: z.string().optional(),
-  paymentMethod: z.string().optional(),
+  paymentMethod: z.enum(PAYMENT_METHODS.map(m => m.value) as [string, ...string[]]).default('cash'),
   amountPaid: z.number().optional(),
   membershipNotes: z.string().optional(),
   
@@ -86,7 +85,7 @@ const NewMemberPage = () => {
   const { currentBranch } = useBranch();
   const { memberships = [], isLoading: isLoadingMemberships } = useMemberships();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [selectedMembership, setSelectedMembership] = useState<MembershipPlan | null>(null);
+  const [selectedMembership, setSelectedMembership] = useState<Membership | null>(null);
   const [totalAmount, setTotalAmount] = useState<number>(0);
   const [registrationError, setRegistrationError] = useState<string | null>(null);
   const [biometricStatus, setBiometricStatus] = useState<{ success: boolean; message: string } | null>(null);
@@ -218,25 +217,29 @@ const NewMemberPage = () => {
             const endDate = new Date(values.startDate);
             endDate.setDate(endDate.getDate() + (selectedMembership.duration_days || 30));
             
-            const result = await membershipService.assignMembership({
-              member_id: newMember.id,
-              membership_plan_id: values.membershipId,
-              branch_id: currentBranch.id,
-              start_date: values.startDate,
-              end_date: endDate,
-              total_amount: selectedMembership.price || 0,
-              payment: {
-                method: values.paymentMethod as PaymentMethod || 'cash',
-                status: (values.paymentStatus as PaymentStatus) || 'pending',
-                amount: selectedMembership.price || 0,
-                amount_paid: values.amountPaid || 0,
-                transaction_id: values.transactionId || undefined,
-                reference_number: values.referenceNumber || undefined,
-                payment_date: new Date().toISOString(),
-                notes: values.membershipNotes || undefined
-              },
-              recorded_by: currentBranch.id // Using branch ID as recorded_by since we don't have user ID
-            });
+            // Create payment details object
+            const paymentDetails: PaymentDetails = {
+              method: values.paymentMethod as PaymentMethod,
+              amount: selectedMembership.price || 0,
+              transaction_id: values.transactionId,
+              reference_number: values.referenceNumber,
+              paid_at: new Date().toISOString(),
+              notes: values.membershipNotes
+            };
+
+            // Call the service to assign membership
+            const result = await membershipService.assignMembership(
+              newMember.id, // memberId
+              values.membershipId, // membershipId
+              paymentDetails,
+              {
+                branchId: currentBranch.id,
+                startDate: new Date(values.startDate),
+                endDate: endDate,
+                notes: values.membershipNotes,
+                // staffId and trainerId can be added here if available
+              }
+            );
             
             if (result.success) {
               // Store the invoice ID from the result
@@ -1000,29 +1003,11 @@ const NewMemberPage = () => {
                           {(form.watch("paymentStatus") === "paid" || form.watch("paymentStatus") === "partial") && (
                             <>
                               <div className="space-y-4">
-                                <FormField
+                                <PaymentMethodSelector
                                   control={form.control}
                                   name="paymentMethod"
-                                  render={({ field }) => (
-                                    <FormItem>
-                                      <FormLabel>Payment Method*</FormLabel>
-                                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                        <FormControl>
-                                          <SelectTrigger>
-                                            <SelectValue placeholder="Select payment method" />
-                                          </SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
-                                          {PAYMENT_METHODS.map((method) => (
-                                            <SelectItem key={method.value} value={method.value}>
-                                              {method.label}
-                                            </SelectItem>
-                                          ))}
-                                        </SelectContent>
-                                      </Select>
-                                      <FormMessage />
-                                    </FormItem>
-                                  )}
+                                  label="Payment Method*"
+                                  description="Select the payment method for this transaction"
                                 />
                                 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
