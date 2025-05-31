@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { DataTable } from "@/components/ui/data-table";
 import { useMemberProfileData } from '@/hooks/members/use-member-profile-data';
 import { useMemberProfileAnalytics } from '@/hooks/members/use-member-profile-analytics';
+import { ColumnDef } from '@tanstack/react-table';
 
 // Component for Member Membership Table
 const MembershipTable = ({ memberships }) => {

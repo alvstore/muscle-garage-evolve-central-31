@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -6,7 +7,6 @@ import {
   Select, SelectContent, SelectGroup, 
   SelectItem, SelectTrigger, SelectValue 
 } from '@/components/ui/select';
-import { AccessibleDialog } from '@/components/ui/accessible-dialog';
 import {
   Popover,
   PopoverContent,
@@ -33,21 +33,13 @@ interface PaymentDetails {
 }
 
 interface MembershipAssignmentFormProps {
-  isOpen: boolean;
-  onClose: () => void;
   memberId: string;
-  memberName: string;
-  onAssigned?: () => void;
-  onSuccess?: () => void;
+  onComplete?: () => void;
 }
 
 const MembershipAssignmentForm: React.FC<MembershipAssignmentFormProps> = ({
   memberId,
-  memberName,
-  isOpen,
-  onClose,
-  onAssigned,
-  onSuccess,
+  onComplete,
 }) => {
   const { currentBranch } = useBranch();
   const [membershipPlans, setMembershipPlans] = useState<MembershipPlan[]>([]);
@@ -70,7 +62,6 @@ const MembershipAssignmentForm: React.FC<MembershipAssignmentFormProps> = ({
         if (!currentBranch?.id) {
           console.error('No branch selected');
           toast.error('Please select a branch first');
-          onClose();
           return;
         }
         const plans = await membershipService.getMembershipPlans(currentBranch.id);
@@ -87,10 +78,8 @@ const MembershipAssignmentForm: React.FC<MembershipAssignmentFormProps> = ({
       }
     };
     
-    if (isOpen) {
-      fetchMembershipPlans();
-    }
-  }, [isOpen, currentBranch?.id, onClose]);
+    fetchMembershipPlans();
+  }, [currentBranch?.id]);
 
   useEffect(() => {
     if (selectedPlanId && startDate) {
@@ -180,7 +169,6 @@ const MembershipAssignmentForm: React.FC<MembershipAssignmentFormProps> = ({
     setIsSubmitting(true);
     
     try {
-      // Validate required fields with more specific messages
       if (!selectedPlanId) {
         throw new Error('Please select a membership plan');
       }
@@ -197,44 +185,19 @@ const MembershipAssignmentForm: React.FC<MembershipAssignmentFormProps> = ({
         amount: amountPaid,
         method: paymentMethod,
         notes: notes || undefined,
-        // Add more payment details if needed
         paid_at: new Date().toISOString()
       };
       
-      // Log assignment details for debugging
-      const assignmentDetails = {
-        memberId,
-        membershipId: selectedPlanId,
-        paymentDetails: {
-          ...paymentDetails,
-          // Don't log sensitive info
-          transaction_id: paymentDetails.transaction_id ? '***' : undefined,
-          reference_number: paymentDetails.reference_number ? '***' : undefined
-        },
-        options: {
-          branchId: currentBranch?.id || 'not specified',
-          startDate: startDate ? new Date(startDate).toISOString() : 'not specified',
-          endDate: endDate ? new Date(endDate).toISOString() : 'not specified',
-          hasNotes: Boolean(notes),
-          staffId: 'not specified' // This would come from auth context in a real app
-        }
-      };
-      
-      console.log('Assigning membership with details:', assignmentDetails);
-      
-      // Prepare options for the membership assignment
       const assignmentOptions = {
         branchId: currentBranch?.id || null,
         startDate: startDate ? new Date(startDate) : undefined,
         endDate: endDate ? new Date(endDate) : undefined,
         notes: notes || undefined,
-        staffId: undefined // Will fall back to memberId
+        staffId: undefined
       };
       
-      // Show loading state
       toast.loading('Assigning membership...');
       
-      // Call the membership service
       const result = await membershipService.assignMembership(
         memberId,
         selectedPlanId,
@@ -242,27 +205,22 @@ const MembershipAssignmentForm: React.FC<MembershipAssignmentFormProps> = ({
         assignmentOptions
       );
       
-      // Dismiss the loading toast
       toast.dismiss();
       
       console.log('Membership assignment result:', result);
       
       if (result.success) {
         toast.success(result.message || 'Membership assigned successfully');
-        onSuccess?.();
-        onAssigned?.();
-        onClose();
+        onComplete?.();
       } else {
         throw new Error(result.error || 'Failed to assign membership');
       }
     } catch (error) {
       console.error('Error assigning membership:', error);
       
-      // User-friendly error messages
       if (error instanceof Error) {
         const errorMessage = error.message;
         
-        // Check for specific error patterns
         if (errorMessage.includes('Member not found')) {
           toast.error('Member not found. Please check the member ID and try again.');
         } else if (errorMessage.includes('Invalid membership plan')) {
@@ -272,7 +230,6 @@ const MembershipAssignmentForm: React.FC<MembershipAssignmentFormProps> = ({
         } else if (errorMessage.includes('already has an active membership')) {
           toast.error('This member already has an active membership. Please check the member\'s current membership status.');
         } else if (errorMessage.includes('violates foreign key constraint')) {
-          // Handle different types of foreign key violations
           if (errorMessage.includes('member_id')) {
             toast.error('Invalid member. The specified member does not exist.');
           } else if (errorMessage.includes('membership_id')) {
@@ -285,192 +242,159 @@ const MembershipAssignmentForm: React.FC<MembershipAssignmentFormProps> = ({
         } else if (errorMessage.includes('network')) {
           toast.error('Network error. Please check your connection and try again.');
         } else {
-          // Show the actual error message for other cases
           toast.error(errorMessage || 'Failed to assign membership. Please try again.');
         }
       } else {
         toast.error('An unexpected error occurred. Please try again.');
       }
-      
-      // Log full error details for debugging (excluding sensitive info)
-      console.error('Full error details:', {
-        error: error instanceof Error ? {
-          name: error.name,
-          message: error.message,
-          stack: error.stack
-        } : error,
-        memberId,
-        selectedPlanId,
-        paymentMethod,
-        amountPaid,
-        currentBranch: currentBranch?.id || 'not specified',
-        startDate: startDate || 'not specified',
-        endDate: endDate || 'not specified',
-        hasNotes: Boolean(notes)
-      });
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <AccessibleDialog
-      open={isOpen}
-      onOpenChange={onClose}
-      title="Assign Membership"
-      description={`Assign a membership plan to ${memberName}`}
-    >
-      <div className="p-4">
-        {isLoading ? (
-          <div className="flex items-center justify-center py-8">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          </div>
-        ) : (
-          <form onSubmit={handleSubmit}>
-            <div className="grid gap-4 py-4">
+    <div className="p-4">
+      {isLoading ? (
+        <div className="flex items-center justify-center py-8">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      ) : (
+        <form onSubmit={handleSubmit}>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="membership_plan">Membership Plan</Label>
+              <Select onValueChange={handlePlanChange} value={selectedPlanId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a membership plan" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    {membershipPlans.map((plan) => (
+                      <SelectItem key={plan.id} value={plan.id || ''}>
+                        {plan.name} - ₹{plan.price} for {plan.duration_days} days
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
-                <Label>Member</Label>
-                <Input value={memberName} disabled />
-              </div>
-              
-              <div className="grid gap-2">
-                <Label htmlFor="membership_plan">Membership Plan</Label>
-                <Select onValueChange={handlePlanChange} value={selectedPlanId}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a membership plan" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectGroup>
-                      {membershipPlans.map((plan) => (
-                        <SelectItem key={plan.id} value={plan.id || ''}>
-                          {plan.name} - ₹{plan.price} for {plan.duration_days} days
-                        </SelectItem>
-                      ))}
-                    </SelectGroup>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div className="grid gap-2">
-                  <Label>Start Date</Label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className={cn(
-                          "justify-start text-left font-normal",
-                          !startDate && "text-muted-foreground"
-                        )}
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {startDate ? format(startDate, "PPP") : "Select date"}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0">
-                      <Calendar
-                        mode="single"
-                        selected={startDate}
-                        onSelect={handleStartDateChange}
-                      />
-                    </PopoverContent>
-                  </Popover>
-                </div>
-                
-                <div className="grid gap-2">
-                  <Label>End Date</Label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className={cn(
-                          "justify-start text-left font-normal",
-                          !endDate && "text-muted-foreground"
-                        )}
-                        disabled
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {endDate ? format(endDate, "PPP") : "Calculated from plan"}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0">
-                      <Calendar
-                        mode="single"
-                        selected={endDate}
-                        disabled
-                      />
-                    </PopoverContent>
-                  </Popover>
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="amount">Amount (₹)</Label>
-                  <Input
-                    id="amount"
-                    type="number"
-                    value={amount}
-                    onChange={(e) => setAmount(Number(e.target.value))}
-                    disabled={!selectedPlanId}
-                  />
-                </div>
-                
-                <div className="grid gap-2">
-                  <Label htmlFor="discount">Discount (%)</Label>
-                  <Input
-                    id="discount"
-                    type="number"
-                    min="0"
-                    max="100"
-                    value={discount}
-                    onChange={handleDiscountChange}
-                    disabled={!selectedPlanId}
-                  />
-                </div>
+                <Label>Start Date</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "justify-start text-left font-normal",
+                        !startDate && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {startDate ? format(startDate, "PPP") : "Select date"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0">
+                    <Calendar
+                      mode="single"
+                      selected={startDate}
+                      onSelect={handleStartDateChange}
+                    />
+                  </PopoverContent>
+                </Popover>
               </div>
               
               <div className="grid gap-2">
-                <Label htmlFor="amount_paid">Amount Paid (₹)</Label>
+                <Label>End Date</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "justify-start text-left font-normal",
+                        !endDate && "text-muted-foreground"
+                      )}
+                      disabled
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {endDate ? format(endDate, "PPP") : "Calculated from plan"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0">
+                    <Calendar
+                      mode="single"
+                      selected={endDate}
+                      disabled
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="amount">Amount (₹)</Label>
                 <Input
-                  id="amount_paid"
+                  id="amount"
                   type="number"
-                  value={amountPaid}
-                  onChange={(e) => setAmountPaid(Number(e.target.value))}
+                  value={amount}
+                  onChange={(e) => setAmount(Number(e.target.value))}
                   disabled={!selectedPlanId}
                 />
               </div>
               
               <div className="grid gap-2">
-                <Label htmlFor="notes">Notes (Optional)</Label>
+                <Label htmlFor="discount">Discount (%)</Label>
                 <Input
-                  id="notes"
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  placeholder="Any additional notes"
+                  id="discount"
+                  type="number"
+                  min="0"
+                  max="100"
+                  value={discount}
+                  onChange={handleDiscountChange}
+                  disabled={!selectedPlanId}
                 />
               </div>
             </div>
             
-            <div className="flex justify-end gap-2 mt-4">
-              <Button type="button" variant="outline" onClick={onClose}>
-                Cancel
-              </Button>
-              <Button type="submit" disabled={isSubmitting || !selectedPlanId}>
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Processing...
-                  </>
-                ) : (
-                  "Assign Membership"
-                )}
-              </Button>
+            <div className="grid gap-2">
+              <Label htmlFor="amount_paid">Amount Paid (₹)</Label>
+              <Input
+                id="amount_paid"
+                type="number"
+                value={amountPaid}
+                onChange={(e) => setAmountPaid(Number(e.target.value))}
+                disabled={!selectedPlanId}
+              />
             </div>
-          </form>
-        )}
-      </div>
-    </AccessibleDialog>
+            
+            <div className="grid gap-2">
+              <Label htmlFor="notes">Notes (Optional)</Label>
+              <Input
+                id="notes"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="Any additional notes"
+              />
+            </div>
+          </div>
+          
+          <div className="flex justify-end gap-2 mt-4">
+            <Button type="submit" disabled={isSubmitting || !selectedPlanId}>
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Processing...
+                </>
+              ) : (
+                "Assign Membership"
+              )}
+            </Button>
+          </div>
+        </form>
+      )}
+    </div>
   );
 };
 
