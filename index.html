@@ -38,8 +38,10 @@
   <body>
     <div id="root"></div>
 
-    <!-- Core scripts -->
-    <script src="https://cdn.gpteng.co/gptengineer.js" type="module"></script>
+    <!-- Main application script (type="module" is added by Vite) -->
     <script type="module" src="/src/main.tsx"></script>
+    
+    <!-- External scripts (load after main app) -->
+    <script src="https://cdn.gpteng.co/gptengineer.js" async defer></script>
   </body>
 </html>
